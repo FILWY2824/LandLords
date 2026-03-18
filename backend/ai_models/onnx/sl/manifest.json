@@ -1,0 +1,37 @@
+{
+  "baseline_dir": "F:\\CodeXProject\\LandLords\\third_party\\baselines\\sl",
+  "device": "cpu",
+  "opset": 14,
+  "roles": {
+    "landlord": {
+      "checkpoint": "F:\\CodeXProject\\LandLords\\third_party\\baselines\\sl\\landlord.ckpt",
+      "onnx": "F:\\CodeXProject\\LandLords\\backend\\ai_models\\onnx\\sl\\landlord.onnx",
+      "x_width": 373,
+      "z_shape": [
+        1,
+        5,
+        162
+      ]
+    },
+    "landlord_up": {
+      "checkpoint": "F:\\CodeXProject\\LandLords\\third_party\\baselines\\sl\\landlord_up.ckpt",
+      "onnx": "F:\\CodeXProject\\LandLords\\backend\\ai_models\\onnx\\sl\\landlord_up.onnx",
+      "x_width": 484,
+      "z_shape": [
+        1,
+        5,
+        162
+      ]
+    },
+    "landlord_down": {
+      "checkpoint": "F:\\CodeXProject\\LandLords\\third_party\\baselines\\sl\\landlord_down.ckpt",
+      "onnx": "F:\\CodeXProject\\LandLords\\backend\\ai_models\\onnx\\sl\\landlord_down.onnx",
+      "x_width": 484,
+      "z_shape": [
+        1,
+        5,
+        162
+      ]
+    }
+  }
+}

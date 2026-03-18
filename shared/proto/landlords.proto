@@ -1,0 +1,218 @@
+syntax = "proto3";
+
+package landlords.protocol;
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_INVALID_REQUEST = 1;
+  ERROR_CODE_AUTH_FAILED = 2;
+  ERROR_CODE_ALREADY_EXISTS = 3;
+  ERROR_CODE_NOT_FOUND = 4;
+  ERROR_CODE_MATCH_STATE_INVALID = 5;
+  ERROR_CODE_GAME_STATE_INVALID = 6;
+  ERROR_CODE_INTERNAL = 7;
+}
+
+enum MatchMode {
+  MATCH_MODE_UNSPECIFIED = 0;
+  MATCH_MODE_VS_BOT = 1;
+  MATCH_MODE_PVP = 2;
+}
+
+enum BotDifficulty {
+  BOT_DIFFICULTY_UNSPECIFIED = 0;
+  BOT_DIFFICULTY_EASY = 1;
+  BOT_DIFFICULTY_NORMAL = 2;
+  BOT_DIFFICULTY_HARD = 3;
+}
+
+enum PlayerRole {
+  PLAYER_ROLE_UNSPECIFIED = 0;
+  PLAYER_ROLE_FARMER = 1;
+  PLAYER_ROLE_LANDLORD = 2;
+}
+
+enum RoomPhase {
+  ROOM_PHASE_UNSPECIFIED = 0;
+  ROOM_PHASE_WAITING = 1;
+  ROOM_PHASE_PLAYING = 2;
+  ROOM_PHASE_FINISHED = 3;
+}
+
+enum ActionType {
+  ACTION_TYPE_UNSPECIFIED = 0;
+  ACTION_TYPE_PLAY = 1;
+  ACTION_TYPE_PASS = 2;
+}
+
+enum PatternType {
+  PATTERN_TYPE_UNSPECIFIED = 0;
+  PATTERN_TYPE_SINGLE = 1;
+  PATTERN_TYPE_PAIR = 2;
+  PATTERN_TYPE_TRIPLE = 3;
+  PATTERN_TYPE_TRIPLE_WITH_SINGLE = 4;
+  PATTERN_TYPE_TRIPLE_WITH_PAIR = 5;
+  PATTERN_TYPE_STRAIGHT = 6;
+  PATTERN_TYPE_STRAIGHT_PAIR = 7;
+  PATTERN_TYPE_AIRPLANE = 8;
+  PATTERN_TYPE_AIRPLANE_WITH_SINGLE = 9;
+  PATTERN_TYPE_AIRPLANE_WITH_PAIR = 10;
+  PATTERN_TYPE_BOMB = 11;
+  PATTERN_TYPE_FOUR_WITH_TWO_SINGLES = 12;
+  PATTERN_TYPE_FOUR_WITH_TWO_PAIRS = 13;
+  PATTERN_TYPE_ROCKET = 14;
+}
+
+message UserProfile {
+  string user_id = 1;
+  string username = 2;
+  int32 total_score = 3;
+}
+
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message RegisterResponse {
+  bool success = 1;
+  string message = 2;
+  UserProfile profile = 3;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  bool success = 1;
+  string message = 2;
+  UserProfile profile = 3;
+  string session_token = 4;
+}
+
+message MatchRequest {
+  MatchMode mode = 1;
+  BotDifficulty bot_difficulty = 2;
+}
+
+message MatchResponse {
+  bool accepted = 1;
+  string message = 2;
+}
+
+message MatchFoundPush {
+  string room_id = 1;
+  MatchMode mode = 2;
+  repeated RoomPlayer players = 3;
+}
+
+message RoomPlayer {
+  string player_id = 1;
+  string display_name = 2;
+  bool is_bot = 3;
+  PlayerRole role = 4;
+  int32 cards_left = 5;
+  int32 round_score = 6;
+}
+
+message Card {
+  string id = 1;
+  string rank = 2;
+  string suit = 3;
+  int32 value = 4;
+}
+
+message CardCounterEntry {
+  string rank = 1;
+  int32 remaining = 2;
+}
+
+message TableAction {
+  string action_id = 1;
+  string player_id = 2;
+  ActionType action_type = 3;
+  repeated Card cards = 4;
+  string pattern = 5;
+  int64 timestamp_ms = 6;
+  PatternType pattern_type = 7;
+}
+
+message RoomSnapshot {
+  string room_id = 1;
+  RoomPhase phase = 2;
+  MatchMode mode = 3;
+  repeated RoomPlayer players = 4;
+  repeated Card self_cards = 5;
+  repeated Card landlord_cards = 6;
+  repeated TableAction recent_actions = 7;
+  string current_turn_player_id = 8;
+  string status_text = 9;
+  repeated CardCounterEntry card_counter = 10;
+  int32 base_score = 11;
+  int32 multiplier = 12;
+  int32 current_round_score = 13;
+  bool spring_triggered = 14;
+  int32 turn_serial = 15;
+}
+
+message PlayCardsRequest {
+  string room_id = 1;
+  repeated string card_ids = 2;
+}
+
+message PassRequest {
+  string room_id = 1;
+}
+
+message ReconnectRequest {
+  string room_id = 1;
+}
+
+message HeartbeatRequest {
+  int64 client_time_ms = 1;
+}
+
+message HeartbeatResponse {
+  int64 server_time_ms = 1;
+}
+
+message OperationResponse {
+  bool success = 1;
+  string message = 2;
+  RoomSnapshot snapshot = 3;
+}
+
+message ErrorResponse {
+  ErrorCode code = 1;
+  string message = 2;
+}
+
+message ClientMessage {
+  string request_id = 1;
+  string session_token = 2;
+  oneof payload {
+    RegisterRequest register_request = 10;
+    LoginRequest login_request = 11;
+    MatchRequest match_request = 12;
+    PlayCardsRequest play_cards_request = 13;
+    PassRequest pass_request = 14;
+    ReconnectRequest reconnect_request = 15;
+    HeartbeatRequest heartbeat_request = 16;
+  }
+}
+
+message ServerMessage {
+  string request_id = 1;
+  oneof payload {
+    RegisterResponse register_response = 10;
+    LoginResponse login_response = 11;
+    MatchResponse match_response = 12;
+    MatchFoundPush match_found_push = 13;
+    RoomSnapshot room_snapshot = 14;
+    OperationResponse operation_response = 15;
+    ErrorResponse error_response = 16;
+    HeartbeatResponse heartbeat_response = 17;
+  }
+}

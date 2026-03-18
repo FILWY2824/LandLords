@@ -1,0 +1,77 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Project-local runtime, logs, and temporary files
+/.codex-appdata/
+/.codex-localappdata/
+/.tooling/
+**/.git.bak/
+/runtime/
+/runtime_logs/
+/.codex-server-smoke.err
+/.codex-server-smoke.out
+/tmp_*.err.log
+/tmp_*.log
+/tmp_*.out
+/tmp_*.png
+
+# Python local environments and caches
+**/.venv/
+**/__pycache__/
+
+# Native build outputs
+/backend/server/build/
+/backend/server/build-vs/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/compile_commands.json
+
+# Android/Kotlin local caches
+**/.kotlin/
+
+# Binary SDKs that can be restored separately
+/third_party/onnxruntime/
