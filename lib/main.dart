@@ -52,6 +52,8 @@ Future<void> main() async {
   };
   appLog(AppLogLevel.info, 'main', 'error handlers installed');
 
+  await _preloadUiFont();
+
   ErrorWidget.builder = (details) => _FatalErrorView(
         title: '页面加载失败',
         message: kDebugMode
@@ -75,20 +77,6 @@ Future<void> main() async {
   }
 
   try {
-    appLog(AppLogLevel.info, 'main', 'font preload begin');
-    final fontLoader = FontLoader('LandlordsUiSubset')
-      ..addFont(rootBundle.load('assets/fonts/LandlordsUiSubset.ttf'));
-    await fontLoader.load();
-    appLog(AppLogLevel.info, 'main', 'ui font preload finished');
-  } catch (error) {
-    appLog(
-      AppLogLevel.warn,
-      'main',
-      'ui font preload failed, continue with fallback fonts: $error',
-    );
-  }
-
-  try {
     appLog(AppLogLevel.info, 'main', 'runApp begin');
     runApp(const LandlordsApp());
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -107,6 +95,18 @@ Future<void> main() async {
         message: kDebugMode ? '$error' : '程序启动失败，请重新打开应用。',
       ),
     );
+  }
+}
+
+Future<void> _preloadUiFont() async {
+  try {
+    final loader = FontLoader('LandlordsUiSubset');
+    loader.addFont(rootBundle.load('assets/fonts/LandlordsUiSubset.ttf'));
+    await loader.load();
+    appLog(AppLogLevel.info, 'main', 'ui font preload finished');
+  } catch (error, stackTrace) {
+    appLog(AppLogLevel.warn, 'main', 'ui font preload failed: $error');
+    appLog(AppLogLevel.debug, 'main', 'ui font preload stack: $stackTrace');
   }
 }
 

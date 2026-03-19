@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
@@ -9,6 +10,7 @@ import '../models/game_models.dart';
 import '../services/voice_cue_service.dart';
 import '../state/app_controller.dart';
 import '../utils/app_log.dart';
+import '../utils/browser_background.dart';
 import '../utils/current_trick_view.dart';
 
 class GamePage extends StatefulWidget {
@@ -24,9 +26,11 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   final _selectedIds = <String>{};
   final _suggestedIds = <String>{};
   final _voice = VoiceCueService();
+  final _browserBackground = createBrowserBackgroundBridge();
   Timer? _countdownTimer;
   Timer? _bannerTimer;
   Timer? _errorTimer;
+  StreamSubscription<bool>? _browserBackgroundSubscription;
   String? _bannerText;
   String? _bannerActionId;
   String? _errorNotice;
@@ -38,15 +42,16 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   final Set<String> _seenActionIds = <String>{};
   final Queue<String> _seenActionOrder = Queue<String>();
   final Set<String> _presentationAckedIds = <String>{};
-  final Set<String> _stalePresentationIds = <String>{};
   final Queue<_PendingPresentation> _presentationQueue =
       Queue<_PendingPresentation>();
   bool _dragSelectionActive = false;
   bool _dragSelectionValue = true;
   int? _lastDragIndex;
   bool _processingPresentationQueue = false;
+  bool _browserBackgroundMode = false;
   String? _presentationRoomId;
   String? _activePresentationActionId;
+  String? _bgmRoomId;
 
   void _showBanner(String text, {int milliseconds = 1800}) {
     _bannerTimer?.cancel();
@@ -62,7 +67,12 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(_voice.startBackgroundMusic());
+    if (_browserBackground.supported) {
+      _browserBackgroundMode = _browserBackground.isBackgrounded;
+      _browserBackgroundSubscription = _browserBackground.changes.listen(
+        _handleBrowserBackgroundChanged,
+      );
+    }
   }
 
   @override
@@ -71,6 +81,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     _countdownTimer?.cancel();
     _bannerTimer?.cancel();
     _errorTimer?.cancel();
+    _browserBackgroundSubscription?.cancel();
     unawaited(_voice.dispose());
     super.dispose();
   }
@@ -80,8 +91,59 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     appLog(
       AppLogLevel.info,
       'game_page',
-      'lifecycle state=$state',
+      'lifecycle state=$state (presentation queue preserved)',
     );
+  }
+
+  @override
+  void didChangeViewFocus(ui.ViewFocusEvent event) {
+    appLog(
+      AppLogLevel.info,
+      'game_page',
+      'view focus=${event.state} (presentation queue preserved)',
+    );
+  }
+
+  void _handleBrowserBackgroundChanged(bool backgrounded) {
+    if (_browserBackgroundMode == backgrounded) {
+      return;
+    }
+    _browserBackgroundMode = backgrounded;
+    appLog(
+      AppLogLevel.info,
+      'game_page',
+      'browser background mode=$backgrounded',
+    );
+    if (backgrounded) {
+      _flushPresentationQueueForBrowserBackground();
+      return;
+    }
+    unawaited(widget.controller.refreshCurrentRoom());
+    _showBanner('\u5df2\u540c\u6b65\u5230\u6700\u65b0\u724c\u5c40', milliseconds: 1200);
+  }
+
+  void _flushPresentationQueueForBrowserBackground() {
+    final roomId = widget.controller.roomSnapshot?.roomId;
+    if (roomId == null) {
+      return;
+    }
+    unawaited(_voice.interruptSpeech());
+    for (final pending in _presentationQueue) {
+      if (_presentationAckedIds.add(pending.actionId)) {
+        unawaited(
+          widget.controller.acknowledgePresentation(roomId, pending.actionId),
+        );
+      }
+    }
+    _presentationQueue.clear();
+    final activeId = _activePresentationActionId;
+    if (activeId != null && _presentationAckedIds.add(activeId)) {
+      unawaited(widget.controller.acknowledgePresentation(roomId, activeId));
+    }
+    _activePresentationActionId = null;
+    if (mounted) {
+      setState(() => _bannerText = null);
+    }
   }
 
   bool _isManaged(RoomSnapshot snapshot, String playerId) {
@@ -100,13 +162,13 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   }
 
   void _sync(RoomSnapshot snapshot) {
+    _syncBackgroundMusic(snapshot);
     if (_presentationRoomId != snapshot.roomId) {
       _presentationRoomId = snapshot.roomId;
       _presentationQueue.clear();
       _seenActionIds.clear();
       _seenActionOrder.clear();
       _presentationAckedIds.clear();
-      _stalePresentationIds.clear();
       _activePresentationActionId = null;
       _voice.clearPending(clearRecentActionIds: true);
       appLog(
@@ -151,52 +213,41 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     }
 
     if (unseenIndexes.isNotEmpty) {
-      final shouldCatchUp = unseenIndexes.length > 1 ||
-          _processingPresentationQueue ||
-          _presentationQueue.isNotEmpty;
-      if (shouldCatchUp) {
-        final latestIndex = unseenIndexes.last;
-        final latestAction = snapshot.recentActions[latestIndex];
-        if (_activePresentationActionId != null) {
-          _stalePresentationIds.add(_activePresentationActionId!);
+      if (_browserBackgroundMode) {
+        appLog(
+          AppLogLevel.info,
+          'game_page',
+          'browser background fast-sync room=${snapshot.roomId} actions=${unseenIndexes.length}',
+        );
+        for (final index in unseenIndexes) {
+          final action = snapshot.recentActions[index];
+          if (_presentationAckedIds.add(action.actionId)) {
+            unawaited(
+              widget.controller.acknowledgePresentation(
+                snapshot.roomId,
+                action.actionId,
+              ),
+            );
+          }
         }
-        for (final pending in _presentationQueue) {
-          _stalePresentationIds.add(pending.actionId);
-        }
-        _presentationQueue.clear();
-        unawaited(_voice.interruptSpeech());
+        return;
+      }
+      for (final index in unseenIndexes) {
+        final action = snapshot.recentActions[index];
         _presentationQueue.add(
           _PendingPresentation(
             roomId: snapshot.roomId,
             actions: snapshot.recentActions,
-            index: latestIndex,
-            actionId: latestAction.actionId,
+            index: index,
+            actionId: action.actionId,
           ),
         );
         appLog(
-          AppLogLevel.warn,
+          AppLogLevel.debug,
           'game_page',
-          'presentation catch-up room=${snapshot.roomId} latest=${latestAction.actionId} '
-          'unseen=${unseenIndexes.length}',
+          'queue presentation room=${snapshot.roomId} action=${action.actionId} '
+          'label=${action.patternLabel} index=$index queue_size=${_presentationQueue.length}',
         );
-      } else {
-        for (final index in unseenIndexes) {
-          final action = snapshot.recentActions[index];
-          _presentationQueue.add(
-            _PendingPresentation(
-              roomId: snapshot.roomId,
-              actions: snapshot.recentActions,
-              index: index,
-              actionId: action.actionId,
-            ),
-          );
-          appLog(
-            AppLogLevel.debug,
-            'game_page',
-            'queue presentation room=${snapshot.roomId} action=${action.actionId} '
-            'label=${action.patternLabel} index=$index',
-          );
-        }
       }
       if (!_processingPresentationQueue) {
         unawaited(_drainPresentationQueue());
@@ -223,6 +274,20 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     }
   }
 
+  void _syncBackgroundMusic(RoomSnapshot snapshot) {
+    if (!_musicEnabled || snapshot.phase == RoomPhase.finished) {
+      if (_bgmRoomId != null) {
+        _bgmRoomId = null;
+        unawaited(_voice.stopBackgroundMusic());
+      }
+      return;
+    }
+    if (_bgmRoomId != snapshot.roomId) {
+      _bgmRoomId = snapshot.roomId;
+      unawaited(_voice.startBackgroundMusic());
+    }
+  }
+
   Future<void> _presentAction(
     String roomId,
     List<TableAction> actions,
@@ -236,6 +301,20 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       }
       return;
     }
+    if (_browserBackgroundMode) {
+      appLog(
+        AppLogLevel.debug,
+        'game_page',
+        'ack immediately for browser background room=$roomId action=${action.actionId}',
+      );
+      if (_presentationAckedIds.add(action.actionId)) {
+        await widget.controller.acknowledgePresentation(roomId, action.actionId);
+      }
+      if (_activePresentationActionId == action.actionId) {
+        _activePresentationActionId = null;
+      }
+      return;
+    }
     await Future<void>.delayed(const Duration(milliseconds: 60));
     appLog(
       AppLogLevel.debug,
@@ -243,22 +322,11 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       'present action start room=$roomId action=${action.actionId} '
       'label=${action.patternLabel}',
     );
-    await _voice.enqueueActionAndWaitForStart(
+    await _voice.enqueueAction(
       action.actionId,
       _voiceText(actions, index),
     );
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-    if (_stalePresentationIds.remove(action.actionId)) {
-      appLog(
-        AppLogLevel.info,
-        'game_page',
-        'skip stale presentation room=$roomId action=${action.actionId}',
-      );
-      if (_activePresentationActionId == action.actionId) {
-        _activePresentationActionId = null;
-      }
-      return;
-    }
+    await Future<void>.delayed(const Duration(milliseconds: 60));
     if (!mounted || _presentationAckedIds.contains(action.actionId)) {
       if (_activePresentationActionId == action.actionId) {
         _activePresentationActionId = null;
@@ -279,6 +347,11 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
 
   Future<void> _drainPresentationQueue() async {
     _processingPresentationQueue = true;
+    appLog(
+      AppLogLevel.debug,
+      'game_page',
+      'drain presentation queue start room=$_presentationRoomId size=${_presentationQueue.length}',
+    );
     try {
       while (_presentationQueue.isNotEmpty) {
         final pending = _presentationQueue.removeFirst();
@@ -289,6 +362,11 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       }
     } finally {
       _processingPresentationQueue = false;
+      appLog(
+        AppLogLevel.debug,
+        'game_page',
+        'drain presentation queue end room=$_presentationRoomId size=${_presentationQueue.length}',
+      );
     }
   }
 
@@ -422,7 +500,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       body: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: (_) {
-          if (_musicEnabled) {
+          if (_musicEnabled && _bgmRoomId != null) {
             unawaited(_voice.startBackgroundMusic());
           }
         },
@@ -441,20 +519,8 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           child: SafeArea(
             child: LayoutBuilder(
               builder: (context, viewport) {
-                final mobileViewport =
-                    viewport.maxWidth < 960 || viewport.maxHeight < 700;
-                final narrowViewport =
-                    viewport.maxWidth < 1320 || viewport.maxHeight < 860;
-                final designWidth = mobileViewport
-                    ? 1180.0
-                    : narrowViewport
-                        ? 1380.0
-                        : 1540.0;
-                final designHeight = mobileViewport
-                    ? 760.0
-                    : narrowViewport
-                        ? 860.0
-                        : 920.0;
+                const designWidth = 1440.0;
+                const designHeight = 860.0;
                 return Center(
                   child: FittedBox(
                     fit: BoxFit.contain,
@@ -465,34 +531,17 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                         children: [
                           Column(
                             children: [
-                              _buildTopHud(snapshot, mobile: mobileViewport),
+                              _buildTopHud(snapshot),
                               Expanded(
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                                   child: LayoutBuilder(
                                     builder: (context, constraints) {
-                                      final compact =
-                                          mobileViewport || constraints.maxWidth < 1080;
-                                      final seatWidth = mobileViewport
-                                          ? 214.0
-                                          : compact
-                                              ? 228.0
-                                              : 270.0;
-                                      final playedWidth = mobileViewport
-                                          ? 122.0
-                                          : compact
-                                              ? 118.0
-                                              : 138.0;
-                                      final sideTrayWidth = mobileViewport
-                                          ? 372.0
-                                          : compact
-                                              ? 454.0
-                                              : 520.0;
-                                      final selfTrayWidth = mobileViewport
-                                          ? 500.0
-                                          : compact
-                                              ? 580.0
-                                              : 700.0;
+                                      final compact = false;
+                                      const seatWidth = 248.0;
+                                      const playedWidth = 112.0;
+                                      const sideTrayWidth = 336.0;
+                                      const selfTrayWidth = 560.0;
                                       final trayLayouts = <_PlayedTrayLayout>[
                                         _PlayedTrayLayout(
                                           position: _PlayedTrayPosition.left,
@@ -569,7 +618,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                             child: _buildTable(snapshot.mode),
                                           ),
                                           Positioned(
-                                            left: compact ? 16 : 22,
+                                            left: 22,
                                             top: 18,
                                             child: _buildSeat(
                                               snapshot,
@@ -582,7 +631,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                             ),
                                           ),
                                           Positioned(
-                                            right: compact ? 16 : 22,
+                                            right: 22,
                                             top: 18,
                                             child: _buildSeat(
                                               snapshot,
@@ -598,7 +647,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                             Positioned(
                                               left: 0,
                                               right: 0,
-                                              top: compact ? 92 : 104,
+                                              top: 104,
                                               child: Center(
                                                 child: _bannerPill(_bannerText!),
                                               ),
@@ -607,7 +656,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                             Positioned(
                                               left: 0,
                                               right: 0,
-                                              top: compact ? 146 : 162,
+                                              top: 162,
                                               child: Center(
                                                 child: _hintPill(
                                                   myTurn
@@ -637,38 +686,12 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                                   centered: layout.centered,
                                                   cardWidth: layout.position ==
                                                           _PlayedTrayPosition.self
-                                                      ? playedWidth + 12
-                                                      : playedWidth,
+                                                      ? playedWidth
+                                                      : playedWidth - 10,
                                                   maxWidth: layout.width,
-                                                  showName: layout.position !=
-                                                      _PlayedTrayPosition.self,
                                                   isLeadingPlay:
                                                       layout.isLeadingPlay,
                                                 ),
-                                              ),
-                                            ),
-                                          if (snapshot.phase != RoomPhase.finished &&
-                                              myTurn &&
-                                              !waitingMyBid)
-                                            Positioned(
-                                              left: 0,
-                                              right: 0,
-                                              bottom: compact ? 154 : 164,
-                                              child: IgnorePointer(
-                                                child: Center(
-                                                  child: _turnPrompt(
-                                                    waitingMyBid: false,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          if (waitingMyBid)
-                                            Positioned(
-                                              left: 0,
-                                              right: 0,
-                                              bottom: mobileViewport ? 12 : 18,
-                                              child: Center(
-                                                child: _buildBidChooser(),
                                               ),
                                             ),
                                           if (snapshot.phase == RoomPhase.finished)
@@ -688,7 +711,10 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                 waitingMyBid: waitingMyBid,
                                 myTurn: myTurn,
                                 managed: managed,
-                                mobile: mobileViewport,
+                                showTurnChooser: snapshot.phase != RoomPhase.finished &&
+                                    myTurn &&
+                                    !waitingMyBid &&
+                                    !managed,
                               ),
                             ],
                           ),
@@ -716,138 +742,87 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildTopHud(RoomSnapshot snapshot, {required bool mobile}) {
+  Widget _buildTopHud(RoomSnapshot snapshot) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        mobile ? 12 : 16,
-        mobile ? 10 : 14,
-        mobile ? 12 : 16,
-        0,
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = mobile || constraints.maxWidth < 1260;
-          final topInfoCluster = Container(
+          final compact = constraints.maxWidth < 1260;
+          final landlordCards = Container(
+            height: compact ? 58 : 62,
             padding: EdgeInsets.symmetric(
-              horizontal: compact ? 12 : 16,
-              vertical: compact ? 10 : 12,
+              horizontal: compact ? 10 : 12,
+              vertical: compact ? 8 : 9,
             ),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              color: Colors.white.withValues(alpha: 0.90),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x143678A3),
-                  blurRadius: 18,
-                  offset: Offset(0, 10),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(22),
+              color: Colors.white.withValues(alpha: 0.92),
+              border: Border.all(color: const Color(0xFFD7EBFF)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: compact ? 10 : 12,
-                    vertical: compact ? 8 : 10,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: const Color(0xFFF6FAFF),
-                    border: Border.all(color: const Color(0xFFD7EBFF)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        '\u5e95\u724c',
-                        style: TextStyle(
-                          color: Color(0xFF245E90),
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      for (var index = 0; index < snapshot.landlordCards.length; index++) ...[
-                        _miniCard(
-                          snapshot.landlordCards[index].rankLabel,
-                          snapshot.landlordCards[index].isRed,
-                        ),
-                        if (index != snapshot.landlordCards.length - 1)
-                          const SizedBox(width: 4),
-                      ],
-                    ],
+                const Text(
+                  '\u5e95\u724c',
+                  style: TextStyle(
+                    color: Color(0xFF245E90),
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
+                const SizedBox(width: 8),
+                for (var index = 0; index < snapshot.landlordCards.length; index++) ...[
+                  _miniCard(
+                    snapshot.landlordCards[index].rankLabel,
+                    snapshot.landlordCards[index].isRed,
+                  ),
+                  if (index != snapshot.landlordCards.length - 1)
+                    const SizedBox(width: 4),
+                ],
               ],
             ),
           );
+
           return Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _hudButton(
                 Icons.arrow_back_rounded,
                 '\u5927\u5385',
                 widget.controller.backToLobby,
-                dense: true,
               ),
-              SizedBox(width: mobile ? 8 : 12),
+              SizedBox(width: compact ? 6 : 8),
+              landlordCards,
+              SizedBox(width: compact ? 6 : 8),
               Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      flex: mobile ? 3 : 2,
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: topInfoCluster,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: mobile ? 8 : 12),
-                    if (_showCounter)
-                      Expanded(
-                        flex: mobile ? 6 : 7,
-                        child: _buildCounter(
-                          snapshot.cardCounter,
-                          compact: !mobile,
-                          singleLine: true,
-                        ),
+                child: _showCounter
+                    ? _buildCounter(
+                        snapshot.cardCounter,
+                        compact: compact,
+                        singleLine: true,
                       )
-                    else
-                      const Spacer(),
-                    SizedBox(width: mobile ? 8 : 12),
-                    _hudButton(
-                      _musicEnabled
-                          ? Icons.music_off_rounded
-                          : Icons.music_note_rounded,
-                      _musicEnabled
-                          ? '\u5173\u95ed\u97f3\u4e50'
-                          : '\u5f00\u542f\u97f3\u4e50',
-                      () {
-                        setState(() => _musicEnabled = !_musicEnabled);
-                        if (_musicEnabled) {
-                          unawaited(_voice.startBackgroundMusic());
-                        } else {
-                          unawaited(_voice.stopBackgroundMusic());
-                        }
-                      },
-                      dense: true,
-                    ),
-                    SizedBox(width: mobile ? 6 : 8),
-                    _hudButton(
-                      _showCounter
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      _showCounter
-                          ? '\u9690\u85cf\u724c\u51b5'
-                          : '\u663e\u793a\u724c\u51b5',
-                      () => setState(() => _showCounter = !_showCounter),
-                      dense: true,
-                    ),
-                  ],
-                ),
+                    : const SizedBox.shrink(),
+              ),
+              SizedBox(width: compact ? 6 : 8),
+              _hudButton(
+                _showCounter
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                _showCounter ? '\u9690\u85cf\u724c\u51b5' : '\u663e\u793a\u724c\u51b5',
+                () => setState(() => _showCounter = !_showCounter),
+              ),
+              SizedBox(width: compact ? 6 : 8),
+              _hudButton(
+                _musicEnabled
+                    ? Icons.music_off_rounded
+                    : Icons.music_note_rounded,
+                _musicEnabled ? '\u5173\u95ed\u97f3\u4e50' : '\u5f00\u542f\u97f3\u4e50',
+                () {
+                  setState(() => _musicEnabled = !_musicEnabled);
+                  if (_musicEnabled) {
+                    unawaited(_voice.startBackgroundMusic());
+                  } else {
+                    unawaited(_voice.stopBackgroundMusic());
+                  }
+                },
               ),
             ],
           );
@@ -1057,100 +1032,6 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     );
   }
 
-  Widget _bottomPlayerSummary(
-    RoomSnapshot snapshot,
-    RoomPlayer me, {
-    required bool active,
-    required bool managed,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: Colors.white.withValues(alpha: 0.92),
-        border: Border.all(
-          color: active ? const Color(0xFF2B7FFF) : const Color(0xFFD7EBFF),
-          width: active ? 2 : 1,
-        ),
-        boxShadow: active
-            ? const [
-                BoxShadow(
-                  color: Color(0x1D2B7FFF),
-                  blurRadius: 18,
-                  offset: Offset(0, 10),
-                ),
-              ]
-            : null,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(
-                    radius: 17,
-                    backgroundColor: const Color(0xFF2B7FFF),
-                    child: Text(
-                      me.displayName.substring(0, 1).toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        me.displayName,
-                        style: const TextStyle(
-                          color: Color(0xFF173A59),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        '${me.isLandlord ? '\u5730\u4e3b' : '\u519c\u6c11'} / ${managed ? '\u6258\u7ba1\u4e2d' : '\u4f60\u5728\u724c\u684c'}',
-                        style: const TextStyle(
-                          color: Color(0xFF5A7894),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  _summaryChip(
-                    snapshot.mode == MatchMode.online
-                        ? '\u771f\u4eba\u5339\u914d'
-                        : widget.controller.botDifficulty.gameChip,
-                    filled: snapshot.mode != MatchMode.online,
-                  ),
-                  _summaryChip('\u5e95\u5206 ${snapshot.baseScore}'),
-                  _summaryChip('\u500d\u6570 ${snapshot.multiplier}'),
-                  _summaryChip('\u672c\u8f6e ${snapshot.currentRoundScore}'),
-                  if (snapshot.springTriggered) _summaryChip('\u6625\u5929'),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Alignment _trayAlignment({
     required bool compact,
     required _PlayedTrayPosition position,
@@ -1159,55 +1040,19 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     final primary = emphasis == TrickActionEmphasis.primary;
     return switch (position) {
       _PlayedTrayPosition.left => compact
-          ? Alignment(primary ? -0.20 : -0.57, primary ? -0.03 : -0.11)
-          : Alignment(primary ? -0.18 : -0.52, primary ? -0.04 : -0.10),
+          ? Alignment(primary ? -0.18 : -0.82, primary ? -0.02 : 0.18)
+          : Alignment(primary ? -0.16 : -0.80, primary ? -0.02 : 0.16),
       _PlayedTrayPosition.right => compact
-          ? Alignment(primary ? 0.20 : 0.57, primary ? -0.03 : -0.11)
-          : Alignment(primary ? 0.18 : 0.52, primary ? -0.04 : -0.10),
+          ? Alignment(primary ? 0.18 : 0.82, primary ? -0.02 : 0.18)
+          : Alignment(primary ? 0.16 : 0.80, primary ? -0.02 : 0.16),
       _PlayedTrayPosition.self => compact
-          ? Alignment(0, primary ? 0.18 : 0.24)
-          : Alignment(0, primary ? 0.14 : 0.20),
+          ? Alignment(0, primary ? 0.12 : 0.42)
+          : Alignment(0, primary ? 0.10 : 0.38),
     };
   }
 
-  Widget _turnPrompt({required bool waitingMyBid}) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF8ACBFF), Color(0xFF2B7FFF)],
-          ),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x332B7FFF),
-              blurRadius: 24,
-              offset: Offset(0, 12),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.bolt_rounded,
-              size: 18,
-              color: Colors.white,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              waitingMyBid ? '\u5230\u4f60\u53eb\u5206' : '\u5230\u4f60\u51fa\u724c',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      );
-
   Widget _buildBidChooser() => Container(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
           color: Colors.white.withValues(alpha: 0.96),
@@ -1224,20 +1069,11 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              '\u9009\u62e9\u672c\u8f6e\u53eb\u5206',
+              '\u8bf7\u53eb\u5206',
               style: TextStyle(
                 color: Color(0xFF173A59),
                 fontWeight: FontWeight.w900,
-                fontSize: 17,
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              '\u5730\u4e3b\u672a\u5b9a\uff0c\u8bf7\u5728\u8fd9\u91cc\u76f4\u63a5\u9009\u62e9\u53eb\u5206\u3002',
-              style: TextStyle(
-                color: Color(0xFF5A7894),
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
+                fontSize: 20,
               ),
             ),
             const SizedBox(height: 12),
@@ -1280,6 +1116,60 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         ),
       );
 
+  Widget _buildTurnActionChooser() => Container(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          color: Colors.white.withValues(alpha: 0.96),
+          border: Border.all(color: const Color(0xFFD7EBFF)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x223678A3),
+              blurRadius: 28,
+              offset: Offset(0, 14),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '\u8f6e\u5230\u4f60',
+              style: TextStyle(
+                color: Color(0xFF173A59),
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.center,
+              children: [
+                _actionButton(
+                  '\u4e0d\u51fa',
+                  widget.controller.isBusy ? null : widget.controller.pass,
+                  primary: false,
+                ),
+                _actionButton(
+                  '\u51fa\u724c',
+                  _selectedIds.isNotEmpty && !widget.controller.isBusy
+                      ? () async {
+                          await widget.controller.playCards(_selectedIds.toList());
+                          if (mounted) {
+                            setState(_selectedIds.clear);
+                          }
+                        }
+                      : null,
+                  primary: true,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
   Widget _buildPlayedTray({
     required RoomPlayer player,
     required TableAction? action,
@@ -1289,14 +1179,12 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     required double cardWidth,
     required double maxWidth,
     required bool isLeadingPlay,
-    bool showName = true,
     bool centered = false,
   }) {
     if (action == null) {
       return const SizedBox.shrink();
     }
     final primary = emphasis == TrickActionEmphasis.primary;
-    final label = _display(action);
     final hasCards = action.cards.isNotEmpty;
     final isPass = action.type == ActionType.pass;
     final toneColor = isLeadingPlay && primary
@@ -1309,14 +1197,29 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     final displayCardWidth = primary
         ? cardWidth
         : centered
-            ? cardWidth * 0.74
-            : cardWidth * 0.62;
+            ? cardWidth * 0.68
+            : cardWidth * 0.56;
     final fanMaxWidth = primary
         ? maxWidth
-        : math.min(maxWidth * (centered ? 0.60 : 0.48), 280.0);
-    return AnimatedScale(
+        : math.min(maxWidth * (centered ? 0.54 : 0.42), 228.0);
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(action.actionId),
+      tween: Tween<double>(begin: 0.94, end: 1),
       duration: const Duration(milliseconds: 220),
-      scale: primary && (active || isLeadingPlay) && hasCards ? 1.02 : 1,
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, (1 - value) * 12),
+            child: AnimatedScale(
+              duration: const Duration(milliseconds: 220),
+              scale: primary && (active || isLeadingPlay) && hasCards ? 1.02 : 1,
+              child: child,
+            ),
+          ),
+        );
+      },
       child: SizedBox(
         width: double.infinity,
         child: Column(
@@ -1327,30 +1230,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                   : CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment:
-                  centered ? MainAxisAlignment.center : MainAxisAlignment.start,
-              children: [
-                if (showName)
-                  Flexible(
-                    child: Text(
-                      player.displayName,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF6A839A),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                if (active) ...[
-                  if (showName) const SizedBox(width: 8),
-                  if (primary) _turnStateChip(),
-                ],
-              ],
-            ),
-            SizedBox(height: primary ? 8 : 5),
-            if (hasCards) ...[
+            if (hasCards)
               Align(
                 alignment: centered
                     ? Alignment.center
@@ -1364,50 +1244,46 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                   width: displayCardWidth,
                   maxWidth: fanMaxWidth,
                 ),
+              )
+            else if (isPass)
+              _passBadge(
+                '\u4e0d\u51fa',
+                color: toneColor,
+                primary: primary,
+                centered: centered,
               ),
-              SizedBox(height: primary ? 8 : 5),
-              Text(
-                label,
-                textAlign: centered ? TextAlign.center : TextAlign.start,
-                style: TextStyle(
-                  color: toneColor,
-                  fontWeight: FontWeight.w900,
-                  fontSize: primary ? 20 : 15,
-                  shadows: primary
-                      ? [
-                          Shadow(
-                            color: toneColor.withValues(alpha: 0.18),
-                            blurRadius: 10,
-                          ),
-                        ]
-                      : null,
-                ),
-              ),
-            ] else ...[
-              Text(
-                isPass ? label : player.displayName,
-                textAlign: centered ? TextAlign.center : TextAlign.start,
-                style: TextStyle(
-                  color: isPass ? toneColor : const Color(0xFF5A7894),
-                  fontWeight: FontWeight.w900,
-                  fontSize: isPass
-                      ? (primary ? 24 : 17)
-                      : (primary ? 16 : 13),
-                  letterSpacing: isPass ? 1.5 : 0,
-                  shadows: isPass
-                      ? primary
-                          ? [
-                              Shadow(
-                                color: toneColor.withValues(alpha: 0.20),
-                                blurRadius: 12,
-                              ),
-                            ]
-                          : null
-                      : null,
-                ),
-              ),
-            ],
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _passBadge(
+    String text, {
+    required Color color,
+    required bool primary,
+    required bool centered,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: primary ? 18 : 14,
+        vertical: primary ? 12 : 10,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: const Color(0xFFF7FBFF).withValues(alpha: primary ? 0.96 : 0.90),
+        border: Border.all(
+          color: color.withValues(alpha: primary ? 0.26 : 0.18),
+        ),
+      ),
+      child: Text(
+        text,
+        textAlign: centered ? TextAlign.center : TextAlign.start,
+        style: TextStyle(
+          color: color.withValues(alpha: 0.78),
+          fontWeight: FontWeight.w900,
+          fontSize: primary ? 22 : 16,
+          letterSpacing: 2,
         ),
       ),
     );
@@ -1419,12 +1295,12 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       ..sort((a, b) => _weight(b.rank).compareTo(_weight(a.rank)));
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        compact ? 10 : 14,
-        compact ? 8 : 12,
-        compact ? 10 : 14,
-        compact ? 8 : 12,
-      ),
+        padding: EdgeInsets.fromLTRB(
+          compact ? 8 : 12,
+          compact ? 10 : 12,
+          compact ? 8 : 12,
+          compact ? 10 : 12,
+        ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: Colors.white.withValues(alpha: 0.92),
@@ -1469,7 +1345,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                           style: TextStyle(
                             color: const Color(0xFF245E90),
                             fontWeight: FontWeight.w900,
-                            fontSize: compact ? 12 : 13,
+                            fontSize: compact ? 15 : 17,
                           ),
                         ),
                       ],
@@ -1479,7 +1355,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                   for (var index = 0; index < sorted.length; index++) ...[
                     _counterPill(sorted[index], compact: compact, singleLine: true),
                     if (index != sorted.length - 1)
-                      SizedBox(width: compact ? 3 : 4),
+                      SizedBox(width: compact ? 2 : 3),
                   ],
                 ],
               ),
@@ -1498,7 +1374,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                   style: TextStyle(
                     color: const Color(0xFF245E90),
                     fontWeight: FontWeight.w900,
-                    fontSize: compact ? 13 : 14,
+                    fontSize: compact ? 14 : 16,
                   ),
                 ),
               ],
@@ -1521,36 +1397,43 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   Widget _counterPill(CardCounterEntry entry,
       {required bool compact, required bool singleLine}) {
     return Container(
+      width: singleLine ? (compact ? 52 : 56) : null,
       padding: EdgeInsets.symmetric(
-        horizontal: singleLine
-            ? (compact ? 6 : 8)
-            : (compact ? 4 : 8),
-        vertical: singleLine ? (compact ? 3 : 5) : (compact ? 4 : 7),
+        horizontal: singleLine ? (compact ? 6 : 7) : (compact ? 5 : 8),
+        vertical: singleLine ? (compact ? 5 : 6) : (compact ? 5 : 7),
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: const Color(0xFFF4FAFF),
         border: Border.all(color: const Color(0xFFD7EBFF)),
       ),
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            _counter(entry.rank),
-            style: TextStyle(
-              color: const Color(0xFF5A7894),
-              fontWeight: FontWeight.w700,
-              fontSize:
-                  singleLine ? (compact ? 11 : 12) : (compact ? 10 : 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: Colors.white,
+              border: Border.all(color: const Color(0xFFDDEBFA)),
+            ),
+            child: Text(
+              _counter(entry.rank),
+              style: TextStyle(
+                color: const Color(0xFF5A7894),
+                fontWeight: FontWeight.w700,
+                fontSize:
+                    singleLine ? (compact ? 13 : 14) : (compact ? 12 : 13),
+              ),
             ),
           ),
-          SizedBox(width: singleLine ? 4 : 6),
+          const SizedBox(height: 4),
           Text(
             '${entry.remaining}',
             style: TextStyle(
               color: const Color(0xFF173A59),
               fontWeight: FontWeight.w900,
-              fontSize: singleLine ? (compact ? 12 : 13) : null,
+              fontSize: singleLine ? (compact ? 16 : 18) : 16,
             ),
           ),
         ],
@@ -1565,177 +1448,274 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     required bool waitingMyBid,
     required bool myTurn,
     required bool managed,
-    required bool mobile,
+    required bool showTurnChooser,
   }) {
-    final statusText = widget.controller.busyText ??
-        (waitingMyBid
-            ? '\u8bf7\u9009\u62e9\u4f60\u8981\u53eb\u7684\u5206\u6570'
-            : managed
-                ? '\u5f53\u524d\u5df2\u8fdb\u5165\u6258\u7ba1\uff0c\u53ef\u968f\u65f6\u53d6\u6d88\u6258\u7ba1\u91cd\u65b0\u63a5\u624b\u3002'
-                : myTurn
-                    ? '\u8f6e\u5230\u4f60\u64cd\u4f5c\uff0c\u5148\u9009\u724c\u518d\u51fa\u724c\u3002'
-                    : '\u7b49\u5f85\u5176\u4ed6\u73a9\u5bb6\u64cd\u4f5c\u3002');
-    return Container(
-      margin: EdgeInsets.fromLTRB(mobile ? 10 : 14, 0, mobile ? 10 : 14, 2),
-      padding: EdgeInsets.fromLTRB(mobile ? 8 : 10, 3, mobile ? 8 : 10, 2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
-        gradient: LinearGradient(
-          colors: myTurn && !managed
-              ? const [Colors.white, Color(0xFFEFF7FF)]
-              : const [Colors.white, Color(0xFFF4FAFF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(
-          color: myTurn && !managed
-              ? const Color(0xFF8CC8FF)
-              : const Color(0xFFD7EBFF),
-          width: myTurn && !managed ? 1.4 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: myTurn && !managed
-                ? const Color(0x222B7FFF)
-                : const Color(0x143678A3),
-            blurRadius: myTurn && !managed ? 28 : 22,
-            offset: const Offset(0, 14),
+    final statusText = waitingMyBid
+        ? '\u8bf7\u53eb\u5206'
+        : managed
+            ? '\u6258\u7ba1\u4e2d'
+            : myTurn
+                ? '\u5230\u4f60\u51fa\u724c'
+                : '\u7b49\u5f85\u4e2d';
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+          padding: EdgeInsets.fromLTRB(
+            12,
+            (showTurnChooser || waitingMyBid) ? 52 : 10,
+            12,
+            10,
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(32),
+            gradient: LinearGradient(
+              colors: myTurn && !managed
+                  ? const [Colors.white, Color(0xFFEFF7FF)]
+                  : const [Colors.white, Color(0xFFF4FAFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: myTurn && !managed
+                  ? const Color(0xFF8CC8FF)
+                  : const Color(0xFFD7EBFF),
+              width: myTurn && !managed ? 1.4 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: myTurn && !managed
+                    ? const Color(0x222B7FFF)
+                    : const Color(0x143678A3),
+                blurRadius: myTurn && !managed ? 28 : 22,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              SizedBox(
+                width: 238,
+                child: Column(
                   children: [
-                    _bottomPlayerSummary(
-                      snapshot,
+                    _buildSelfIdentityCard(
                       me,
                       active: myTurn,
                       managed: managed,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                '\u4f60\u7684\u624b\u724c / ${me.isLandlord ? '\u5730\u4e3b' : '\u519c\u6c11'}',
-                                style: const TextStyle(
-                                  color: Color(0xFF173A59),
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              if (snapshot.phase != RoomPhase.finished)
-                                _chip(
-                                  myTurn
-                                      ? (waitingMyBid
-                                          ? '\u8f6e\u5230\u4f60\u53eb\u5206'
-                                          : '\u8f6e\u5230\u4f60\u51fa\u724c')
-                                      : managed
-                                          ? '\u6258\u7ba1\u4e2d'
-                                          : '\u7b49\u5f85\u4e2d',
-                                ),
-                              if (myTurn && snapshot.phase != RoomPhase.finished) ...[
-                                const SizedBox(width: 6),
-                                _turnStateChip(compact: false),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 1),
-                          Text(
-                            statusText,
-                            style: const TextStyle(
-                              color: Color(0xFF5A7894),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    const SizedBox(height: 10),
+                    _buildMatchMetaCard(snapshot),
                   ],
                 ),
               ),
-              if (snapshot.phase != RoomPhase.finished) ...[
-                OutlinedButton(
-                  onPressed:
-                      _selectedIds.isEmpty ? null : () => setState(_selectedIds.clear),
-                  child: const Text('\u6e05\u7a7a\u9009\u62e9'),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '\u4f60\u7684\u624b\u724c',
+                          style: const TextStyle(
+                            color: Color(0xFF173A59),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (snapshot.phase != RoomPhase.finished)
+                          _chip(statusText, filled: myTurn || managed),
+                        if (myTurn && snapshot.phase != RoomPhase.finished) ...[
+                          const SizedBox(width: 8),
+                          _turnStateChip(compact: false),
+                        ],
+                        const Spacer(),
+                        OutlinedButton(
+                          onPressed: snapshot.phase == RoomPhase.playing &&
+                                  myTurn &&
+                                  !managed &&
+                                  !widget.controller.isBusy
+                              ? _toggleSuggestedSelection
+                              : null,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(104, 52),
+                            textStyle: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(
+                            _isSuggestedSelectionActive()
+                                ? '\u53d6\u6d88\u63d0\u793a'
+                                : '\u63d0\u793a',
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        FilledButton.tonal(
+                          onPressed: widget.controller.isBusy
+                              ? null
+                              : () => widget.controller.setManaged(!managed),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(118, 52),
+                            textStyle: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(
+                            managed ? '\u53d6\u6d88\u6258\u7ba1' : '\u6258\u7ba1',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      me.isLandlord ? '\u5730\u4e3b' : '\u519c\u6c11',
+                      style: const TextStyle(
+                        color: Color(0xFF5A7894),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _selfFan(selfCards, disabled: waitingMyBid || managed),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                OutlinedButton(
-                  onPressed: snapshot.phase == RoomPhase.playing &&
-                          myTurn &&
-                          !managed &&
-                          !widget.controller.isBusy
-                      ? _toggleSuggestedSelection
-                      : null,
-                  child: Text(
-                    _isSuggestedSelectionActive()
-                        ? '\u53d6\u6d88\u63d0\u793a'
-                        : '\u63d0\u793a',
-                  ),
-                ),
-                const SizedBox(width: 6),
-                FilledButton.tonal(
-                  onPressed: widget.controller.isBusy
-                      ? null
-                      : () => widget.controller.setManaged(!managed),
-                  child: Text(
-                    managed ? '\u53d6\u6d88\u6258\u7ba1' : '\u6258\u7ba1',
-                  ),
-                ),
-              ],
+              ),
             ],
           ),
-          const SizedBox(height: 2),
-          _selfFan(selfCards, disabled: waitingMyBid || managed),
-          const SizedBox(height: 2),
-          if (snapshot.phase == RoomPhase.playing && snapshot.phase != RoomPhase.finished)
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
+        ),
+        if (showTurnChooser || waitingMyBid)
+          Positioned(
+            top: -6,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: waitingMyBid
+                  ? _buildBidChooser()
+                  : _buildTurnActionChooser(),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSelfIdentityCard(
+    RoomPlayer me, {
+    required bool active,
+    required bool managed,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Colors.white.withValues(alpha: 0.94),
+        border: Border.all(
+          color: active ? const Color(0xFF2B7FFF) : const Color(0xFFD7EBFF),
+          width: active ? 2 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: const Color(0xFF2B7FFF),
+            child: Text(
+              me.displayName.substring(0, 1).toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _actionButton(
-                  '\u4e0d\u51fa',
-                  snapshot.phase == RoomPhase.playing &&
-                          myTurn &&
-                          !managed &&
-                          !widget.controller.isBusy
-                      ? widget.controller.pass
-                      : null,
-                  primary: false,
+                Text(
+                  me.displayName,
+                  style: const TextStyle(
+                    color: Color(0xFF173A59),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
                 ),
-                _actionButton(
-                  '\u51fa\u724c',
-                  snapshot.phase == RoomPhase.playing &&
-                          myTurn &&
-                          !managed &&
-                          _selectedIds.isNotEmpty &&
-                          !widget.controller.isBusy
-                      ? () async {
-                          await widget.controller.playCards(
-                            _selectedIds.toList(),
-                          );
-                          if (mounted) {
-                            setState(_selectedIds.clear);
-                          }
-                        }
-                      : null,
-                  primary: true,
+                const SizedBox(height: 4),
+                Text(
+                  me.isLandlord ? '\u5730\u4e3b' : '\u519c\u6c11',
+                  style: const TextStyle(
+                    color: Color(0xFF5A7894),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
+          ),
+          if (managed)
+            _seatTag('\u6258\u7ba1\u4e2d', const Color(0xFF2B7FFF)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchMetaCard(RoomSnapshot snapshot) {
+    final modeText = snapshot.mode == MatchMode.online
+        ? '\u771f\u4eba'
+        : widget.controller.botDifficulty.gameChip;
+    final rows = <MapEntry<String, String>>[
+      MapEntry('\u6a21\u5f0f', modeText),
+      MapEntry('\u5e95\u5206', '${snapshot.baseScore}'),
+      MapEntry('\u500d\u6570', '${snapshot.multiplier}'),
+      MapEntry('\u672c\u8f6e', '${snapshot.currentRoundScore}'),
+    ];
+    if (snapshot.springTriggered) {
+      rows.add(const MapEntry('\u72b6\u6001', '\u6625\u5929'));
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: const Color(0xFFF3F9FF),
+        border: Border.all(color: const Color(0xFFD7EBFF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var index = 0; index < rows.length; index++) ...[
+            Row(
+              children: [
+                SizedBox(
+                  width: 64,
+                  child: Text(
+                    '${rows[index].key}：',
+                    style: const TextStyle(
+                      color: Color(0xFF5A7894),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    rows[index].value,
+                    style: const TextStyle(
+                      color: Color(0xFF173A59),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (index != rows.length - 1) const SizedBox(height: 8),
+          ],
         ],
       ),
     );
@@ -1744,91 +1724,101 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   Widget _selfFan(List<PlayingCard> cards, {required bool disabled}) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const width = 130.0;
-        final minSpacing = width * 0.38;
-        final maxSpacing = width * 0.54;
-        final spacing = cards.length <= 1
-            ? width
-            : ((constraints.maxWidth - width) / (cards.length - 1))
-                .clamp(minSpacing, maxSpacing);
-        final totalWidth =
+        final availableWidth = constraints.maxWidth;
+        final overlapFactor = cards.length >= 20
+            ? 0.34
+            : cards.length >= 17
+                ? 0.36
+                : cards.length >= 14
+                    ? 0.38
+                    : cards.length >= 10
+                        ? 0.40
+                        : 0.44;
+        var width = cards.isEmpty
+            ? 132.0
+            : (availableWidth /
+                    (1 + overlapFactor * math.max(0, cards.length - 1)))
+                .clamp(112.0, 168.0);
+        var spacing = cards.length <= 1 ? width : width * overlapFactor;
+        var totalWidth =
             cards.isEmpty ? width : width + (cards.length - 1) * spacing;
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Listener(
-            behavior: HitTestBehavior.translucent,
-            onPointerDown: disabled
-                ? null
-                : (event) {
-                    final index = _handIndexAtPosition(
+        if (cards.length > 1 && totalWidth > availableWidth) {
+          spacing = (availableWidth - width) / (cards.length - 1);
+          totalWidth = availableWidth;
+        }
+        final leftInset = math.max(0.0, (availableWidth - totalWidth) / 2);
+
+        int? handIndexAt(double dx) {
+          return _handIndexAtPosition(
+            cards,
+            dx - leftInset,
+            spacing,
+            width,
+            totalWidth,
+          );
+        }
+
+        return Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: disabled
+              ? null
+              : (event) {
+                  final index = handIndexAt(event.localPosition.dx);
+                  if (index == null) {
+                    return;
+                  }
+                  setState(() {
+                    _dragSelectionActive = true;
+                    _dragSelectionValue =
+                        !_selectedIds.contains(cards[index].id);
+                    _lastDragIndex = index;
+                    _applyDragSelectionRange(
                       cards,
-                      event.localPosition.dx,
-                      spacing,
-                      width,
-                      totalWidth,
+                      index,
+                      index,
+                      _dragSelectionValue,
                     );
-                    if (index == null) {
-                      return;
-                    }
-                    setState(() {
-                      _dragSelectionActive = true;
-                      _dragSelectionValue =
-                          !_selectedIds.contains(cards[index].id);
-                      _lastDragIndex = index;
-                      _applyDragSelectionRange(
-                        cards,
-                        index,
-                        index,
-                        _dragSelectionValue,
-                      );
-                    });
-                  },
-            onPointerMove: disabled
-                ? null
-                : (event) {
-                    if (!_dragSelectionActive || _lastDragIndex == null) {
-                      return;
-                    }
-                    final index = _handIndexAtPosition(
+                  });
+                },
+          onPointerMove: disabled
+              ? null
+              : (event) {
+                  if (!_dragSelectionActive || _lastDragIndex == null) {
+                    return;
+                  }
+                  final index = handIndexAt(event.localPosition.dx);
+                  if (index == null || index == _lastDragIndex) {
+                    return;
+                  }
+                  setState(() {
+                    _applyDragSelectionRange(
                       cards,
-                      event.localPosition.dx,
-                      spacing,
-                      width,
-                      totalWidth,
+                      _lastDragIndex!,
+                      index,
+                      _dragSelectionValue,
                     );
-                    if (index == null || index == _lastDragIndex) {
-                      return;
-                    }
-                    setState(() {
-                      _applyDragSelectionRange(
-                        cards,
-                        _lastDragIndex!,
-                        index,
-                        _dragSelectionValue,
-                      );
-                      _lastDragIndex = index;
-                    });
-                  },
-            onPointerUp: disabled ? null : (_) => _endDragSelection(),
-            onPointerCancel: disabled ? null : (_) => _endDragSelection(),
-            child: SizedBox(
-              width: totalWidth,
-              height: width * 1.48,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  for (var index = 0; index < cards.length; index++)
-                    Positioned(
-                      left: index * spacing,
-                      top: _selectedIds.contains(cards[index].id) ? 0 : 7,
-                      child: _cardFace(
-                        cards[index],
-                        width,
-                        selected: _selectedIds.contains(cards[index].id),
-                      ),
+                    _lastDragIndex = index;
+                  });
+                },
+          onPointerUp: disabled ? null : (_) => _endDragSelection(),
+          onPointerCancel: disabled ? null : (_) => _endDragSelection(),
+          child: SizedBox(
+            width: availableWidth,
+            height: width * 1.46,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                for (var index = 0; index < cards.length; index++)
+                  Positioned(
+                    left: leftInset + index * spacing,
+                    top: _selectedIds.contains(cards[index].id) ? 0 : 9,
+                    child: _cardFace(
+                      cards[index],
+                      width,
+                      selected: _selectedIds.contains(cards[index].id),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         );
@@ -1839,7 +1829,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   Widget _backFan(int count, {required bool towardCenter}) {
     const width = 38.0;
     final visible = math.min(count, 11);
-    final spacing = width * 0.24;
+    final spacing = width * 0.16;
     final totalWidth =
         visible == 0 ? width : width + (visible - 1) * spacing;
     return SizedBox(
@@ -2017,7 +2007,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       );
 
   Widget _miniCard(String label, bool isRed) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           color: Colors.white,
@@ -2028,6 +2018,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           style: TextStyle(
             color: isRed ? const Color(0xFFC53C35) : const Color(0xFF173A59),
             fontWeight: FontWeight.w900,
+            fontSize: 15,
           ),
         ),
       );
@@ -2043,22 +2034,6 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           style: TextStyle(
             color: filled ? Colors.white : const Color(0xFF2B7FFF),
             fontWeight: FontWeight.w800,
-          ),
-        ),
-      );
-
-  Widget _summaryChip(String text, {bool filled = false}) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
-          color: filled ? const Color(0xFF2B7FFF) : const Color(0x142B7FFF),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: filled ? Colors.white : const Color(0xFF2B7FFF),
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
           ),
         ),
       );
@@ -2111,19 +2086,17 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         ),
       );
 
-  Widget _hudButton(IconData icon, String label, VoidCallback onTap,
-          {bool dense = false}) =>
+  Widget _hudButton(IconData icon, String label, VoidCallback onTap) =>
       InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Ink(
-          padding: EdgeInsets.symmetric(
-            horizontal: dense ? 12 : 14,
-            vertical: dense ? 10 : 12,
-          ),
+          height: 60,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Colors.white.withValues(alpha: 0.88),
+            border: Border.all(color: const Color(0xFFD7EBFF)),
           ),
           child: Row(
             children: [
@@ -2134,6 +2107,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                 style: const TextStyle(
                   color: Color(0xFF245E90),
                   fontWeight: FontWeight.w800,
+                  fontSize: 16,
                 ),
               ),
             ],
@@ -2227,9 +2201,29 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   Widget _actionButton(String text, VoidCallback? onTap,
       {required bool primary}) {
     if (primary) {
-      return FilledButton(onPressed: onTap, child: Text(text));
+      return FilledButton(
+        onPressed: onTap,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(120, 52),
+          textStyle: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        child: Text(text),
+      );
     }
-    return OutlinedButton(onPressed: onTap, child: Text(text));
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(120, 52),
+        textStyle: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      child: Text(text),
+    );
   }
 
   Widget _buildResult(RoomSnapshot snapshot, RoomPlayer me) {

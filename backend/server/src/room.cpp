@@ -1145,7 +1145,7 @@ void Room::ArmPresentationGate(const core::RoomAction& action) {
   presentation_wait_player_id_ = audience_player_id;
   presentation_timeout_at_ms_ =
       action.timestamp_ms +
-      std::max(LoadDelayMs("LANDLORDS_PRESENTATION_TIMEOUT_MS", 9000),
+      std::max(LoadDelayMs("LANDLORDS_PRESENTATION_TIMEOUT_MS", 15000),
                AnnouncementDelayMs(action) + 2500);
   LANDLORDS_LOG(landlords::core::LogLevel::kDebug,
                 "room",

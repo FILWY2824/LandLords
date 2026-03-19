@@ -171,6 +171,15 @@ class LocalDemoGateway implements GameGateway {
   }) async {}
 
   @override
+  Future<RoomSnapshot?> refreshCurrentRoom() async {
+    final roomId = _roomsById.keys.isEmpty ? null : _roomsById.keys.last;
+    if (roomId == null) {
+      return null;
+    }
+    return currentSnapshot(roomId);
+  }
+
+  @override
   RoomSnapshot? currentSnapshot(String roomId) => _roomsById[roomId]?.snapshotFor(
         _roomsById[roomId]!.ownerId,
       );

@@ -3,6 +3,7 @@ import 'voice_backend_stub.dart'
     if (dart.library.js_interop) 'voice_backend_web.dart';
 
 abstract class VoiceBackend {
+  bool get reportsSpeechCompletion;
   Future<void> speak(String line);
   Future<void> stopSpeech();
   Future<void> playErrorEffect();

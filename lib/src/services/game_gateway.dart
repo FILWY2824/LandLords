@@ -59,5 +59,7 @@ abstract class GameGateway {
     required String actionId,
   });
 
+  Future<RoomSnapshot?> refreshCurrentRoom();
+
   RoomSnapshot? currentSnapshot(String roomId);
 }

@@ -2,6 +2,9 @@ import 'voice_backend.dart';
 
 class _StubVoiceBackend implements VoiceBackend {
   @override
+  bool get reportsSpeechCompletion => true;
+
+  @override
   Future<void> dispose() async {}
 
   @override

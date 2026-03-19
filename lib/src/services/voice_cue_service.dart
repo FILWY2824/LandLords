@@ -18,10 +18,6 @@ class VoiceCueService {
     return _enqueueLine(actionId, line).done.future;
   }
 
-  Future<void> enqueueActionAndWaitForStart(String actionId, String line) {
-    return _enqueueLine(actionId, line).started.future;
-  }
-
   _QueuedLine _enqueueLine(String actionId, String line) {
     if (actionId.isEmpty || line.isEmpty || _recentActionIds.contains(actionId)) {
       final completed = _QueuedLine(
@@ -58,7 +54,11 @@ class VoiceCueService {
         if (!item.started.isCompleted) {
           item.started.complete();
         }
-        await _waitForPresentationWindow(item.line, generation);
+        if (_backend.reportsSpeechCompletion) {
+          await Future<void>.delayed(const Duration(milliseconds: 90));
+        } else {
+          await _waitForPresentationWindow(item.line, generation);
+        }
         if (!item.done.isCompleted) {
           item.done.complete();
         }
@@ -179,7 +179,7 @@ class VoiceCueService {
 
   Duration _estimatedSpeechDuration(String line) {
     final visibleChars = line.replaceAll(RegExp(r'\s+'), '').runes.length;
-    final estimatedMs = (180 + visibleChars * 55).clamp(220, 720);
+    final estimatedMs = (720 + visibleChars * 220).clamp(1500, 4200);
     return Duration(milliseconds: estimatedMs);
   }
 }

@@ -26,6 +26,9 @@ class _WebVoiceBackend implements VoiceBackend {
   html.AudioElement? _errorAudio;
 
   @override
+  bool get reportsSpeechCompletion => true;
+
+  @override
   Future<void> speak(String line) async {
     try {
       final synthesis = html.window.speechSynthesis;
@@ -34,13 +37,13 @@ class _WebVoiceBackend implements VoiceBackend {
       }
       await _primeSpeechSynthesis(withSilentUtterance: true);
       _duckBackgroundMusic();
-      var started = await _speakOnce(synthesis, line);
-      if (!started) {
+      var completed = await _speakOnce(synthesis, line);
+      if (!completed) {
         await Future<void>.delayed(const Duration(milliseconds: 120));
         await _primeSpeechSynthesis(withSilentUtterance: true);
-        started = await _speakOnce(synthesis, line);
+        completed = await _speakOnce(synthesis, line);
       }
-      if (!started) {
+      if (!completed) {
         appLog(
           AppLogLevel.warn,
           'voice_web',
@@ -52,6 +55,8 @@ class _WebVoiceBackend implements VoiceBackend {
       appLog(AppLogLevel.warn, 'voice_web', 'speech failed: $error');
       _installUnlockHooks();
       // Ignore browser speech failures.
+    } finally {
+      _restoreBackgroundMusicVolume();
     }
   }
 
@@ -335,30 +340,63 @@ class _WebVoiceBackend implements VoiceBackend {
       utterance.voice = voice;
     }
 
-    final started = Completer<bool>();
+    final started = Completer<void>();
+    final completed = Completer<bool>();
+    var didStart = false;
     utterance.onStart.first.then((_) {
+      didStart = true;
       if (!started.isCompleted) {
-        started.complete(true);
+        started.complete();
       }
     });
     utterance.onError.first.then((_) {
       if (!started.isCompleted) {
-        started.complete(false);
+        started.complete();
+      }
+      if (!completed.isCompleted) {
+        completed.complete(false);
       }
     });
     utterance.onEnd.first.then((_) {
       if (!started.isCompleted) {
-        started.complete(true);
+        started.complete();
+      }
+      if (!completed.isCompleted) {
+        completed.complete(true);
       }
     });
 
     synthesis.cancel();
     synthesis.resume();
     synthesis.speak(utterance);
-    return started.future.timeout(
+    await started.future.timeout(
       const Duration(milliseconds: 420),
-      onTimeout: () => (synthesis.speaking ?? false) || (synthesis.pending ?? false),
+      onTimeout: () {},
     );
+    return completed.future.timeout(
+      _speechTimeout(line),
+      onTimeout: () async {
+        final deadline = DateTime.now().add(const Duration(seconds: 4));
+        while ((synthesis.speaking ?? false) || (synthesis.pending ?? false)) {
+          if (DateTime.now().isAfter(deadline)) {
+            appLog(
+              AppLogLevel.warn,
+              'voice_web',
+              'speech timed out while still speaking line=$line',
+            );
+            break;
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 80));
+        }
+        return didStart;
+      },
+    );
+  }
+
+  Duration _speechTimeout(String line) {
+    final visibleChars = line.replaceAll(RegExp(r'\s+'), '').runes.length;
+    final estimatedMs = (900 + visibleChars * 260).clamp(1800, 6000);
+    return Duration(milliseconds: estimatedMs);
   }
 
   void _duckBackgroundMusic() {

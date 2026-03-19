@@ -280,6 +280,20 @@ class WebSocketGameGateway implements GameGateway {
   }
 
   @override
+  Future<RoomSnapshot?> refreshCurrentRoom() async {
+    if (_sessionToken == null || _lastRoomId == null) {
+      return null;
+    }
+    final response = await reconnect();
+    if (!response.hasRoomSnapshot()) {
+      return null;
+    }
+    final snapshot = _mapSnapshot(response.roomSnapshot);
+    _publishSnapshot(snapshot);
+    return snapshot;
+  }
+
+  @override
   RoomSnapshot? currentSnapshot(String roomId) =>
       _latestSnapshot?.roomId == roomId ? _latestSnapshot : null;
 
@@ -341,25 +355,31 @@ class WebSocketGameGateway implements GameGateway {
   }
 
   Future<void> _openConnection() async {
-    _channel = WebSocketChannel.connect(Uri.parse(url));
-    _subscription = _channel!.stream.listen(
-      _onMessage,
-      onError: (Object error, StackTrace stackTrace) => _handleDisconnect(error),
-      onDone: _handleDisconnect,
-      cancelOnError: true,
-    );
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      if (_sessionToken != null) {
-        _send(
-          (message) => message.heartbeatRequest = pb.HeartbeatRequest(
-            clientTimeMs: Int64(DateTime.now().millisecondsSinceEpoch),
-          ),
-        ).ignore();
+    try {
+      _channel = WebSocketChannel.connect(Uri.parse(url));
+      await _channel!.ready;
+      _subscription = _channel!.stream.listen(
+        _onMessage,
+        onError: (Object error, StackTrace stackTrace) => _handleDisconnect(error),
+        onDone: _handleDisconnect,
+        cancelOnError: true,
+      );
+      _heartbeatTimer?.cancel();
+      _heartbeatTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+        if (_sessionToken != null) {
+          _send(
+            (message) => message.heartbeatRequest = pb.HeartbeatRequest(
+              clientTimeMs: Int64(DateTime.now().millisecondsSinceEpoch),
+            ),
+          ).ignore();
+        }
+      });
+      if (_sessionToken != null && _lastRoomId != null) {
+        unawaited(reconnect());
       }
-    });
-    if (_sessionToken != null && _lastRoomId != null) {
-      unawaited(reconnect());
+    } catch (error) {
+      _handleDisconnect(error);
+      throw Exception('服务器连接失败，请检查地址或网络。');
     }
   }
 

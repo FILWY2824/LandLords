@@ -75,17 +75,9 @@ class _LandlordsAppState extends State<LandlordsApp>
       title: '欢乐斗地主',
       theme: ThemeData(
         useMaterial3: true,
+        fontFamily: 'LandlordsUiSubset',
         colorScheme: scheme,
         scaffoldBackgroundColor: const Color(0xFFF3F9FF),
-        fontFamily: 'LandlordsUiSubset',
-        fontFamilyFallback: const [
-          'Noto Sans SC',
-          'Microsoft YaHei UI',
-          'Microsoft YaHei',
-          'PingFang SC',
-          'Heiti SC',
-          'WenQuanYi Micro Hei',
-        ],
         textTheme: ThemeData.light().textTheme.apply(
               bodyColor: const Color(0xFF14304B),
               displayColor: const Color(0xFF14304B),
@@ -202,7 +194,7 @@ class _LandscapeGuard extends StatelessWidget {
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
+          constraints: const BoxConstraints(maxWidth: 320),
           child: Container(
             margin: const EdgeInsets.all(24),
             padding: const EdgeInsets.all(24),
@@ -227,7 +219,7 @@ class _LandscapeGuard extends StatelessWidget {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  '请横屏体验牌桌',
+                  '请横屏',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
@@ -236,11 +228,11 @@ class _LandscapeGuard extends StatelessWidget {
                 ),
                 SizedBox(height: 10),
                 Text(
-                  '安卓原生应用会自动横屏。浏览器打开时，程序会尽量请求横屏；如果系统或浏览器拦截，请手动旋转设备后继续游戏。',
+                  '横过来继续',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Color(0xFF5A7894),
-                    height: 1.6,
+                    height: 1.4,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

@@ -279,6 +279,20 @@ class SocketGameGateway implements GameGateway {
   }
 
   @override
+  Future<RoomSnapshot?> refreshCurrentRoom() async {
+    if (_sessionToken == null || _lastRoomId == null) {
+      return null;
+    }
+    final response = await reconnect();
+    if (!response.hasRoomSnapshot()) {
+      return null;
+    }
+    final snapshot = _mapSnapshot(response.roomSnapshot);
+    _publishSnapshot(snapshot);
+    return snapshot;
+  }
+
+  @override
   RoomSnapshot? currentSnapshot(String roomId) =>
       _latestSnapshot?.roomId == roomId ? _latestSnapshot : null;
 

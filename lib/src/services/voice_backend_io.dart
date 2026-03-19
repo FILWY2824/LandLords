@@ -1,9 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'voice_backend.dart';
 
 class _ChannelVoiceBackend implements VoiceBackend {
   static const MethodChannel _channel = MethodChannel('landlords/voice');
+
+  @override
+  bool get reportsSpeechCompletion =>
+      defaultTargetPlatform == TargetPlatform.android;
 
   @override
   Future<void> speak(String line) async {

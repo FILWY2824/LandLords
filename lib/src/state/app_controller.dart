@@ -312,6 +312,31 @@ class AppController extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshCurrentRoom() async {
+    if (_sessionToken == null || _roomSnapshot == null) {
+      return;
+    }
+    try {
+      appLog(
+        AppLogLevel.info,
+        'app_controller',
+        'refresh current room room=${_roomSnapshot!.roomId}',
+      );
+      final snapshot = await _gateway.refreshCurrentRoom();
+      if (snapshot != null) {
+        _roomSnapshot = snapshot;
+        _errorText = null;
+        notifyListeners();
+      }
+    } catch (error) {
+      appLog(
+        AppLogLevel.warn,
+        'app_controller',
+        'refresh current room failed room=${_roomSnapshot?.roomId ?? '-'} error=$error',
+      );
+    }
+  }
+
   void backToLobby() {
     _matchingTimer?.cancel();
     _matchingTimer = null;
