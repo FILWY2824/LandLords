@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:math';
 
 import '../models/app_models.dart';
@@ -10,8 +10,13 @@ class LocalDemoGateway implements GameGateway {
     final demo = _LocalUser(
       profile: const UserProfile(
         userId: 'demo-user',
-        username: 'player1',
-        totalScore: 1888,
+        account: 'player1',
+        nickname: '玩家1',
+        coins: 1888,
+        landlordWins: 8,
+        landlordGames: 15,
+        farmerWins: 18,
+        farmerGames: 29,
       ),
       password: 'player1',
     );
@@ -23,28 +28,38 @@ class LocalDemoGateway implements GameGateway {
   final Map<String, String> _sessionToUserId = {};
   final StreamController<RoomSnapshot> _snapshotController =
       StreamController<RoomSnapshot>.broadcast();
+  final StreamController<GatewayNotification> _notificationController =
+      StreamController<GatewayNotification>.broadcast();
   final Random _random = Random();
 
   @override
   Stream<RoomSnapshot> get roomSnapshots => _snapshotController.stream;
 
   @override
+  Stream<GatewayNotification> get notifications => _notificationController.stream;
+
+  @override
   Future<void> register({
-    required String username,
+    required String account,
+    required String nickname,
     required String password,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 280));
-    if (username.trim().isEmpty || password.isEmpty) {
-      throw Exception('用户名和密码不能为空');
+    if (account.trim().isEmpty || nickname.trim().isEmpty || password.isEmpty) {
+      throw Exception('昵称、账号和密码不能为空');
     }
-    if (_usersByName.containsKey(username)) {
-      throw Exception('用户名已存在');
+    if (nickname.runes.length > 5) {
+      throw Exception('昵称最多 5 个字');
     }
-    _usersByName[username] = _LocalUser(
+    if (_usersByName.containsKey(account)) {
+      throw Exception('账号已存在');
+    }
+    _usersByName[account] = _LocalUser(
       profile: UserProfile(
         userId: _id('user'),
-        username: username,
-        totalScore: 0,
+        account: account,
+        nickname: nickname,
+        coins: 0,
       ),
       password: password,
     );
@@ -52,17 +67,36 @@ class LocalDemoGateway implements GameGateway {
 
   @override
   Future<LoginResult> login({
-    required String username,
+    required String account,
     required String password,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 240));
-    final user = _usersByName[username];
+    final user = _usersByName[account];
     if (user == null || user.password != password) {
-      throw Exception('用户名或密码错误');
+      throw Exception('账号或密码错误');
     }
     final session = _id('session');
     _sessionToUserId[session] = user.profile.userId;
     return LoginResult(profile: user.profile, sessionToken: session);
+  }
+
+  @override
+  Future<void> resetPassword({
+    required String account,
+    required String newPassword,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    final user = _usersByName[account];
+    if (user == null) {
+      throw Exception('账号不存在');
+    }
+    if (newPassword.isEmpty) {
+      throw Exception('新密码不能为空');
+    }
+    _usersByName[account] = _LocalUser(
+      profile: user.profile,
+      password: newPassword,
+    );
   }
 
   @override
@@ -84,6 +118,154 @@ class LocalDemoGateway implements GameGateway {
     final snapshot = room.snapshotFor(profile.userId);
     _snapshotController.add(snapshot);
     return snapshot;
+  }
+
+  @override
+  Future<RoomSnapshot> createRoom({
+    required String sessionToken,
+  }) {
+    final userId = _requireUserId(sessionToken);
+    final profile = _usersByName.values
+        .firstWhere((item) => item.profile.userId == userId)
+        .profile;
+    return startMatch(
+      sessionToken: sessionToken,
+      profile: profile,
+      mode: MatchMode.online,
+    );
+  }
+
+  @override
+  Future<RoomSnapshot> joinRoom({
+    required String sessionToken,
+    required String roomCode,
+  }) {
+    return createRoom(sessionToken: sessionToken);
+  }
+
+  @override
+  Future<void> leaveRoom({
+    required String sessionToken,
+    required String roomId,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+  }
+
+  @override
+  Future<RoomSnapshot> setRoomReady({
+    required String sessionToken,
+    required String roomId,
+    required bool ready,
+  }) async {
+    final snapshot = currentSnapshot(roomId);
+    if (snapshot == null) {
+      throw Exception('房间不存在');
+    }
+    return snapshot;
+  }
+
+  @override
+  Future<RoomSnapshot> addBot({
+    required String sessionToken,
+    required String roomId,
+    required int seatIndex,
+    BotDifficulty botDifficulty = BotDifficulty.normal,
+  }) async {
+    final snapshot = currentSnapshot(roomId);
+    if (snapshot == null) {
+      throw Exception('房间不存在');
+    }
+    return snapshot;
+  }
+
+  @override
+  Future<RoomSnapshot> removePlayer({
+    required String sessionToken,
+    required String roomId,
+    required String playerId,
+  }) async {
+    final snapshot = currentSnapshot(roomId);
+    if (snapshot == null) {
+      throw Exception('房间不存在');
+    }
+    return snapshot;
+  }
+
+  @override
+  Future<List<OnlineUser>> fetchFriends({
+    required String sessionToken,
+  }) async {
+    final userId = _requireUserId(sessionToken);
+    return _usersByName.values
+        .map((user) => user.profile)
+        .where((profile) => profile.userId != userId)
+        .map(
+          (profile) => OnlineUser(
+            userId: profile.userId,
+            account: profile.account,
+            nickname: profile.nickname,
+            online: true,
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<OnlineUser> addFriend({
+    required String sessionToken,
+    required String account,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    final friend = _usersByName[account];
+    if (friend == null) {
+      throw Exception('账号不存在');
+    }
+    return OnlineUser(
+      userId: friend.profile.userId,
+      account: friend.profile.account,
+      nickname: friend.profile.nickname,
+      online: true,
+    );
+  }
+
+  @override
+  Future<void> invitePlayer({
+    required String sessionToken,
+    required String roomId,
+    required String targetAccount,
+    required int seatIndex,
+  }) async {
+    final inviterId = _requireUserId(sessionToken);
+    final inviter = _usersByName.values.firstWhere((item) => item.profile.userId == inviterId);
+    final target = _usersByName[targetAccount];
+    if (target == null) {
+      throw Exception('目标玩家不在线');
+    }
+    _notificationController.add(
+      RoomInvitationNotification(
+        RoomInvitation(
+          invitationId: _id('invite'),
+          roomId: roomId,
+          roomCode: roomId.substring(0, roomId.length > 6 ? 6 : roomId.length),
+          inviterUserId: inviter.profile.userId,
+          inviterAccount: inviter.profile.account,
+          inviterNickname: inviter.profile.nickname,
+          seatIndex: seatIndex,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Future<RoomSnapshot?> respondInvitation({
+    required String sessionToken,
+    required String invitationId,
+    required bool accept,
+  }) async {
+    if (!accept) {
+      return null;
+    }
+    return null;
   }
 
   @override
@@ -192,8 +374,15 @@ class LocalDemoGateway implements GameGateway {
     final user = _usersByName.values.firstWhere((item) => item.profile.userId == userId);
     user.profile = UserProfile(
       userId: user.profile.userId,
-      username: user.profile.username,
-      totalScore: user.profile.totalScore + player.roundScore,
+      account: user.profile.account,
+      nickname: user.profile.nickname,
+      coins: user.profile.coins + player.roundScore,
+      landlordWins: user.profile.landlordWins +
+          (player.isLandlord && player.roundScore > 0 ? 1 : 0),
+      landlordGames: user.profile.landlordGames + (player.isLandlord ? 1 : 0),
+      farmerWins:
+          user.profile.farmerWins + (!player.isLandlord && player.roundScore > 0 ? 1 : 0),
+      farmerGames: user.profile.farmerGames + (!player.isLandlord ? 1 : 0),
     );
   }
 
@@ -331,9 +520,14 @@ class _DemoRoom {
               role: player.isLandlord ? PlayerRole.landlord : PlayerRole.farmer,
               cardsLeft: player.hand.length,
               roundScore: player.roundScore,
+              seatIndex: players.indexOf(player),
+              ready: true,
+              occupied: true,
             ),
           )
           .toList(),
+      roomCode: roomId.split('-').last,
+      ownerPlayerId: ownerId,
       selfCards: List<PlayingCard>.from(me.hand),
       landlordCards: List<PlayingCard>.from(landlordCards),
       recentActions: List<TableAction>.from(actions),
@@ -716,7 +910,7 @@ CardPattern _evaluatePattern(List<PlayingCard> cards) {
       cards: sorted,
       weight: sorted.first.value,
       length: 1,
-      label: '单牌 ${sorted.first.label}',
+      label: '鍗曠墝 ${sorted.first.label}',
     );
   }
 
@@ -727,7 +921,7 @@ CardPattern _evaluatePattern(List<PlayingCard> cards) {
         cards: sorted,
         weight: 100,
         length: 2,
-        label: '王炸',
+        label: '鐜嬬偢',
       );
     }
     if (groups.length == 1) {
@@ -736,7 +930,7 @@ CardPattern _evaluatePattern(List<PlayingCard> cards) {
         cards: sorted,
         weight: sorted.first.value,
         length: 2,
-        label: '对子 ${sorted.first.rank}',
+        label: '瀵瑰瓙 ${sorted.first.rank}',
       );
     }
   }
@@ -747,7 +941,7 @@ CardPattern _evaluatePattern(List<PlayingCard> cards) {
       cards: sorted,
       weight: sorted.first.value,
       length: 3,
-      label: '三张 ${sorted.first.rank}',
+      label: '涓夊紶 ${sorted.first.rank}',
     );
   }
 
@@ -758,7 +952,7 @@ CardPattern _evaluatePattern(List<PlayingCard> cards) {
         cards: sorted,
         weight: sorted.first.value,
         length: 4,
-        label: '炸弹 ${sorted.first.rank}',
+        label: '鐐稿脊 ${sorted.first.rank}',
       );
     }
     if (counts.join(',') == '1,3') {
@@ -768,7 +962,7 @@ CardPattern _evaluatePattern(List<PlayingCard> cards) {
         cards: sorted,
         weight: triple,
         length: 4,
-        label: '三带一',
+        label: '涓夊甫涓€',
       );
     }
   }
@@ -794,7 +988,7 @@ CardPattern _evaluatePattern(List<PlayingCard> cards) {
       cards: sorted,
       weight: values.last,
       length: sorted.length,
-      label: '顺子',
+      label: '椤哄瓙',
     );
   }
 
@@ -829,7 +1023,7 @@ CardPattern _evaluatePattern(List<PlayingCard> cards) {
           cards: sorted,
           weight: main.last,
           length: sorted.length,
-          label: '飞机',
+          label: '椋炴満',
         );
       }
       if (sorted.length == triples * 4) {
@@ -838,7 +1032,7 @@ CardPattern _evaluatePattern(List<PlayingCard> cards) {
           cards: sorted,
           weight: main.last,
           length: sorted.length,
-          label: '飞机带单',
+          label: '椋炴満甯﹀崟',
         );
       }
       if (sorted.length == triples * 5) {
@@ -847,7 +1041,7 @@ CardPattern _evaluatePattern(List<PlayingCard> cards) {
           cards: sorted,
           weight: main.last,
           length: sorted.length,
-          label: '飞机带对',
+          label: '椋炴満甯﹀',
         );
       }
     }

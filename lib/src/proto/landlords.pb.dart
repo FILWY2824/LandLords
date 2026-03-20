@@ -24,13 +24,23 @@ export 'landlords.pbenum.dart';
 class UserProfile extends $pb.GeneratedMessage {
   factory UserProfile({
     $core.String? userId,
-    $core.String? username,
+    $core.String? account,
+    $core.String? nickname,
     $core.int? totalScore,
+    $core.int? landlordWins,
+    $core.int? landlordGames,
+    $core.int? farmerWins,
+    $core.int? farmerGames,
   }) {
     final result = create();
     if (userId != null) result.userId = userId;
-    if (username != null) result.username = username;
+    if (account != null) result.account = account;
+    if (nickname != null) result.nickname = nickname;
     if (totalScore != null) result.totalScore = totalScore;
+    if (landlordWins != null) result.landlordWins = landlordWins;
+    if (landlordGames != null) result.landlordGames = landlordGames;
+    if (farmerWins != null) result.farmerWins = farmerWins;
+    if (farmerGames != null) result.farmerGames = farmerGames;
     return result;
   }
 
@@ -49,8 +59,13 @@ class UserProfile extends $pb.GeneratedMessage {
           const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'userId')
-    ..aOS(2, _omitFieldNames ? '' : 'username')
-    ..aI(3, _omitFieldNames ? '' : 'totalScore')
+    ..aOS(2, _omitFieldNames ? '' : 'account')
+    ..aOS(3, _omitFieldNames ? '' : 'nickname')
+    ..aI(4, _omitFieldNames ? '' : 'totalScore')
+    ..aI(5, _omitFieldNames ? '' : 'landlordWins')
+    ..aI(6, _omitFieldNames ? '' : 'landlordGames')
+    ..aI(7, _omitFieldNames ? '' : 'farmerWins')
+    ..aI(8, _omitFieldNames ? '' : 'farmerGames')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -82,31 +97,168 @@ class UserProfile extends $pb.GeneratedMessage {
   void clearUserId() => $_clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get username => $_getSZ(1);
+  $core.String get account => $_getSZ(1);
   @$pb.TagNumber(2)
-  set username($core.String value) => $_setString(1, value);
+  set account($core.String value) => $_setString(1, value);
   @$pb.TagNumber(2)
-  $core.bool hasUsername() => $_has(1);
+  $core.bool hasAccount() => $_has(1);
   @$pb.TagNumber(2)
-  void clearUsername() => $_clearField(2);
+  void clearAccount() => $_clearField(2);
 
   @$pb.TagNumber(3)
-  $core.int get totalScore => $_getIZ(2);
+  $core.String get nickname => $_getSZ(2);
   @$pb.TagNumber(3)
-  set totalScore($core.int value) => $_setSignedInt32(2, value);
+  set nickname($core.String value) => $_setString(2, value);
   @$pb.TagNumber(3)
-  $core.bool hasTotalScore() => $_has(2);
+  $core.bool hasNickname() => $_has(2);
   @$pb.TagNumber(3)
-  void clearTotalScore() => $_clearField(3);
+  void clearNickname() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.int get totalScore => $_getIZ(3);
+  @$pb.TagNumber(4)
+  set totalScore($core.int value) => $_setSignedInt32(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasTotalScore() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearTotalScore() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.int get landlordWins => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set landlordWins($core.int value) => $_setSignedInt32(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasLandlordWins() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearLandlordWins() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.int get landlordGames => $_getIZ(5);
+  @$pb.TagNumber(6)
+  set landlordGames($core.int value) => $_setSignedInt32(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasLandlordGames() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearLandlordGames() => $_clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.int get farmerWins => $_getIZ(6);
+  @$pb.TagNumber(7)
+  set farmerWins($core.int value) => $_setSignedInt32(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasFarmerWins() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearFarmerWins() => $_clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.int get farmerGames => $_getIZ(7);
+  @$pb.TagNumber(8)
+  set farmerGames($core.int value) => $_setSignedInt32(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasFarmerGames() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearFarmerGames() => $_clearField(8);
+}
+
+class OnlineUser extends $pb.GeneratedMessage {
+  factory OnlineUser({
+    $core.String? userId,
+    $core.String? account,
+    $core.String? nickname,
+    $core.bool? online,
+  }) {
+    final result = create();
+    if (userId != null) result.userId = userId;
+    if (account != null) result.account = account;
+    if (nickname != null) result.nickname = nickname;
+    if (online != null) result.online = online;
+    return result;
+  }
+
+  OnlineUser._();
+
+  factory OnlineUser.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory OnlineUser.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'OnlineUser',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'userId')
+    ..aOS(2, _omitFieldNames ? '' : 'account')
+    ..aOS(3, _omitFieldNames ? '' : 'nickname')
+    ..aOB(4, _omitFieldNames ? '' : 'online')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  OnlineUser clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  OnlineUser copyWith(void Function(OnlineUser) updates) =>
+      super.copyWith((message) => updates(message as OnlineUser)) as OnlineUser;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static OnlineUser create() => OnlineUser._();
+  @$core.override
+  OnlineUser createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static OnlineUser getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<OnlineUser>(create);
+  static OnlineUser? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get userId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set userId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUserId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get account => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set account($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasAccount() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearAccount() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get nickname => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set nickname($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasNickname() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearNickname() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.bool get online => $_getBF(3);
+  @$pb.TagNumber(4)
+  set online($core.bool value) => $_setBool(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasOnline() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearOnline() => $_clearField(4);
 }
 
 class RegisterRequest extends $pb.GeneratedMessage {
   factory RegisterRequest({
-    $core.String? username,
+    $core.String? nickname,
+    $core.String? account,
     $core.String? password,
   }) {
     final result = create();
-    if (username != null) result.username = username;
+    if (nickname != null) result.nickname = nickname;
+    if (account != null) result.account = account;
     if (password != null) result.password = password;
     return result;
   }
@@ -125,8 +277,9 @@ class RegisterRequest extends $pb.GeneratedMessage {
       package:
           const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
       createEmptyInstance: create)
-    ..aOS(1, _omitFieldNames ? '' : 'username')
-    ..aOS(2, _omitFieldNames ? '' : 'password')
+    ..aOS(1, _omitFieldNames ? '' : 'nickname')
+    ..aOS(2, _omitFieldNames ? '' : 'account')
+    ..aOS(3, _omitFieldNames ? '' : 'password')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -149,22 +302,31 @@ class RegisterRequest extends $pb.GeneratedMessage {
   static RegisterRequest? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.String get username => $_getSZ(0);
+  $core.String get nickname => $_getSZ(0);
   @$pb.TagNumber(1)
-  set username($core.String value) => $_setString(0, value);
+  set nickname($core.String value) => $_setString(0, value);
   @$pb.TagNumber(1)
-  $core.bool hasUsername() => $_has(0);
+  $core.bool hasNickname() => $_has(0);
   @$pb.TagNumber(1)
-  void clearUsername() => $_clearField(1);
+  void clearNickname() => $_clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get password => $_getSZ(1);
+  $core.String get account => $_getSZ(1);
   @$pb.TagNumber(2)
-  set password($core.String value) => $_setString(1, value);
+  set account($core.String value) => $_setString(1, value);
   @$pb.TagNumber(2)
-  $core.bool hasPassword() => $_has(1);
+  $core.bool hasAccount() => $_has(1);
   @$pb.TagNumber(2)
-  void clearPassword() => $_clearField(2);
+  void clearAccount() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get password => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set password($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasPassword() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearPassword() => $_clearField(3);
 }
 
 class RegisterResponse extends $pb.GeneratedMessage {
@@ -251,11 +413,11 @@ class RegisterResponse extends $pb.GeneratedMessage {
 
 class LoginRequest extends $pb.GeneratedMessage {
   factory LoginRequest({
-    $core.String? username,
+    $core.String? account,
     $core.String? password,
   }) {
     final result = create();
-    if (username != null) result.username = username;
+    if (account != null) result.account = account;
     if (password != null) result.password = password;
     return result;
   }
@@ -274,7 +436,7 @@ class LoginRequest extends $pb.GeneratedMessage {
       package:
           const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
       createEmptyInstance: create)
-    ..aOS(1, _omitFieldNames ? '' : 'username')
+    ..aOS(1, _omitFieldNames ? '' : 'account')
     ..aOS(2, _omitFieldNames ? '' : 'password')
     ..hasRequiredFields = false;
 
@@ -298,13 +460,13 @@ class LoginRequest extends $pb.GeneratedMessage {
   static LoginRequest? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.String get username => $_getSZ(0);
+  $core.String get account => $_getSZ(0);
   @$pb.TagNumber(1)
-  set username($core.String value) => $_setString(0, value);
+  set account($core.String value) => $_setString(0, value);
   @$pb.TagNumber(1)
-  $core.bool hasUsername() => $_has(0);
+  $core.bool hasAccount() => $_has(0);
   @$pb.TagNumber(1)
-  void clearUsername() => $_clearField(1);
+  void clearAccount() => $_clearField(1);
 
   @$pb.TagNumber(2)
   $core.String get password => $_getSZ(1);
@@ -410,6 +572,141 @@ class LoginResponse extends $pb.GeneratedMessage {
   void clearSessionToken() => $_clearField(4);
 }
 
+class ResetPasswordRequest extends $pb.GeneratedMessage {
+  factory ResetPasswordRequest({
+    $core.String? account,
+    $core.String? newPassword,
+  }) {
+    final result = create();
+    if (account != null) result.account = account;
+    if (newPassword != null) result.newPassword = newPassword;
+    return result;
+  }
+
+  ResetPasswordRequest._();
+
+  factory ResetPasswordRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ResetPasswordRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ResetPasswordRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'account')
+    ..aOS(2, _omitFieldNames ? '' : 'newPassword')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ResetPasswordRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ResetPasswordRequest copyWith(void Function(ResetPasswordRequest) updates) =>
+      super.copyWith((message) => updates(message as ResetPasswordRequest))
+          as ResetPasswordRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ResetPasswordRequest create() => ResetPasswordRequest._();
+  @$core.override
+  ResetPasswordRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ResetPasswordRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ResetPasswordRequest>(create);
+  static ResetPasswordRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get account => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set account($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasAccount() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearAccount() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get newPassword => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set newPassword($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasNewPassword() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearNewPassword() => $_clearField(2);
+}
+
+class ResetPasswordResponse extends $pb.GeneratedMessage {
+  factory ResetPasswordResponse({
+    $core.bool? success,
+    $core.String? message,
+  }) {
+    final result = create();
+    if (success != null) result.success = success;
+    if (message != null) result.message = message;
+    return result;
+  }
+
+  ResetPasswordResponse._();
+
+  factory ResetPasswordResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ResetPasswordResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ResetPasswordResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ResetPasswordResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ResetPasswordResponse copyWith(
+          void Function(ResetPasswordResponse) updates) =>
+      super.copyWith((message) => updates(message as ResetPasswordResponse))
+          as ResetPasswordResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ResetPasswordResponse create() => ResetPasswordResponse._();
+  @$core.override
+  ResetPasswordResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ResetPasswordResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ResetPasswordResponse>(create);
+  static ResetPasswordResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+}
+
 class MatchRequest extends $pb.GeneratedMessage {
   factory MatchRequest({
     MatchMode? mode,
@@ -438,7 +735,7 @@ class MatchRequest extends $pb.GeneratedMessage {
     ..aE<MatchMode>(1, _omitFieldNames ? '' : 'mode',
         enumValues: MatchMode.values)
     ..aE<BotDifficulty>(2, _omitFieldNames ? '' : 'botDifficulty',
-        protoName: 'bot_difficulty', enumValues: BotDifficulty.values)
+        enumValues: BotDifficulty.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -477,6 +774,1140 @@ class MatchRequest extends $pb.GeneratedMessage {
   $core.bool hasBotDifficulty() => $_has(1);
   @$pb.TagNumber(2)
   void clearBotDifficulty() => $_clearField(2);
+}
+
+class CreateRoomRequest extends $pb.GeneratedMessage {
+  factory CreateRoomRequest() => create();
+
+  CreateRoomRequest._();
+
+  factory CreateRoomRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory CreateRoomRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'CreateRoomRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CreateRoomRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CreateRoomRequest copyWith(void Function(CreateRoomRequest) updates) =>
+      super.copyWith((message) => updates(message as CreateRoomRequest))
+          as CreateRoomRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CreateRoomRequest create() => CreateRoomRequest._();
+  @$core.override
+  CreateRoomRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static CreateRoomRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<CreateRoomRequest>(create);
+  static CreateRoomRequest? _defaultInstance;
+}
+
+class JoinRoomRequest extends $pb.GeneratedMessage {
+  factory JoinRoomRequest({
+    $core.String? roomCode,
+  }) {
+    final result = create();
+    if (roomCode != null) result.roomCode = roomCode;
+    return result;
+  }
+
+  JoinRoomRequest._();
+
+  factory JoinRoomRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory JoinRoomRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'JoinRoomRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'roomCode')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  JoinRoomRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  JoinRoomRequest copyWith(void Function(JoinRoomRequest) updates) =>
+      super.copyWith((message) => updates(message as JoinRoomRequest))
+          as JoinRoomRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static JoinRoomRequest create() => JoinRoomRequest._();
+  @$core.override
+  JoinRoomRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static JoinRoomRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<JoinRoomRequest>(create);
+  static JoinRoomRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get roomCode => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set roomCode($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRoomCode() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRoomCode() => $_clearField(1);
+}
+
+class LeaveRoomRequest extends $pb.GeneratedMessage {
+  factory LeaveRoomRequest({
+    $core.String? roomId,
+  }) {
+    final result = create();
+    if (roomId != null) result.roomId = roomId;
+    return result;
+  }
+
+  LeaveRoomRequest._();
+
+  factory LeaveRoomRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory LeaveRoomRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'LeaveRoomRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'roomId')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  LeaveRoomRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  LeaveRoomRequest copyWith(void Function(LeaveRoomRequest) updates) =>
+      super.copyWith((message) => updates(message as LeaveRoomRequest))
+          as LeaveRoomRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static LeaveRoomRequest create() => LeaveRoomRequest._();
+  @$core.override
+  LeaveRoomRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static LeaveRoomRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<LeaveRoomRequest>(create);
+  static LeaveRoomRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get roomId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set roomId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRoomId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRoomId() => $_clearField(1);
+}
+
+class RoomReadyRequest extends $pb.GeneratedMessage {
+  factory RoomReadyRequest({
+    $core.String? roomId,
+    $core.bool? ready,
+  }) {
+    final result = create();
+    if (roomId != null) result.roomId = roomId;
+    if (ready != null) result.ready = ready;
+    return result;
+  }
+
+  RoomReadyRequest._();
+
+  factory RoomReadyRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory RoomReadyRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RoomReadyRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'roomId')
+    ..aOB(2, _omitFieldNames ? '' : 'ready')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RoomReadyRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RoomReadyRequest copyWith(void Function(RoomReadyRequest) updates) =>
+      super.copyWith((message) => updates(message as RoomReadyRequest))
+          as RoomReadyRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RoomReadyRequest create() => RoomReadyRequest._();
+  @$core.override
+  RoomReadyRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static RoomReadyRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RoomReadyRequest>(create);
+  static RoomReadyRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get roomId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set roomId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRoomId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRoomId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get ready => $_getBF(1);
+  @$pb.TagNumber(2)
+  set ready($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasReady() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearReady() => $_clearField(2);
+}
+
+class AddBotRequest extends $pb.GeneratedMessage {
+  factory AddBotRequest({
+    $core.String? roomId,
+    BotDifficulty? botDifficulty,
+    $core.int? seatIndex,
+  }) {
+    final result = create();
+    if (roomId != null) result.roomId = roomId;
+    if (botDifficulty != null) result.botDifficulty = botDifficulty;
+    if (seatIndex != null) result.seatIndex = seatIndex;
+    return result;
+  }
+
+  AddBotRequest._();
+
+  factory AddBotRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory AddBotRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'AddBotRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'roomId')
+    ..aE<BotDifficulty>(2, _omitFieldNames ? '' : 'botDifficulty',
+        enumValues: BotDifficulty.values)
+    ..aI(3, _omitFieldNames ? '' : 'seatIndex')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AddBotRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AddBotRequest copyWith(void Function(AddBotRequest) updates) =>
+      super.copyWith((message) => updates(message as AddBotRequest))
+          as AddBotRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static AddBotRequest create() => AddBotRequest._();
+  @$core.override
+  AddBotRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static AddBotRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<AddBotRequest>(create);
+  static AddBotRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get roomId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set roomId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRoomId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRoomId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  BotDifficulty get botDifficulty => $_getN(1);
+  @$pb.TagNumber(2)
+  set botDifficulty(BotDifficulty value) => $_setField(2, value);
+  @$pb.TagNumber(2)
+  $core.bool hasBotDifficulty() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearBotDifficulty() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.int get seatIndex => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set seatIndex($core.int value) => $_setSignedInt32(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasSeatIndex() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSeatIndex() => $_clearField(3);
+}
+
+class RemovePlayerRequest extends $pb.GeneratedMessage {
+  factory RemovePlayerRequest({
+    $core.String? roomId,
+    $core.String? playerId,
+  }) {
+    final result = create();
+    if (roomId != null) result.roomId = roomId;
+    if (playerId != null) result.playerId = playerId;
+    return result;
+  }
+
+  RemovePlayerRequest._();
+
+  factory RemovePlayerRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory RemovePlayerRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RemovePlayerRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'roomId')
+    ..aOS(2, _omitFieldNames ? '' : 'playerId')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RemovePlayerRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RemovePlayerRequest copyWith(void Function(RemovePlayerRequest) updates) =>
+      super.copyWith((message) => updates(message as RemovePlayerRequest))
+          as RemovePlayerRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RemovePlayerRequest create() => RemovePlayerRequest._();
+  @$core.override
+  RemovePlayerRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static RemovePlayerRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RemovePlayerRequest>(create);
+  static RemovePlayerRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get roomId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set roomId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRoomId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRoomId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get playerId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set playerId($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasPlayerId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearPlayerId() => $_clearField(2);
+}
+
+class ListFriendsRequest extends $pb.GeneratedMessage {
+  factory ListFriendsRequest() => create();
+
+  ListFriendsRequest._();
+
+  factory ListFriendsRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ListFriendsRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ListFriendsRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListFriendsRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListFriendsRequest copyWith(void Function(ListFriendsRequest) updates) =>
+      super.copyWith((message) => updates(message as ListFriendsRequest))
+          as ListFriendsRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListFriendsRequest create() => ListFriendsRequest._();
+  @$core.override
+  ListFriendsRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ListFriendsRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ListFriendsRequest>(create);
+  static ListFriendsRequest? _defaultInstance;
+}
+
+class ListFriendsResponse extends $pb.GeneratedMessage {
+  factory ListFriendsResponse({
+    $core.Iterable<OnlineUser>? users,
+  }) {
+    final result = create();
+    if (users != null) result.users.addAll(users);
+    return result;
+  }
+
+  ListFriendsResponse._();
+
+  factory ListFriendsResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ListFriendsResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ListFriendsResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..pPM<OnlineUser>(1, _omitFieldNames ? '' : 'users',
+        subBuilder: OnlineUser.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListFriendsResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ListFriendsResponse copyWith(void Function(ListFriendsResponse) updates) =>
+      super.copyWith((message) => updates(message as ListFriendsResponse))
+          as ListFriendsResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListFriendsResponse create() => ListFriendsResponse._();
+  @$core.override
+  ListFriendsResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ListFriendsResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ListFriendsResponse>(create);
+  static ListFriendsResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $pb.PbList<OnlineUser> get users => $_getList(0);
+}
+
+class AddFriendRequest extends $pb.GeneratedMessage {
+  factory AddFriendRequest({
+    $core.String? account,
+  }) {
+    final result = create();
+    if (account != null) result.account = account;
+    return result;
+  }
+
+  AddFriendRequest._();
+
+  factory AddFriendRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory AddFriendRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'AddFriendRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'account')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AddFriendRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AddFriendRequest copyWith(void Function(AddFriendRequest) updates) =>
+      super.copyWith((message) => updates(message as AddFriendRequest))
+          as AddFriendRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static AddFriendRequest create() => AddFriendRequest._();
+  @$core.override
+  AddFriendRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static AddFriendRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<AddFriendRequest>(create);
+  static AddFriendRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get account => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set account($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasAccount() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearAccount() => $_clearField(1);
+}
+
+class AddFriendResponse extends $pb.GeneratedMessage {
+  factory AddFriendResponse({
+    $core.bool? success,
+    $core.String? message,
+    OnlineUser? user,
+  }) {
+    final result = create();
+    if (success != null) result.success = success;
+    if (message != null) result.message = message;
+    if (user != null) result.user = user;
+    return result;
+  }
+
+  AddFriendResponse._();
+
+  factory AddFriendResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory AddFriendResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'AddFriendResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..aOM<OnlineUser>(3, _omitFieldNames ? '' : 'user',
+        subBuilder: OnlineUser.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AddFriendResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  AddFriendResponse copyWith(void Function(AddFriendResponse) updates) =>
+      super.copyWith((message) => updates(message as AddFriendResponse))
+          as AddFriendResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static AddFriendResponse create() => AddFriendResponse._();
+  @$core.override
+  AddFriendResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static AddFriendResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<AddFriendResponse>(create);
+  static AddFriendResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  OnlineUser get user => $_getN(2);
+  @$pb.TagNumber(3)
+  set user(OnlineUser value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasUser() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearUser() => $_clearField(3);
+  @$pb.TagNumber(3)
+  OnlineUser ensureUser() => $_ensure(2);
+}
+
+class InvitePlayerRequest extends $pb.GeneratedMessage {
+  factory InvitePlayerRequest({
+    $core.String? roomId,
+    $core.String? inviteeAccount,
+    $core.int? seatIndex,
+  }) {
+    final result = create();
+    if (roomId != null) result.roomId = roomId;
+    if (inviteeAccount != null) result.inviteeAccount = inviteeAccount;
+    if (seatIndex != null) result.seatIndex = seatIndex;
+    return result;
+  }
+
+  InvitePlayerRequest._();
+
+  factory InvitePlayerRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory InvitePlayerRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'InvitePlayerRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'roomId')
+    ..aOS(2, _omitFieldNames ? '' : 'inviteeAccount')
+    ..aI(3, _omitFieldNames ? '' : 'seatIndex')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  InvitePlayerRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  InvitePlayerRequest copyWith(void Function(InvitePlayerRequest) updates) =>
+      super.copyWith((message) => updates(message as InvitePlayerRequest))
+          as InvitePlayerRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static InvitePlayerRequest create() => InvitePlayerRequest._();
+  @$core.override
+  InvitePlayerRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static InvitePlayerRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<InvitePlayerRequest>(create);
+  static InvitePlayerRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get roomId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set roomId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRoomId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRoomId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get inviteeAccount => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set inviteeAccount($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasInviteeAccount() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearInviteeAccount() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.int get seatIndex => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set seatIndex($core.int value) => $_setSignedInt32(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasSeatIndex() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSeatIndex() => $_clearField(3);
+}
+
+class InvitePlayerResponse extends $pb.GeneratedMessage {
+  factory InvitePlayerResponse({
+    $core.bool? accepted,
+    $core.String? message,
+  }) {
+    final result = create();
+    if (accepted != null) result.accepted = accepted;
+    if (message != null) result.message = message;
+    return result;
+  }
+
+  InvitePlayerResponse._();
+
+  factory InvitePlayerResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory InvitePlayerResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'InvitePlayerResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'accepted')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  InvitePlayerResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  InvitePlayerResponse copyWith(void Function(InvitePlayerResponse) updates) =>
+      super.copyWith((message) => updates(message as InvitePlayerResponse))
+          as InvitePlayerResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static InvitePlayerResponse create() => InvitePlayerResponse._();
+  @$core.override
+  InvitePlayerResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static InvitePlayerResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<InvitePlayerResponse>(create);
+  static InvitePlayerResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get accepted => $_getBF(0);
+  @$pb.TagNumber(1)
+  set accepted($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasAccepted() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearAccepted() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+}
+
+class RoomInvitationPush extends $pb.GeneratedMessage {
+  factory RoomInvitationPush({
+    $core.String? invitationId,
+    $core.String? roomId,
+    $core.String? roomCode,
+    $core.String? inviterUserId,
+    $core.String? inviterAccount,
+    $core.String? inviterNickname,
+    $core.int? seatIndex,
+  }) {
+    final result = create();
+    if (invitationId != null) result.invitationId = invitationId;
+    if (roomId != null) result.roomId = roomId;
+    if (roomCode != null) result.roomCode = roomCode;
+    if (inviterUserId != null) result.inviterUserId = inviterUserId;
+    if (inviterAccount != null) result.inviterAccount = inviterAccount;
+    if (inviterNickname != null) result.inviterNickname = inviterNickname;
+    if (seatIndex != null) result.seatIndex = seatIndex;
+    return result;
+  }
+
+  RoomInvitationPush._();
+
+  factory RoomInvitationPush.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory RoomInvitationPush.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RoomInvitationPush',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'invitationId')
+    ..aOS(2, _omitFieldNames ? '' : 'roomId')
+    ..aOS(3, _omitFieldNames ? '' : 'roomCode')
+    ..aOS(4, _omitFieldNames ? '' : 'inviterUserId')
+    ..aOS(5, _omitFieldNames ? '' : 'inviterAccount')
+    ..aOS(6, _omitFieldNames ? '' : 'inviterNickname')
+    ..aI(7, _omitFieldNames ? '' : 'seatIndex')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RoomInvitationPush clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RoomInvitationPush copyWith(void Function(RoomInvitationPush) updates) =>
+      super.copyWith((message) => updates(message as RoomInvitationPush))
+          as RoomInvitationPush;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RoomInvitationPush create() => RoomInvitationPush._();
+  @$core.override
+  RoomInvitationPush createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static RoomInvitationPush getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RoomInvitationPush>(create);
+  static RoomInvitationPush? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get invitationId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set invitationId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasInvitationId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearInvitationId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get roomId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set roomId($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasRoomId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearRoomId() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get roomCode => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set roomCode($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasRoomCode() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearRoomCode() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get inviterUserId => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set inviterUserId($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasInviterUserId() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearInviterUserId() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get inviterAccount => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set inviterAccount($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasInviterAccount() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearInviterAccount() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.String get inviterNickname => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set inviterNickname($core.String value) => $_setString(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasInviterNickname() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearInviterNickname() => $_clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.int get seatIndex => $_getIZ(6);
+  @$pb.TagNumber(7)
+  set seatIndex($core.int value) => $_setSignedInt32(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasSeatIndex() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearSeatIndex() => $_clearField(7);
+}
+
+class RespondRoomInvitationRequest extends $pb.GeneratedMessage {
+  factory RespondRoomInvitationRequest({
+    $core.String? invitationId,
+    $core.bool? accept,
+  }) {
+    final result = create();
+    if (invitationId != null) result.invitationId = invitationId;
+    if (accept != null) result.accept = accept;
+    return result;
+  }
+
+  RespondRoomInvitationRequest._();
+
+  factory RespondRoomInvitationRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory RespondRoomInvitationRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RespondRoomInvitationRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'invitationId')
+    ..aOB(2, _omitFieldNames ? '' : 'accept')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RespondRoomInvitationRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RespondRoomInvitationRequest copyWith(
+          void Function(RespondRoomInvitationRequest) updates) =>
+      super.copyWith(
+              (message) => updates(message as RespondRoomInvitationRequest))
+          as RespondRoomInvitationRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RespondRoomInvitationRequest create() =>
+      RespondRoomInvitationRequest._();
+  @$core.override
+  RespondRoomInvitationRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static RespondRoomInvitationRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RespondRoomInvitationRequest>(create);
+  static RespondRoomInvitationRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get invitationId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set invitationId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasInvitationId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearInvitationId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get accept => $_getBF(1);
+  @$pb.TagNumber(2)
+  set accept($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasAccept() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearAccept() => $_clearField(2);
+}
+
+class RespondRoomInvitationResponse extends $pb.GeneratedMessage {
+  factory RespondRoomInvitationResponse({
+    $core.bool? success,
+    $core.String? message,
+    RoomSnapshot? snapshot,
+  }) {
+    final result = create();
+    if (success != null) result.success = success;
+    if (message != null) result.message = message;
+    if (snapshot != null) result.snapshot = snapshot;
+    return result;
+  }
+
+  RespondRoomInvitationResponse._();
+
+  factory RespondRoomInvitationResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory RespondRoomInvitationResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RespondRoomInvitationResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..aOM<RoomSnapshot>(3, _omitFieldNames ? '' : 'snapshot',
+        subBuilder: RoomSnapshot.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RespondRoomInvitationResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RespondRoomInvitationResponse copyWith(
+          void Function(RespondRoomInvitationResponse) updates) =>
+      super.copyWith(
+              (message) => updates(message as RespondRoomInvitationResponse))
+          as RespondRoomInvitationResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RespondRoomInvitationResponse create() =>
+      RespondRoomInvitationResponse._();
+  @$core.override
+  RespondRoomInvitationResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static RespondRoomInvitationResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RespondRoomInvitationResponse>(create);
+  static RespondRoomInvitationResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  RoomSnapshot get snapshot => $_getN(2);
+  @$pb.TagNumber(3)
+  set snapshot(RoomSnapshot value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasSnapshot() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSnapshot() => $_clearField(3);
+  @$pb.TagNumber(3)
+  RoomSnapshot ensureSnapshot() => $_ensure(2);
+}
+
+class RoomInvitationResultPush extends $pb.GeneratedMessage {
+  factory RoomInvitationResultPush({
+    $core.String? invitationId,
+    InvitationResult? result,
+    $core.String? inviteeUserId,
+    $core.String? inviteeAccount,
+    $core.String? inviteeNickname,
+    $core.String? message,
+  }) {
+    final result$ = create();
+    if (invitationId != null) result$.invitationId = invitationId;
+    if (result != null) result$.result = result;
+    if (inviteeUserId != null) result$.inviteeUserId = inviteeUserId;
+    if (inviteeAccount != null) result$.inviteeAccount = inviteeAccount;
+    if (inviteeNickname != null) result$.inviteeNickname = inviteeNickname;
+    if (message != null) result$.message = message;
+    return result$;
+  }
+
+  RoomInvitationResultPush._();
+
+  factory RoomInvitationResultPush.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory RoomInvitationResultPush.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RoomInvitationResultPush',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'invitationId')
+    ..aE<InvitationResult>(2, _omitFieldNames ? '' : 'result',
+        enumValues: InvitationResult.values)
+    ..aOS(3, _omitFieldNames ? '' : 'inviteeUserId')
+    ..aOS(4, _omitFieldNames ? '' : 'inviteeAccount')
+    ..aOS(5, _omitFieldNames ? '' : 'inviteeNickname')
+    ..aOS(6, _omitFieldNames ? '' : 'message')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RoomInvitationResultPush clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RoomInvitationResultPush copyWith(
+          void Function(RoomInvitationResultPush) updates) =>
+      super.copyWith((message) => updates(message as RoomInvitationResultPush))
+          as RoomInvitationResultPush;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RoomInvitationResultPush create() => RoomInvitationResultPush._();
+  @$core.override
+  RoomInvitationResultPush createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static RoomInvitationResultPush getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RoomInvitationResultPush>(create);
+  static RoomInvitationResultPush? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get invitationId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set invitationId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasInvitationId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearInvitationId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  InvitationResult get result => $_getN(1);
+  @$pb.TagNumber(2)
+  set result(InvitationResult value) => $_setField(2, value);
+  @$pb.TagNumber(2)
+  $core.bool hasResult() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearResult() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get inviteeUserId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set inviteeUserId($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasInviteeUserId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearInviteeUserId() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get inviteeAccount => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set inviteeAccount($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasInviteeAccount() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearInviteeAccount() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get inviteeNickname => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set inviteeNickname($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasInviteeNickname() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearInviteeNickname() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.String get message => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set message($core.String value) => $_setString(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasMessage() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearMessage() => $_clearField(6);
 }
 
 class MatchResponse extends $pb.GeneratedMessage {
@@ -629,6 +2060,9 @@ class RoomPlayer extends $pb.GeneratedMessage {
     PlayerRole? role,
     $core.int? cardsLeft,
     $core.int? roundScore,
+    $core.int? seatIndex,
+    $core.bool? ready,
+    $core.bool? occupied,
   }) {
     final result = create();
     if (playerId != null) result.playerId = playerId;
@@ -637,6 +2071,9 @@ class RoomPlayer extends $pb.GeneratedMessage {
     if (role != null) result.role = role;
     if (cardsLeft != null) result.cardsLeft = cardsLeft;
     if (roundScore != null) result.roundScore = roundScore;
+    if (seatIndex != null) result.seatIndex = seatIndex;
+    if (ready != null) result.ready = ready;
+    if (occupied != null) result.occupied = occupied;
     return result;
   }
 
@@ -661,6 +2098,9 @@ class RoomPlayer extends $pb.GeneratedMessage {
         enumValues: PlayerRole.values)
     ..aI(5, _omitFieldNames ? '' : 'cardsLeft')
     ..aI(6, _omitFieldNames ? '' : 'roundScore')
+    ..aI(7, _omitFieldNames ? '' : 'seatIndex')
+    ..aOB(8, _omitFieldNames ? '' : 'ready')
+    ..aOB(9, _omitFieldNames ? '' : 'occupied')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -734,6 +2174,33 @@ class RoomPlayer extends $pb.GeneratedMessage {
   $core.bool hasRoundScore() => $_has(5);
   @$pb.TagNumber(6)
   void clearRoundScore() => $_clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.int get seatIndex => $_getIZ(6);
+  @$pb.TagNumber(7)
+  set seatIndex($core.int value) => $_setSignedInt32(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasSeatIndex() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearSeatIndex() => $_clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.bool get ready => $_getBF(7);
+  @$pb.TagNumber(8)
+  set ready($core.bool value) => $_setBool(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasReady() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearReady() => $_clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.bool get occupied => $_getBF(8);
+  @$pb.TagNumber(9)
+  set occupied($core.bool value) => $_setBool(8, value);
+  @$pb.TagNumber(9)
+  $core.bool hasOccupied() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearOccupied() => $_clearField(9);
 }
 
 class Card extends $pb.GeneratedMessage {
@@ -1033,6 +2500,8 @@ class RoomSnapshot extends $pb.GeneratedMessage {
     $core.int? currentRoundScore,
     $core.bool? springTriggered,
     $core.int? turnSerial,
+    $core.String? roomCode,
+    $core.String? ownerPlayerId,
   }) {
     final result = create();
     if (roomId != null) result.roomId = roomId;
@@ -1051,6 +2520,8 @@ class RoomSnapshot extends $pb.GeneratedMessage {
     if (currentRoundScore != null) result.currentRoundScore = currentRoundScore;
     if (springTriggered != null) result.springTriggered = springTriggered;
     if (turnSerial != null) result.turnSerial = turnSerial;
+    if (roomCode != null) result.roomCode = roomCode;
+    if (ownerPlayerId != null) result.ownerPlayerId = ownerPlayerId;
     return result;
   }
 
@@ -1089,6 +2560,8 @@ class RoomSnapshot extends $pb.GeneratedMessage {
     ..aI(13, _omitFieldNames ? '' : 'currentRoundScore')
     ..aOB(14, _omitFieldNames ? '' : 'springTriggered')
     ..aI(15, _omitFieldNames ? '' : 'turnSerial')
+    ..aOS(16, _omitFieldNames ? '' : 'roomCode')
+    ..aOS(17, _omitFieldNames ? '' : 'ownerPlayerId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1214,6 +2687,24 @@ class RoomSnapshot extends $pb.GeneratedMessage {
   $core.bool hasTurnSerial() => $_has(14);
   @$pb.TagNumber(15)
   void clearTurnSerial() => $_clearField(15);
+
+  @$pb.TagNumber(16)
+  $core.String get roomCode => $_getSZ(15);
+  @$pb.TagNumber(16)
+  set roomCode($core.String value) => $_setString(15, value);
+  @$pb.TagNumber(16)
+  $core.bool hasRoomCode() => $_has(15);
+  @$pb.TagNumber(16)
+  void clearRoomCode() => $_clearField(16);
+
+  @$pb.TagNumber(17)
+  $core.String get ownerPlayerId => $_getSZ(16);
+  @$pb.TagNumber(17)
+  set ownerPlayerId($core.String value) => $_setString(16, value);
+  @$pb.TagNumber(17)
+  $core.bool hasOwnerPlayerId() => $_has(16);
+  @$pb.TagNumber(17)
+  void clearOwnerPlayerId() => $_clearField(17);
 }
 
 class PlayCardsRequest extends $pb.GeneratedMessage {
@@ -1655,6 +3146,17 @@ enum ClientMessage_Payload {
   passRequest,
   reconnectRequest,
   heartbeatRequest,
+  resetPasswordRequest,
+  createRoomRequest,
+  joinRoomRequest,
+  roomReadyRequest,
+  addBotRequest,
+  removePlayerRequest,
+  listFriendsRequest,
+  addFriendRequest,
+  invitePlayerRequest,
+  respondRoomInvitationRequest,
+  leaveRoomRequest,
   notSet
 }
 
@@ -1669,6 +3171,17 @@ class ClientMessage extends $pb.GeneratedMessage {
     PassRequest? passRequest,
     ReconnectRequest? reconnectRequest,
     HeartbeatRequest? heartbeatRequest,
+    ResetPasswordRequest? resetPasswordRequest,
+    CreateRoomRequest? createRoomRequest,
+    JoinRoomRequest? joinRoomRequest,
+    RoomReadyRequest? roomReadyRequest,
+    AddBotRequest? addBotRequest,
+    RemovePlayerRequest? removePlayerRequest,
+    ListFriendsRequest? listFriendsRequest,
+    AddFriendRequest? addFriendRequest,
+    InvitePlayerRequest? invitePlayerRequest,
+    RespondRoomInvitationRequest? respondRoomInvitationRequest,
+    LeaveRoomRequest? leaveRoomRequest,
   }) {
     final result = create();
     if (requestId != null) result.requestId = requestId;
@@ -1680,6 +3193,22 @@ class ClientMessage extends $pb.GeneratedMessage {
     if (passRequest != null) result.passRequest = passRequest;
     if (reconnectRequest != null) result.reconnectRequest = reconnectRequest;
     if (heartbeatRequest != null) result.heartbeatRequest = heartbeatRequest;
+    if (resetPasswordRequest != null)
+      result.resetPasswordRequest = resetPasswordRequest;
+    if (createRoomRequest != null) result.createRoomRequest = createRoomRequest;
+    if (joinRoomRequest != null) result.joinRoomRequest = joinRoomRequest;
+    if (roomReadyRequest != null) result.roomReadyRequest = roomReadyRequest;
+    if (addBotRequest != null) result.addBotRequest = addBotRequest;
+    if (removePlayerRequest != null)
+      result.removePlayerRequest = removePlayerRequest;
+    if (listFriendsRequest != null)
+      result.listFriendsRequest = listFriendsRequest;
+    if (addFriendRequest != null) result.addFriendRequest = addFriendRequest;
+    if (invitePlayerRequest != null)
+      result.invitePlayerRequest = invitePlayerRequest;
+    if (respondRoomInvitationRequest != null)
+      result.respondRoomInvitationRequest = respondRoomInvitationRequest;
+    if (leaveRoomRequest != null) result.leaveRoomRequest = leaveRoomRequest;
     return result;
   }
 
@@ -1701,6 +3230,17 @@ class ClientMessage extends $pb.GeneratedMessage {
     14: ClientMessage_Payload.passRequest,
     15: ClientMessage_Payload.reconnectRequest,
     16: ClientMessage_Payload.heartbeatRequest,
+    17: ClientMessage_Payload.resetPasswordRequest,
+    18: ClientMessage_Payload.createRoomRequest,
+    19: ClientMessage_Payload.joinRoomRequest,
+    20: ClientMessage_Payload.roomReadyRequest,
+    21: ClientMessage_Payload.addBotRequest,
+    22: ClientMessage_Payload.removePlayerRequest,
+    23: ClientMessage_Payload.listFriendsRequest,
+    24: ClientMessage_Payload.addFriendRequest,
+    25: ClientMessage_Payload.invitePlayerRequest,
+    26: ClientMessage_Payload.respondRoomInvitationRequest,
+    27: ClientMessage_Payload.leaveRoomRequest,
     0: ClientMessage_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -1708,7 +3248,26 @@ class ClientMessage extends $pb.GeneratedMessage {
       package:
           const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
       createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 15, 16])
+    ..oo(0, [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27
+    ])
     ..aOS(1, _omitFieldNames ? '' : 'requestId')
     ..aOS(2, _omitFieldNames ? '' : 'sessionToken')
     ..aOM<RegisterRequest>(10, _omitFieldNames ? '' : 'registerRequest',
@@ -1725,6 +3284,30 @@ class ClientMessage extends $pb.GeneratedMessage {
         subBuilder: ReconnectRequest.create)
     ..aOM<HeartbeatRequest>(16, _omitFieldNames ? '' : 'heartbeatRequest',
         subBuilder: HeartbeatRequest.create)
+    ..aOM<ResetPasswordRequest>(
+        17, _omitFieldNames ? '' : 'resetPasswordRequest',
+        subBuilder: ResetPasswordRequest.create)
+    ..aOM<CreateRoomRequest>(18, _omitFieldNames ? '' : 'createRoomRequest',
+        subBuilder: CreateRoomRequest.create)
+    ..aOM<JoinRoomRequest>(19, _omitFieldNames ? '' : 'joinRoomRequest',
+        subBuilder: JoinRoomRequest.create)
+    ..aOM<RoomReadyRequest>(20, _omitFieldNames ? '' : 'roomReadyRequest',
+        subBuilder: RoomReadyRequest.create)
+    ..aOM<AddBotRequest>(21, _omitFieldNames ? '' : 'addBotRequest',
+        subBuilder: AddBotRequest.create)
+    ..aOM<RemovePlayerRequest>(22, _omitFieldNames ? '' : 'removePlayerRequest',
+        subBuilder: RemovePlayerRequest.create)
+    ..aOM<ListFriendsRequest>(23, _omitFieldNames ? '' : 'listFriendsRequest',
+        subBuilder: ListFriendsRequest.create)
+    ..aOM<AddFriendRequest>(24, _omitFieldNames ? '' : 'addFriendRequest',
+        subBuilder: AddFriendRequest.create)
+    ..aOM<InvitePlayerRequest>(25, _omitFieldNames ? '' : 'invitePlayerRequest',
+        subBuilder: InvitePlayerRequest.create)
+    ..aOM<RespondRoomInvitationRequest>(
+        26, _omitFieldNames ? '' : 'respondRoomInvitationRequest',
+        subBuilder: RespondRoomInvitationRequest.create)
+    ..aOM<LeaveRoomRequest>(27, _omitFieldNames ? '' : 'leaveRoomRequest',
+        subBuilder: LeaveRoomRequest.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1753,6 +3336,17 @@ class ClientMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(14)
   @$pb.TagNumber(15)
   @$pb.TagNumber(16)
+  @$pb.TagNumber(17)
+  @$pb.TagNumber(18)
+  @$pb.TagNumber(19)
+  @$pb.TagNumber(20)
+  @$pb.TagNumber(21)
+  @$pb.TagNumber(22)
+  @$pb.TagNumber(23)
+  @$pb.TagNumber(24)
+  @$pb.TagNumber(25)
+  @$pb.TagNumber(26)
+  @$pb.TagNumber(27)
   ClientMessage_Payload whichPayload() =>
       _ClientMessage_PayloadByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(10)
@@ -1762,6 +3356,17 @@ class ClientMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(14)
   @$pb.TagNumber(15)
   @$pb.TagNumber(16)
+  @$pb.TagNumber(17)
+  @$pb.TagNumber(18)
+  @$pb.TagNumber(19)
+  @$pb.TagNumber(20)
+  @$pb.TagNumber(21)
+  @$pb.TagNumber(22)
+  @$pb.TagNumber(23)
+  @$pb.TagNumber(24)
+  @$pb.TagNumber(25)
+  @$pb.TagNumber(26)
+  @$pb.TagNumber(27)
   void clearPayload() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -1858,6 +3463,129 @@ class ClientMessage extends $pb.GeneratedMessage {
   void clearHeartbeatRequest() => $_clearField(16);
   @$pb.TagNumber(16)
   HeartbeatRequest ensureHeartbeatRequest() => $_ensure(8);
+
+  @$pb.TagNumber(17)
+  ResetPasswordRequest get resetPasswordRequest => $_getN(9);
+  @$pb.TagNumber(17)
+  set resetPasswordRequest(ResetPasswordRequest value) => $_setField(17, value);
+  @$pb.TagNumber(17)
+  $core.bool hasResetPasswordRequest() => $_has(9);
+  @$pb.TagNumber(17)
+  void clearResetPasswordRequest() => $_clearField(17);
+  @$pb.TagNumber(17)
+  ResetPasswordRequest ensureResetPasswordRequest() => $_ensure(9);
+
+  @$pb.TagNumber(18)
+  CreateRoomRequest get createRoomRequest => $_getN(10);
+  @$pb.TagNumber(18)
+  set createRoomRequest(CreateRoomRequest value) => $_setField(18, value);
+  @$pb.TagNumber(18)
+  $core.bool hasCreateRoomRequest() => $_has(10);
+  @$pb.TagNumber(18)
+  void clearCreateRoomRequest() => $_clearField(18);
+  @$pb.TagNumber(18)
+  CreateRoomRequest ensureCreateRoomRequest() => $_ensure(10);
+
+  @$pb.TagNumber(19)
+  JoinRoomRequest get joinRoomRequest => $_getN(11);
+  @$pb.TagNumber(19)
+  set joinRoomRequest(JoinRoomRequest value) => $_setField(19, value);
+  @$pb.TagNumber(19)
+  $core.bool hasJoinRoomRequest() => $_has(11);
+  @$pb.TagNumber(19)
+  void clearJoinRoomRequest() => $_clearField(19);
+  @$pb.TagNumber(19)
+  JoinRoomRequest ensureJoinRoomRequest() => $_ensure(11);
+
+  @$pb.TagNumber(20)
+  RoomReadyRequest get roomReadyRequest => $_getN(12);
+  @$pb.TagNumber(20)
+  set roomReadyRequest(RoomReadyRequest value) => $_setField(20, value);
+  @$pb.TagNumber(20)
+  $core.bool hasRoomReadyRequest() => $_has(12);
+  @$pb.TagNumber(20)
+  void clearRoomReadyRequest() => $_clearField(20);
+  @$pb.TagNumber(20)
+  RoomReadyRequest ensureRoomReadyRequest() => $_ensure(12);
+
+  @$pb.TagNumber(21)
+  AddBotRequest get addBotRequest => $_getN(13);
+  @$pb.TagNumber(21)
+  set addBotRequest(AddBotRequest value) => $_setField(21, value);
+  @$pb.TagNumber(21)
+  $core.bool hasAddBotRequest() => $_has(13);
+  @$pb.TagNumber(21)
+  void clearAddBotRequest() => $_clearField(21);
+  @$pb.TagNumber(21)
+  AddBotRequest ensureAddBotRequest() => $_ensure(13);
+
+  @$pb.TagNumber(22)
+  RemovePlayerRequest get removePlayerRequest => $_getN(14);
+  @$pb.TagNumber(22)
+  set removePlayerRequest(RemovePlayerRequest value) => $_setField(22, value);
+  @$pb.TagNumber(22)
+  $core.bool hasRemovePlayerRequest() => $_has(14);
+  @$pb.TagNumber(22)
+  void clearRemovePlayerRequest() => $_clearField(22);
+  @$pb.TagNumber(22)
+  RemovePlayerRequest ensureRemovePlayerRequest() => $_ensure(14);
+
+  @$pb.TagNumber(23)
+  ListFriendsRequest get listFriendsRequest => $_getN(15);
+  @$pb.TagNumber(23)
+  set listFriendsRequest(ListFriendsRequest value) => $_setField(23, value);
+  @$pb.TagNumber(23)
+  $core.bool hasListFriendsRequest() => $_has(15);
+  @$pb.TagNumber(23)
+  void clearListFriendsRequest() => $_clearField(23);
+  @$pb.TagNumber(23)
+  ListFriendsRequest ensureListFriendsRequest() => $_ensure(15);
+
+  @$pb.TagNumber(24)
+  AddFriendRequest get addFriendRequest => $_getN(16);
+  @$pb.TagNumber(24)
+  set addFriendRequest(AddFriendRequest value) => $_setField(24, value);
+  @$pb.TagNumber(24)
+  $core.bool hasAddFriendRequest() => $_has(16);
+  @$pb.TagNumber(24)
+  void clearAddFriendRequest() => $_clearField(24);
+  @$pb.TagNumber(24)
+  AddFriendRequest ensureAddFriendRequest() => $_ensure(16);
+
+  @$pb.TagNumber(25)
+  InvitePlayerRequest get invitePlayerRequest => $_getN(17);
+  @$pb.TagNumber(25)
+  set invitePlayerRequest(InvitePlayerRequest value) => $_setField(25, value);
+  @$pb.TagNumber(25)
+  $core.bool hasInvitePlayerRequest() => $_has(17);
+  @$pb.TagNumber(25)
+  void clearInvitePlayerRequest() => $_clearField(25);
+  @$pb.TagNumber(25)
+  InvitePlayerRequest ensureInvitePlayerRequest() => $_ensure(17);
+
+  @$pb.TagNumber(26)
+  RespondRoomInvitationRequest get respondRoomInvitationRequest => $_getN(18);
+  @$pb.TagNumber(26)
+  set respondRoomInvitationRequest(RespondRoomInvitationRequest value) =>
+      $_setField(26, value);
+  @$pb.TagNumber(26)
+  $core.bool hasRespondRoomInvitationRequest() => $_has(18);
+  @$pb.TagNumber(26)
+  void clearRespondRoomInvitationRequest() => $_clearField(26);
+  @$pb.TagNumber(26)
+  RespondRoomInvitationRequest ensureRespondRoomInvitationRequest() =>
+      $_ensure(18);
+
+  @$pb.TagNumber(27)
+  LeaveRoomRequest get leaveRoomRequest => $_getN(19);
+  @$pb.TagNumber(27)
+  set leaveRoomRequest(LeaveRoomRequest value) => $_setField(27, value);
+  @$pb.TagNumber(27)
+  $core.bool hasLeaveRoomRequest() => $_has(19);
+  @$pb.TagNumber(27)
+  void clearLeaveRoomRequest() => $_clearField(27);
+  @$pb.TagNumber(27)
+  LeaveRoomRequest ensureLeaveRoomRequest() => $_ensure(19);
 }
 
 enum ServerMessage_Payload {
@@ -1869,6 +3597,13 @@ enum ServerMessage_Payload {
   operationResponse,
   errorResponse,
   heartbeatResponse,
+  resetPasswordResponse,
+  listFriendsResponse,
+  addFriendResponse,
+  invitePlayerResponse,
+  roomInvitationPush,
+  respondRoomInvitationResponse,
+  roomInvitationResultPush,
   notSet
 }
 
@@ -1883,6 +3618,13 @@ class ServerMessage extends $pb.GeneratedMessage {
     OperationResponse? operationResponse,
     ErrorResponse? errorResponse,
     HeartbeatResponse? heartbeatResponse,
+    ResetPasswordResponse? resetPasswordResponse,
+    ListFriendsResponse? listFriendsResponse,
+    AddFriendResponse? addFriendResponse,
+    InvitePlayerResponse? invitePlayerResponse,
+    RoomInvitationPush? roomInvitationPush,
+    RespondRoomInvitationResponse? respondRoomInvitationResponse,
+    RoomInvitationResultPush? roomInvitationResultPush,
   }) {
     final result = create();
     if (requestId != null) result.requestId = requestId;
@@ -1894,6 +3636,19 @@ class ServerMessage extends $pb.GeneratedMessage {
     if (operationResponse != null) result.operationResponse = operationResponse;
     if (errorResponse != null) result.errorResponse = errorResponse;
     if (heartbeatResponse != null) result.heartbeatResponse = heartbeatResponse;
+    if (resetPasswordResponse != null)
+      result.resetPasswordResponse = resetPasswordResponse;
+    if (listFriendsResponse != null)
+      result.listFriendsResponse = listFriendsResponse;
+    if (addFriendResponse != null) result.addFriendResponse = addFriendResponse;
+    if (invitePlayerResponse != null)
+      result.invitePlayerResponse = invitePlayerResponse;
+    if (roomInvitationPush != null)
+      result.roomInvitationPush = roomInvitationPush;
+    if (respondRoomInvitationResponse != null)
+      result.respondRoomInvitationResponse = respondRoomInvitationResponse;
+    if (roomInvitationResultPush != null)
+      result.roomInvitationResultPush = roomInvitationResultPush;
     return result;
   }
 
@@ -1916,6 +3671,13 @@ class ServerMessage extends $pb.GeneratedMessage {
     15: ServerMessage_Payload.operationResponse,
     16: ServerMessage_Payload.errorResponse,
     17: ServerMessage_Payload.heartbeatResponse,
+    18: ServerMessage_Payload.resetPasswordResponse,
+    19: ServerMessage_Payload.listFriendsResponse,
+    20: ServerMessage_Payload.addFriendResponse,
+    21: ServerMessage_Payload.invitePlayerResponse,
+    22: ServerMessage_Payload.roomInvitationPush,
+    23: ServerMessage_Payload.respondRoomInvitationResponse,
+    24: ServerMessage_Payload.roomInvitationResultPush,
     0: ServerMessage_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -1923,7 +3685,7 @@ class ServerMessage extends $pb.GeneratedMessage {
       package:
           const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
       createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17])
+    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24])
     ..aOS(1, _omitFieldNames ? '' : 'requestId')
     ..aOM<RegisterResponse>(10, _omitFieldNames ? '' : 'registerResponse',
         subBuilder: RegisterResponse.create)
@@ -1941,6 +3703,24 @@ class ServerMessage extends $pb.GeneratedMessage {
         subBuilder: ErrorResponse.create)
     ..aOM<HeartbeatResponse>(17, _omitFieldNames ? '' : 'heartbeatResponse',
         subBuilder: HeartbeatResponse.create)
+    ..aOM<ResetPasswordResponse>(
+        18, _omitFieldNames ? '' : 'resetPasswordResponse',
+        subBuilder: ResetPasswordResponse.create)
+    ..aOM<ListFriendsResponse>(19, _omitFieldNames ? '' : 'listFriendsResponse',
+        subBuilder: ListFriendsResponse.create)
+    ..aOM<AddFriendResponse>(20, _omitFieldNames ? '' : 'addFriendResponse',
+        subBuilder: AddFriendResponse.create)
+    ..aOM<InvitePlayerResponse>(
+        21, _omitFieldNames ? '' : 'invitePlayerResponse',
+        subBuilder: InvitePlayerResponse.create)
+    ..aOM<RoomInvitationPush>(22, _omitFieldNames ? '' : 'roomInvitationPush',
+        subBuilder: RoomInvitationPush.create)
+    ..aOM<RespondRoomInvitationResponse>(
+        23, _omitFieldNames ? '' : 'respondRoomInvitationResponse',
+        subBuilder: RespondRoomInvitationResponse.create)
+    ..aOM<RoomInvitationResultPush>(
+        24, _omitFieldNames ? '' : 'roomInvitationResultPush',
+        subBuilder: RoomInvitationResultPush.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1970,6 +3750,13 @@ class ServerMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(15)
   @$pb.TagNumber(16)
   @$pb.TagNumber(17)
+  @$pb.TagNumber(18)
+  @$pb.TagNumber(19)
+  @$pb.TagNumber(20)
+  @$pb.TagNumber(21)
+  @$pb.TagNumber(22)
+  @$pb.TagNumber(23)
+  @$pb.TagNumber(24)
   ServerMessage_Payload whichPayload() =>
       _ServerMessage_PayloadByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(10)
@@ -1980,6 +3767,13 @@ class ServerMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(15)
   @$pb.TagNumber(16)
   @$pb.TagNumber(17)
+  @$pb.TagNumber(18)
+  @$pb.TagNumber(19)
+  @$pb.TagNumber(20)
+  @$pb.TagNumber(21)
+  @$pb.TagNumber(22)
+  @$pb.TagNumber(23)
+  @$pb.TagNumber(24)
   void clearPayload() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -2078,6 +3872,87 @@ class ServerMessage extends $pb.GeneratedMessage {
   void clearHeartbeatResponse() => $_clearField(17);
   @$pb.TagNumber(17)
   HeartbeatResponse ensureHeartbeatResponse() => $_ensure(8);
+
+  @$pb.TagNumber(18)
+  ResetPasswordResponse get resetPasswordResponse => $_getN(9);
+  @$pb.TagNumber(18)
+  set resetPasswordResponse(ResetPasswordResponse value) =>
+      $_setField(18, value);
+  @$pb.TagNumber(18)
+  $core.bool hasResetPasswordResponse() => $_has(9);
+  @$pb.TagNumber(18)
+  void clearResetPasswordResponse() => $_clearField(18);
+  @$pb.TagNumber(18)
+  ResetPasswordResponse ensureResetPasswordResponse() => $_ensure(9);
+
+  @$pb.TagNumber(19)
+  ListFriendsResponse get listFriendsResponse => $_getN(10);
+  @$pb.TagNumber(19)
+  set listFriendsResponse(ListFriendsResponse value) => $_setField(19, value);
+  @$pb.TagNumber(19)
+  $core.bool hasListFriendsResponse() => $_has(10);
+  @$pb.TagNumber(19)
+  void clearListFriendsResponse() => $_clearField(19);
+  @$pb.TagNumber(19)
+  ListFriendsResponse ensureListFriendsResponse() => $_ensure(10);
+
+  @$pb.TagNumber(20)
+  AddFriendResponse get addFriendResponse => $_getN(11);
+  @$pb.TagNumber(20)
+  set addFriendResponse(AddFriendResponse value) => $_setField(20, value);
+  @$pb.TagNumber(20)
+  $core.bool hasAddFriendResponse() => $_has(11);
+  @$pb.TagNumber(20)
+  void clearAddFriendResponse() => $_clearField(20);
+  @$pb.TagNumber(20)
+  AddFriendResponse ensureAddFriendResponse() => $_ensure(11);
+
+  @$pb.TagNumber(21)
+  InvitePlayerResponse get invitePlayerResponse => $_getN(12);
+  @$pb.TagNumber(21)
+  set invitePlayerResponse(InvitePlayerResponse value) => $_setField(21, value);
+  @$pb.TagNumber(21)
+  $core.bool hasInvitePlayerResponse() => $_has(12);
+  @$pb.TagNumber(21)
+  void clearInvitePlayerResponse() => $_clearField(21);
+  @$pb.TagNumber(21)
+  InvitePlayerResponse ensureInvitePlayerResponse() => $_ensure(12);
+
+  @$pb.TagNumber(22)
+  RoomInvitationPush get roomInvitationPush => $_getN(13);
+  @$pb.TagNumber(22)
+  set roomInvitationPush(RoomInvitationPush value) => $_setField(22, value);
+  @$pb.TagNumber(22)
+  $core.bool hasRoomInvitationPush() => $_has(13);
+  @$pb.TagNumber(22)
+  void clearRoomInvitationPush() => $_clearField(22);
+  @$pb.TagNumber(22)
+  RoomInvitationPush ensureRoomInvitationPush() => $_ensure(13);
+
+  @$pb.TagNumber(23)
+  RespondRoomInvitationResponse get respondRoomInvitationResponse => $_getN(14);
+  @$pb.TagNumber(23)
+  set respondRoomInvitationResponse(RespondRoomInvitationResponse value) =>
+      $_setField(23, value);
+  @$pb.TagNumber(23)
+  $core.bool hasRespondRoomInvitationResponse() => $_has(14);
+  @$pb.TagNumber(23)
+  void clearRespondRoomInvitationResponse() => $_clearField(23);
+  @$pb.TagNumber(23)
+  RespondRoomInvitationResponse ensureRespondRoomInvitationResponse() =>
+      $_ensure(14);
+
+  @$pb.TagNumber(24)
+  RoomInvitationResultPush get roomInvitationResultPush => $_getN(15);
+  @$pb.TagNumber(24)
+  set roomInvitationResultPush(RoomInvitationResultPush value) =>
+      $_setField(24, value);
+  @$pb.TagNumber(24)
+  $core.bool hasRoomInvitationResultPush() => $_has(15);
+  @$pb.TagNumber(24)
+  void clearRoomInvitationResultPush() => $_clearField(24);
+  @$pb.TagNumber(24)
+  RoomInvitationResultPush ensureRoomInvitationResultPush() => $_ensure(15);
 }
 
 const $core.bool _omitFieldNames =

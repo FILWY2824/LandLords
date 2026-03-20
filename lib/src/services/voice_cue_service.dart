@@ -9,6 +9,7 @@ class VoiceCueService {
   final VoiceBackend _backend;
   final Queue<_QueuedLine> _queue = Queue<_QueuedLine>();
   final Queue<String> _recentActionIds = Queue<String>();
+  static int _bgmOwnerCount = 0;
   bool _processing = false;
   bool _bgmStarted = false;
   int _generation = 0;
@@ -111,16 +112,29 @@ class VoiceCueService {
   }
 
   Future<void> startBackgroundMusic() async {
-    _bgmStarted = true;
+    if (!_bgmStarted) {
+      _bgmStarted = true;
+      _bgmOwnerCount += 1;
+    }
     await _backend.startBackgroundMusic();
   }
 
-  Future<void> stopBackgroundMusic() async {
-    if (!_bgmStarted) {
+  Future<void> stopBackgroundMusic({bool force = false}) async {
+    if (force) {
+      _bgmStarted = false;
+      _bgmOwnerCount = 0;
+      await _backend.stopBackgroundMusic();
       return;
     }
-    _bgmStarted = false;
-    await _backend.stopBackgroundMusic();
+    if (_bgmStarted) {
+      _bgmStarted = false;
+      if (_bgmOwnerCount > 0) {
+        _bgmOwnerCount -= 1;
+      }
+    }
+    if (_bgmOwnerCount == 0) {
+      await _backend.stopBackgroundMusic();
+    }
   }
 
   void clearPending({bool clearRecentActionIds = false}) {
@@ -155,10 +169,15 @@ class VoiceCueService {
     await _backend.stopSpeech();
   }
 
-  Future<void> dispose() async {
+  Future<void> dispose({
+    bool releaseBackgroundMusic = false,
+    bool forceStopBackgroundMusic = false,
+  }) async {
     _queue.clear();
     await _backend.stopSpeech();
-    await stopBackgroundMusic();
+    if (releaseBackgroundMusic || forceStopBackgroundMusic) {
+      await stopBackgroundMusic(force: forceStopBackgroundMusic);
+    }
     await _backend.dispose();
   }
 

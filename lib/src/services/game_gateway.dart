@@ -1,17 +1,40 @@
 import '../models/app_models.dart';
 import '../models/game_models.dart';
 
+sealed class GatewayNotification {
+  const GatewayNotification();
+}
+
+class RoomInvitationNotification extends GatewayNotification {
+  const RoomInvitationNotification(this.invitation);
+
+  final RoomInvitation invitation;
+}
+
+class InvitationFeedbackNotification extends GatewayNotification {
+  const InvitationFeedbackNotification(this.feedback);
+
+  final InvitationFeedback feedback;
+}
+
 abstract class GameGateway {
   Stream<RoomSnapshot> get roomSnapshots;
+  Stream<GatewayNotification> get notifications;
 
   Future<void> register({
-    required String username,
+    required String account,
+    required String nickname,
     required String password,
   });
 
   Future<LoginResult> login({
-    required String username,
+    required String account,
     required String password,
+  });
+
+  Future<void> resetPassword({
+    required String account,
+    required String newPassword,
   });
 
   Future<RoomSnapshot> startMatch({
@@ -19,6 +42,61 @@ abstract class GameGateway {
     required UserProfile profile,
     required MatchMode mode,
     BotDifficulty botDifficulty = BotDifficulty.normal,
+  });
+
+  Future<RoomSnapshot> createRoom({
+    required String sessionToken,
+  });
+
+  Future<RoomSnapshot> joinRoom({
+    required String sessionToken,
+    required String roomCode,
+  });
+
+  Future<void> leaveRoom({
+    required String sessionToken,
+    required String roomId,
+  });
+
+  Future<RoomSnapshot> setRoomReady({
+    required String sessionToken,
+    required String roomId,
+    required bool ready,
+  });
+
+  Future<RoomSnapshot> addBot({
+    required String sessionToken,
+    required String roomId,
+    required int seatIndex,
+    BotDifficulty botDifficulty = BotDifficulty.normal,
+  });
+
+  Future<RoomSnapshot> removePlayer({
+    required String sessionToken,
+    required String roomId,
+    required String playerId,
+  });
+
+  Future<List<OnlineUser>> fetchFriends({
+    required String sessionToken,
+  });
+
+  Future<OnlineUser> addFriend({
+    required String sessionToken,
+    required String account,
+  });
+
+  Future<void> invitePlayer({
+    required String sessionToken,
+    required String roomId,
+    required String targetAccount,
+    required int seatIndex,
+  });
+
+  Future<RoomSnapshot?> respondInvitation({
+    required String sessionToken,
+    required String invitationId,
+    required bool accept,
   });
 
   Future<void> cancelMatch({

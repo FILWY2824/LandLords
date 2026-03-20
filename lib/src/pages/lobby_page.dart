@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/app_models.dart';
 import '../services/voice_cue_service.dart';
@@ -22,7 +23,7 @@ class _LobbyPageState extends State<LobbyPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(_voice.stopBackgroundMusic());
+    unawaited(_voice.stopBackgroundMusic(force: true));
   }
 
   @override
@@ -31,35 +32,323 @@ class _LobbyPageState extends State<LobbyPage> {
     super.dispose();
   }
 
-  Future<void> _showBotDifficultyDialog(BuildContext context) async {
+  Future<void> _selectBotMode() async {
     final difficulty = await showDialog<BotDifficulty>(
       context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(18),
-        child: _BotDifficultyDialog(selected: widget.controller.botDifficulty),
+      builder: (context) => const _ChoiceDialog<BotDifficulty>(
+        title: '选择 AI 对局',
+        subtitle: '选择一个难度后，将立即进入牌桌，与两位机器人开始游戏。',
+        options: [
+          _ChoiceItem(
+            value: BotDifficulty.easy,
+            title: '简单',
+            detail: '节奏更轻，适合快速上手。',
+          ),
+          _ChoiceItem(
+            value: BotDifficulty.normal,
+            title: '正常',
+            detail: '强度均衡，适合正式对局。',
+          ),
+          _ChoiceItem(
+            value: BotDifficulty.hard,
+            title: '困难',
+            detail: '压制更强，适合高强度对抗。',
+          ),
+        ],
       ),
     );
-    if (difficulty == null) {
+    if (difficulty != null) {
+      await widget.controller.startMatch(
+        MatchMode.vsBot,
+        botDifficulty: difficulty,
+      );
+    }
+  }
+
+  Future<void> _selectOnlineMode() async {
+    if (widget.controller.hasResumeRoom) {
+      widget.controller.resumeRoom();
       return;
     }
-    await widget.controller.startMatch(
-      MatchMode.vsBot,
-      botDifficulty: difficulty,
+    final action = await showDialog<_OnlineAction>(
+      context: context,
+      builder: (context) => const _ChoiceDialog<_OnlineAction>(
+        title: '真人对局',
+        subtitle: '你可以创建房间、进入房间，或者直接自由匹配。',
+        options: [
+          _ChoiceItem(
+            value: _OnlineAction.createRoom,
+            title: '创建房间',
+            detail: '先创建自己的牌桌，再邀请好友或补入 DouZero。',
+          ),
+          _ChoiceItem(
+            value: _OnlineAction.joinRoom,
+            title: '进入房间',
+            detail: '输入 6 位房间号即可加入对应牌桌。',
+          ),
+          _ChoiceItem(
+            value: _OnlineAction.freeMatch,
+            title: '自由匹配',
+            detail: '匹配满 3 人后直接开局，不经过准备阶段。',
+          ),
+        ],
+      ),
+    );
+    if (!mounted || action == null) {
+      return;
+    }
+    if (action == _OnlineAction.createRoom) {
+      await widget.controller.createRoom();
+      return;
+    }
+    if (action == _OnlineAction.joinRoom) {
+      final roomCode = await showDialog<String>(
+        context: context,
+        builder: (context) => const _JoinRoomDialog(),
+      );
+      if (roomCode != null && roomCode.isNotEmpty) {
+        await widget.controller.joinRoom(roomCode);
+      }
+      return;
+    }
+    await widget.controller.startMatch(MatchMode.online);
+  }
+
+  Future<void> _showWinRate() async {
+    final profile = widget.controller.profile;
+    if (profile == null) {
+      return;
+    }
+    if (mounted) {
+      await _showWinRatePanel(profile);
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('个人胜率'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('地主胜率：${_formatRate(profile.landlordWinRate)}'),
+            Text('农民胜率：${_formatRate(profile.farmerWinRate)}'),
+            Text('总体胜率：${_formatRate(profile.overallWinRate)}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
     );
   }
 
-  VoidCallback _onlineAction() {
-    return widget.controller.hasResumeRoom
-        ? widget.controller.resumeRoom
-        : () => unawaited(widget.controller.startMatch(MatchMode.online));
+  Future<void> _showWinRatePanel(UserProfile profile) async {
+    await showDialog<void>(
+      context: context,
+      barrierColor: const Color(0x33173A59),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: StagePanel(
+            padding: const EdgeInsets.fromLTRB(26, 24, 26, 22),
+            radius: 30,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '个人战绩',
+                            style: TextStyle(
+                              color: Color(0xFF173A59),
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${profile.displayName} 的地主、农民与总体胜率一览',
+                            style: const TextStyle(
+                              color: Color(0xFF587790),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFF2F8FF), Color(0xFFE3F1FF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(color: const Color(0xFFD7EBFF)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 74,
+                        height: 74,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF84D2FF), Color(0xFF2B7FFF)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          _formatRate(profile.overallWinRate),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '总体表现',
+                              style: TextStyle(
+                                color: Color(0xFF173A59),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '共 ${profile.totalGames} 局，胜 ${profile.totalWins} 局',
+                              style: const TextStyle(
+                                color: Color(0xFF587790),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              profile.totalGames == 0
+                                  ? '当前还没有历史对局数据'
+                                  : '继续对局后会实时更新本面板数据',
+                              style: const TextStyle(
+                                color: Color(0xFF587790),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _WinRateStatCard(
+                      title: '地主胜率',
+                      rate: _formatRate(profile.landlordWinRate),
+                      record: _formatRecord(
+                        wins: profile.landlordWins,
+                        games: profile.landlordGames,
+                      ),
+                      accent: const Color(0xFF2B7FFF),
+                    ),
+                    _WinRateStatCard(
+                      title: '农民胜率',
+                      rate: _formatRate(profile.farmerWinRate),
+                      record: _formatRecord(
+                        wins: profile.farmerWins,
+                        games: profile.farmerGames,
+                      ),
+                      accent: const Color(0xFF3BB58F),
+                    ),
+                    _WinRateStatCard(
+                      title: '总体胜率',
+                      rate: _formatRate(profile.overallWinRate),
+                      record: _formatRecord(
+                        wins: profile.totalWins,
+                        games: profile.totalGames,
+                      ),
+                      accent: const Color(0xFF4F7BFF),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton.tonal(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('关闭'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('退出当前账号'),
+        content: const Text('确定要退出当前账号吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('退出'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      widget.controller.logout();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final profile = controller.profile;
+    final displayName = profile?.displayName ?? '牌友';
+
     return Scaffold(
       body: FixedStageBackdrop(
         child: FixedStage(
@@ -73,20 +362,172 @@ class _LobbyPageState extends State<LobbyPage> {
                 radius: 34,
                 child: Column(
                   children: [
-                    _LobbyHeader(profile: profile),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            color: const Color(0xFFEAF5FF),
+                          ),
+                          child: const Text(
+                            '欢乐斗地主',
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            color: Colors.white,
+                            border: Border.all(color: const Color(0xFFD7EBFF)),
+                          ),
+                          child: Text(
+                            '${profile?.displayName ?? '玩家'}  账号：${profile?.account ?? '-'}  金币：${profile?.coins ?? 0}',
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        FilledButton.tonal(
+                          onPressed: _showWinRate,
+                          child: const Text('胜率'),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          onPressed: _logout,
+                          child: const Text('退出'),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 18),
                     Expanded(
                       child: Row(
                         children: [
                           Expanded(
                             flex: 7,
-                            child: _LobbyHero(
-                              username: profile?.username ?? 'player1',
-                              notice: controller.lobbyNotice,
-                              hasResumeRoom: controller.hasResumeRoom,
-                              onResume: controller.hasResumeRoom
-                                  ? controller.resumeRoom
-                                  : null,
+                            child: StagePanel(
+                              padding: const EdgeInsets.fromLTRB(26, 24, 26, 24),
+                              radius: 30,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(999),
+                                      color: const Color(0xFFE6F3FF),
+                                    ),
+                                    child: const Text(
+                                      '大厅',
+                                      style: TextStyle(fontWeight: FontWeight.w900),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 22),
+                                  const Text(
+                                    '立即对局',
+                                    style: TextStyle(
+                                      color: Color(0xFF173A59),
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 66,
+                                      height: 0.98,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    '$displayName，选择模式后即可开始正式对局。',
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF587790),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  Wrap(
+                                    spacing: 10,
+                                    runSpacing: 10,
+                                    children: const [
+                                      _Chip('AI策略'),
+                                      _Chip('实时分析'),
+                                      _Chip('真人对局'),
+                                      _Chip('断线可续'),
+                                    ],
+                                  ),
+                                  const Spacer(),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(22),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(28),
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFFF2F8FF),
+                                          Color(0xFFE3F1FF),
+                                        ],
+                                      ),
+                                    ),
+                                    child: const Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '简单模式：DouZero-ADP',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                        SizedBox(height: 10),
+                                        Text(
+                                          '标准模式：DouZero-SL',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                        SizedBox(height: 10),
+                                        Text(
+                                          '困难模式：DouZero-WP',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    controller.lobbyNotice ?? '状态正常，随时可以开始对局。',
+                                    style: TextStyle(
+                                      color: controller.lobbyNotice == null
+                                          ? const Color(0xFF587790)
+                                          : const Color(0xFFB95645),
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                  if (controller.hasResumeRoom) ...[
+                                    const SizedBox(height: 12),
+                                    FilledButton(
+                                      onPressed: controller.resumeRoom,
+                                      child: const Text('恢复牌桌'),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                           ),
                           const SizedBox(width: 18),
@@ -95,35 +536,33 @@ class _LobbyPageState extends State<LobbyPage> {
                             child: Column(
                               children: [
                                 Expanded(
-                                  child: _LobbyActionCard(
-                                    badge: '推荐',
-                                    title: '人机练习',
-                                    subtitle: '先选难度，再开一局。',
+                                  child: _ActionCard(
+                                    title: 'AI 对局',
+                                    subtitle:
+                                        '选择难度后立即进入牌桌，与两位 DouZero 直接开始游戏。',
                                     accent: const Color(0xFF2B7FFF),
-                                    buttonLabel: '选难度',
-                                    enabled:
-                                        !controller.isBusy && !controller.isMatching,
-                                    onPressed: () =>
-                                        _showBotDifficultyDialog(context),
+                                    buttonLabel: '选择模式',
+                                    onPressed: controller.isBusy ||
+                                            controller.isMatching
+                                        ? null
+                                        : _selectBotMode,
                                   ),
                                 ),
                                 const SizedBox(height: 14),
                                 Expanded(
-                                  child: _LobbyActionCard(
-                                    badge: controller.hasResumeRoom ? '继续' : '在线',
-                                    title: controller.hasResumeRoom
-                                        ? '继续牌局'
-                                        : '真人匹配',
+                                  child: _ActionCard(
+                                    title:
+                                        controller.hasResumeRoom ? '恢复牌桌' : '真人匹配',
                                     subtitle: controller.hasResumeRoom
-                                        ? '回到上一桌继续玩。'
-                                        : '在线匹配，随时可退出。',
+                                        ? '返回上一桌，继续当前已经开局的真人对局。'
+                                        : '支持创建房间、进入房间与自由匹配。',
                                     accent: const Color(0xFF4FB9FF),
-                                    buttonLabel: controller.hasResumeRoom
-                                        ? '回到牌桌'
-                                        : '开始匹配',
-                                    enabled:
-                                        !controller.isBusy && !controller.isMatching,
-                                    onPressed: _onlineAction(),
+                                    buttonLabel:
+                                        controller.hasResumeRoom ? '恢复牌桌' : '选择方式',
+                                    onPressed: controller.isBusy ||
+                                            controller.isMatching
+                                        ? null
+                                        : _selectOnlineMode,
                                   ),
                                 ),
                               ],
@@ -136,13 +575,42 @@ class _LobbyPageState extends State<LobbyPage> {
                 ),
               ),
               if (controller.stage == AppStage.matching)
-                _MatchingMask(
-                  elapsedSeconds: controller.matchingElapsedSeconds,
-                  timeoutSeconds: controller.matchingTimeoutSeconds,
-                  onCancel: controller.cancelMatching,
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    child: Center(
+                      child: StagePanel(
+                        padding: const EdgeInsets.all(24),
+                        radius: 30,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 16),
+                            Text(
+                              '正在匹配玩家 ${controller.matchingElapsedSeconds}/${controller.matchingTimeoutSeconds}',
+                            ),
+                            const SizedBox(height: 16),
+                            OutlinedButton(
+                              onPressed: () =>
+                                  controller.cancelMatching(timedOut: false),
+                              child: const Text('取消匹配'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 )
               else if (controller.isBusy)
-                const _BusyMask(),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Container(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -151,263 +619,22 @@ class _LobbyPageState extends State<LobbyPage> {
   }
 }
 
-class _LobbyHeader extends StatelessWidget {
-  const _LobbyHeader({required this.profile});
+enum _OnlineAction { createRoom, joinRoom, freeMatch }
 
-  final UserProfile? profile;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            color: const Color(0xFFEAF5FF),
-          ),
-          child: const Text(
-            '欢乐斗地主',
-            style: TextStyle(
-              color: Color(0xFF173A59),
-              fontWeight: FontWeight.w900,
-              fontSize: 26,
-            ),
-          ),
-        ),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            color: Colors.white.withValues(alpha: 0.92),
-            border: Border.all(color: const Color(0xFFD7EBFF)),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: const Color(0xFF2B7FFF),
-                child: Text(
-                  (profile?.username.isNotEmpty ?? false)
-                      ? profile!.username.substring(0, 1).toUpperCase()
-                      : 'P',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 22,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    profile?.username ?? 'player1',
-                    style: const TextStyle(
-                      color: Color(0xFF173A59),
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
-                    ),
-                  ),
-                  Text(
-                    '总分：${profile?.totalScore ?? 0}',
-                    style: const TextStyle(
-                      color: Color(0xFF5A7894),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LobbyHero extends StatelessWidget {
-  const _LobbyHero({
-    required this.username,
-    required this.notice,
-    required this.hasResumeRoom,
-    required this.onResume,
-  });
-
-  final String username;
-  final String? notice;
-  final bool hasResumeRoom;
-  final VoidCallback? onResume;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: StagePanel(
-            padding: const EdgeInsets.fromLTRB(26, 24, 26, 24),
-            radius: 30,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    color: const Color(0xFFE6F3FF),
-                  ),
-                  child: const Text(
-                    '大厅',
-                    style: TextStyle(
-                      color: Color(0xFF2B7FFF),
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 22),
-                const Text(
-                  '继续开局',
-                  style: TextStyle(
-                    color: Color(0xFF173A59),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 66,
-                    height: 0.98,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  '$username，选一个模式就能直接开局。',
-                  style: const TextStyle(
-                    color: Color(0xFF587790),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 22,
-                    height: 1.45,
-                  ),
-                ),
-                const SizedBox(height: 22),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: const [
-                    _LobbyChip(label: '人机热身'),
-                    _LobbyChip(label: '真人匹配'),
-                    _LobbyChip(label: '托管续局'),
-                  ],
-                ),
-                const Spacer(),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFF2F8FF), Color(0xFFE3F1FF)],
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _HallFact(title: '简单人机', value: 'DouZero-ADP模型'),
-                            SizedBox(height: 10),
-                            _HallFact(title: '标准人机', value: 'DouZero-SL模型'),
-                            SizedBox(height: 10),
-                            _HallFact(title: '困难人机', value: 'DouZero-WP模型'),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 18),
-                      Container(
-                        width: 150,
-                        height: 150,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(36),
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF83D2FF), Color(0xFF2B7FFF)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.style_rounded,
-                          color: Colors.white,
-                          size: 62,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        SizedBox(
-          height: 118,
-          child: StagePanel(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-            radius: 26,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    notice ?? '状态正常，随时可以开始。',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: notice == null
-                          ? const Color(0xFF587790)
-                          : const Color(0xFFB95645),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                      height: 1.45,
-                    ),
-                  ),
-                ),
-                if (hasResumeRoom && onResume != null) ...[
-                  const SizedBox(width: 14),
-                  FilledButton(
-                    onPressed: onResume,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(140, 54),
-                    ),
-                    child: const Text('继续牌局'),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LobbyActionCard extends StatelessWidget {
-  const _LobbyActionCard({
-    required this.badge,
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({
     required this.title,
     required this.subtitle,
     required this.accent,
     required this.buttonLabel,
-    required this.enabled,
     required this.onPressed,
   });
 
-  final String badge;
   final String title;
   final String subtitle;
   final Color accent;
   final String buttonLabel;
-  final bool enabled;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -417,36 +644,17 @@ class _LobbyActionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              color: accent.withValues(alpha: 0.14),
-            ),
-            child: Text(
-              badge,
-              style: TextStyle(
-                color: accent,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
           Text(
             title,
-            style: const TextStyle(
-              color: Color(0xFF173A59),
-              fontWeight: FontWeight.w900,
-              fontSize: 30,
-            ),
+            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 10),
           Text(
             subtitle,
             style: const TextStyle(
-              color: Color(0xFF587790),
-              fontWeight: FontWeight.w700,
               fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF587790),
               height: 1.45,
             ),
           ),
@@ -454,11 +662,8 @@ class _LobbyActionCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: enabled ? onPressed : null,
-              style: FilledButton.styleFrom(
-                backgroundColor: accent,
-                minimumSize: const Size.fromHeight(58),
-              ),
+              onPressed: onPressed,
+              style: FilledButton.styleFrom(backgroundColor: accent),
               child: Text(buttonLabel),
             ),
           ),
@@ -468,269 +673,10 @@ class _LobbyActionCard extends StatelessWidget {
   }
 }
 
-class _BotDifficultyDialog extends StatelessWidget {
-  const _BotDifficultyDialog({required this.selected});
+class _Chip extends StatelessWidget {
+  const _Chip(this.text);
 
-  final BotDifficulty selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 340),
-        child: StagePanel(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          radius: 24,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      '选择难度',
-                      style: TextStyle(
-                        color: Color(0xFF173A59),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 22,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                '选一档就能开局。',
-                style: TextStyle(
-                  color: Color(0xFF587790),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 14),
-              for (final difficulty in BotDifficulty.values) ...[
-                _DifficultyTile(
-                  difficulty: difficulty,
-                  selected: selected == difficulty,
-                  onTap: () => Navigator.of(context).pop(difficulty),
-                ),
-                if (difficulty != BotDifficulty.values.last)
-                  const SizedBox(height: 8),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DifficultyTile extends StatelessWidget {
-  const _DifficultyTile({
-    required this.difficulty,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final BotDifficulty difficulty;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = switch (difficulty) {
-      BotDifficulty.easy => const Color(0xFF4FB9FF),
-      BotDifficulty.normal => const Color(0xFF2B7FFF),
-      BotDifficulty.hard => const Color(0xFF0F5BD6),
-    };
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Ink(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: selected
-              ? accent.withValues(alpha: 0.10)
-              : Colors.white.withValues(alpha: 0.86),
-          border: Border.all(
-            color: selected ? accent : const Color(0xFFD7EBFF),
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    difficulty.label,
-                    style: const TextStyle(
-                      color: Color(0xFF173A59),
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              selected
-                  ? Icons.check_circle_rounded
-                  : Icons.arrow_forward_ios_rounded,
-              color: accent,
-              size: selected ? 24 : 16,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MatchingMask extends StatelessWidget {
-  const _MatchingMask({
-    required this.elapsedSeconds,
-    required this.timeoutSeconds,
-    required this.onCancel,
-  });
-
-  final int elapsedSeconds;
-  final int timeoutSeconds;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: const Color(0x66F4FAFF),
-      child: Center(
-        child: StagePanel(
-          padding: const EdgeInsets.fromLTRB(26, 22, 26, 22),
-          radius: 28,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(
-                width: 26,
-                height: 26,
-                child: CircularProgressIndicator(strokeWidth: 2.8),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '匹配中',
-                style: TextStyle(
-                  color: Color(0xFF173A59),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 24,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '$elapsedSeconds / $timeoutSeconds 秒',
-                style: const TextStyle(
-                  color: Color(0xFF587790),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 14),
-              OutlinedButton(
-                onPressed: onCancel,
-                child: const Text('退出匹配'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BusyMask extends StatelessWidget {
-  const _BusyMask();
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: const Color(0x55F4FAFF),
-      child: const Center(
-        child: StagePanel(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-          radius: 24,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2.4),
-              ),
-              SizedBox(width: 12),
-              Text(
-                '请稍候',
-                style: TextStyle(
-                  color: Color(0xFF173A59),
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HallFact extends StatelessWidget {
-  const _HallFact({
-    required this.title,
-    required this.value,
-  });
-
-  final String title;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 68,
-          child: Text(
-            '$title：',
-            style: const TextStyle(
-              color: Color(0xFF245E90),
-              fontWeight: FontWeight.w900,
-              fontSize: 18,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Color(0xFF587790),
-              fontWeight: FontWeight.w700,
-              fontSize: 17,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LobbyChip extends StatelessWidget {
-  const _LobbyChip({required this.label});
-
-  final String label;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -741,14 +687,270 @@ class _LobbyChip extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.88),
         border: Border.all(color: const Color(0xFFD7EBFF)),
       ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Color(0xFF245E90),
-          fontWeight: FontWeight.w800,
-          fontSize: 16,
+      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w800)),
+    );
+  }
+}
+
+class _WinRateStatCard extends StatelessWidget {
+  const _WinRateStatCard({
+    required this.title,
+    required this.rate,
+    required this.record,
+    required this.accent,
+  });
+
+  final String title;
+  final String rate;
+  final String record;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 161,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          color: const Color(0xFFF9FCFF),
+          border: Border.all(color: const Color(0xFFD7EBFF)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F3678A3),
+              blurRadius: 18,
+              offset: Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: accent.withValues(alpha: 0.12),
+              ),
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: accent,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              rate,
+              style: const TextStyle(
+                color: Color(0xFF173A59),
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              record,
+              style: const TextStyle(
+                color: Color(0xFF587790),
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                height: 1.45,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
+
+class _JoinRoomDialog extends StatefulWidget {
+  const _JoinRoomDialog();
+
+  @override
+  State<_JoinRoomDialog> createState() => _JoinRoomDialogState();
+}
+
+class _JoinRoomDialogState extends State<_JoinRoomDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final canSubmit = _controller.text.trim().length == 6;
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 380),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x143678A3),
+                blurRadius: 28,
+                offset: Offset(0, 14),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      '进入房间',
+                      style: TextStyle(
+                        color: Color(0xFF173A59),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 24,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                '输入 6 位房间号即可加入对应牌桌。',
+                style: TextStyle(
+                  color: Color(0xFF587790),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                onChanged: (_) => setState(() {}),
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(6),
+                ],
+                decoration: const InputDecoration(
+                  hintText: '请输入 6 位房间号',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('取消'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: canSubmit
+                          ? () => Navigator.of(context).pop(_controller.text.trim())
+                          : null,
+                      child: const Text('确认进入'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChoiceItem<T> {
+  const _ChoiceItem({
+    required this.value,
+    required this.title,
+    required this.detail,
+  });
+
+  final T value;
+  final String title;
+  final String detail;
+}
+
+class _ChoiceDialog<T> extends StatelessWidget {
+  const _ChoiceDialog({
+    required this.title,
+    required this.subtitle,
+    required this.options,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<_ChoiceItem<T>> options;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                style: const TextStyle(color: Color(0xFF587790)),
+              ),
+              const SizedBox(height: 12),
+              for (final option in options) ...[
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    option.title,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  subtitle: Text(option.detail),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.of(context).pop(option.value),
+                ),
+                if (option != options.last) const Divider(height: 1),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _formatRate(double value) => '${(value * 100).toStringAsFixed(1)}%';
+
+String _formatRecord({
+  required int wins,
+  required int games,
+}) {
+  if (games == 0) {
+    return '0 胜 / 0 局';
+  }
+  return '$wins 胜 / $games 局';
 }

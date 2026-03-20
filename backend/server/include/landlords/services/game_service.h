@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -32,13 +33,66 @@ class GameService {
     std::string room_id;
   };
 
+  struct PendingSeat {
+    std::string player_id;
+    std::string display_name;
+    bool is_bot = false;
+    bool ready = false;
+    landlords::protocol::BotDifficulty bot_difficulty =
+        landlords::protocol::BOT_DIFFICULTY_NORMAL;
+  };
+
+  struct PendingRoom {
+    std::string room_id;
+    std::string room_code;
+    std::string owner_player_id;
+    std::vector<PendingSeat> seats;
+  };
+
+  struct PendingInvitation {
+    std::string invitation_id;
+    std::string room_id;
+    std::string room_code;
+    std::string inviter_player_id;
+    std::string inviter_account;
+    std::string inviter_nickname;
+    std::string invitee_player_id;
+    std::string invitee_account;
+    std::string invitee_nickname;
+    int seat_index = -1;
+    std::int64_t created_at_ms = 0;
+  };
+
   std::optional<SessionState*> RequireSession(const std::string& session_token);
+  std::optional<SessionState*> FindSessionByUserId(const std::string& user_id);
   void HandleRegister(const std::shared_ptr<network::IConnection>& connection,
                       const landlords::protocol::ClientMessage& message);
   void HandleLogin(const std::shared_ptr<network::IConnection>& connection,
                    const landlords::protocol::ClientMessage& message);
+  void HandleResetPassword(const std::shared_ptr<network::IConnection>& connection,
+                           const landlords::protocol::ClientMessage& message);
   void HandleMatch(const std::shared_ptr<network::IConnection>& connection,
                    const landlords::protocol::ClientMessage& message);
+  void HandleCreateRoom(const std::shared_ptr<network::IConnection>& connection,
+                        const landlords::protocol::ClientMessage& message);
+  void HandleJoinRoom(const std::shared_ptr<network::IConnection>& connection,
+                      const landlords::protocol::ClientMessage& message);
+  void HandleLeaveRoom(const std::shared_ptr<network::IConnection>& connection,
+                       const landlords::protocol::ClientMessage& message);
+  void HandleListFriends(const std::shared_ptr<network::IConnection>& connection,
+                         const landlords::protocol::ClientMessage& message);
+  void HandleAddFriend(const std::shared_ptr<network::IConnection>& connection,
+                       const landlords::protocol::ClientMessage& message);
+  void HandleInvitePlayer(const std::shared_ptr<network::IConnection>& connection,
+                          const landlords::protocol::ClientMessage& message);
+  void HandleRespondRoomInvitation(const std::shared_ptr<network::IConnection>& connection,
+                                   const landlords::protocol::ClientMessage& message);
+  void HandleRoomReady(const std::shared_ptr<network::IConnection>& connection,
+                       const landlords::protocol::ClientMessage& message);
+  void HandleAddBot(const std::shared_ptr<network::IConnection>& connection,
+                    const landlords::protocol::ClientMessage& message);
+  void HandleRemovePlayer(const std::shared_ptr<network::IConnection>& connection,
+                          const landlords::protocol::ClientMessage& message);
   void HandlePlay(const std::shared_ptr<network::IConnection>& connection,
                   const landlords::protocol::ClientMessage& message);
   void HandlePass(const std::shared_ptr<network::IConnection>& connection,
@@ -55,6 +109,27 @@ class GameService {
                  const std::string& message);
   void PersistFinishedRoomScores(const game::Room& room);
   void SendSnapshotToRoom(const game::Room& room);
+  landlords::protocol::RoomSnapshot BuildPendingRoomSnapshot(
+      const PendingRoom& room,
+      const std::string& audience_player_id) const;
+  landlords::protocol::OnlineUser BuildOnlineUser(const core::UserRecord& user);
+  void SendPendingSnapshotToRoom(const PendingRoom& room);
+  bool EnsureSessionRoomAvailable(const SessionState& session);
+  bool SessionCanJoinPendingRoom(const SessionState& session,
+                                 const std::string& target_room_id) const;
+  std::optional<PendingRoom*> FindPendingRoom(const std::string& room_id);
+  std::optional<const PendingRoom*> FindPendingRoom(const std::string& room_id) const;
+  void RemoveSessionFromPendingRoom(SessionState& session,
+                                    const std::string& room_id);
+  void SendInvitationReceived(const PendingInvitation& invitation);
+  void SendInvitationResult(const PendingInvitation& invitation,
+                            landlords::protocol::InvitationResult result,
+                            const std::string& detail);
+  void ClearInvitation(const std::string& invitation_id);
+  void ExpireInvitationsForRoom(const std::string& room_id,
+                                const std::string& detail);
+  void ExpireStaleInvitations(std::int64_t now_ms);
+  void StartPreparedRoom(PendingRoom room);
   void CreateBotRoom(SessionState& session,
                      landlords::protocol::BotDifficulty difficulty);
   void MaybeCreatePvpRoom();
@@ -67,6 +142,10 @@ class GameService {
   std::shared_ptr<persistence::IUserRepository> user_repository_;
   std::unordered_map<std::string, SessionState> sessions_by_token_;
   std::unordered_map<std::string, std::shared_ptr<game::Room>> rooms_by_id_;
+  std::unordered_map<std::string, PendingRoom> pending_rooms_by_id_;
+  std::unordered_map<std::string, std::string> pending_room_id_by_code_;
+  std::unordered_map<std::string, PendingInvitation> invitations_by_id_;
+  std::unordered_map<std::string, std::string> invitation_id_by_invitee_;
   std::vector<std::string> pvp_waiting_tokens_;
   std::mutex mutex_;
   std::atomic_bool running_{true};

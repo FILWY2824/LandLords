@@ -15,16 +15,19 @@ class WebSocketGameGateway implements GameGateway {
   WebSocketGameGateway({String? url}) : url = url ?? _resolveDefaultUrl();
 
   final String url;
+
   static const String _configuredUrl =
       String.fromEnvironment('LANDLORDS_WS_URL', defaultValue: '');
   static const String _suggestCommand = '__hint__';
   static const String _cancelMatchCommand = 'match:cancel';
   static const String _presentationAckPrefix = '__presented__:';
+  static const Duration _requestTimeout = Duration(seconds: 45);
 
   final StreamController<RoomSnapshot> _snapshotController =
       StreamController<RoomSnapshot>.broadcast();
+  final StreamController<GatewayNotification> _notificationController =
+      StreamController<GatewayNotification>.broadcast();
   final Map<String, Completer<pb.ServerMessage>> _pending = {};
-  static const Duration _requestTimeout = Duration(seconds: 45);
 
   WebSocketChannel? _channel;
   Future<void>? _connectFuture;
@@ -36,6 +39,10 @@ class WebSocketGameGateway implements GameGateway {
 
   @override
   Stream<RoomSnapshot> get roomSnapshots => _snapshotController.stream;
+
+  @override
+  Stream<GatewayNotification> get notifications =>
+      _notificationController.stream;
 
   Future<void> _ensureConnected() async {
     if (_channel != null) {
@@ -54,13 +61,15 @@ class WebSocketGameGateway implements GameGateway {
 
   @override
   Future<void> register({
-    required String username,
+    required String account,
+    required String nickname,
     required String password,
   }) async {
     await _ensureConnected();
     final response = await _send(
       (message) => message.registerRequest = pb.RegisterRequest(
-        username: username,
+        account: account,
+        nickname: nickname,
         password: password,
       ),
     );
@@ -75,13 +84,13 @@ class WebSocketGameGateway implements GameGateway {
 
   @override
   Future<LoginResult> login({
-    required String username,
+    required String account,
     required String password,
   }) async {
     await _ensureConnected();
     final response = await _send(
       (message) => message.loginRequest = pb.LoginRequest(
-        username: username,
+        account: account,
         password: password,
       ),
     );
@@ -94,13 +103,31 @@ class WebSocketGameGateway implements GameGateway {
     }
     _sessionToken = response.loginResponse.sessionToken;
     return LoginResult(
-      profile: app.UserProfile(
-        userId: response.loginResponse.profile.userId,
-        username: response.loginResponse.profile.username,
-        totalScore: response.loginResponse.profile.totalScore,
-      ),
+      profile: _mapUserProfile(response.loginResponse.profile),
       sessionToken: response.loginResponse.sessionToken,
     );
+  }
+
+  @override
+  Future<void> resetPassword({
+    required String account,
+    required String newPassword,
+  }) async {
+    await _ensureConnected();
+    final response = await _send(
+      (message) => message.resetPasswordRequest = pb.ResetPasswordRequest(
+        account: account,
+        newPassword: newPassword,
+      ),
+    );
+    if (!response.hasResetPasswordResponse() ||
+        !response.resetPasswordResponse.success) {
+      throw Exception(
+        response.hasResetPasswordResponse()
+            ? response.resetPasswordResponse.message
+            : response.errorResponse.message,
+      );
+    }
   }
 
   @override
@@ -140,12 +167,234 @@ class WebSocketGameGateway implements GameGateway {
     }
     if (!response.hasMatchResponse() || !response.matchResponse.accepted) {
       throw Exception(
-        response.hasMatchResponse() ? response.matchResponse.message : '匹配失败',
+        response.hasMatchResponse()
+            ? response.matchResponse.message
+            : '匹配失败',
       );
     }
     final snapshot = await snapshotFuture.timeout(_requestTimeout);
     _lastRoomId = snapshot.roomId;
     return snapshot;
+  }
+
+  @override
+  Future<RoomSnapshot> createRoom({
+    required String sessionToken,
+  }) async {
+    await _ensureConnected();
+    final response = await _send(
+      (message) => message.createRoomRequest = pb.CreateRoomRequest(),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+    final snapshot = _mapSnapshot(response.operationResponse.snapshot);
+    _publishSnapshot(snapshot);
+    return snapshot;
+  }
+
+  @override
+  Future<RoomSnapshot> joinRoom({
+    required String sessionToken,
+    required String roomCode,
+  }) async {
+    await _ensureConnected();
+    final response = await _send(
+      (message) =>
+          message.joinRoomRequest = pb.JoinRoomRequest(roomCode: roomCode),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+    final snapshot = _mapSnapshot(response.operationResponse.snapshot);
+    _publishSnapshot(snapshot);
+    return snapshot;
+  }
+
+  @override
+  Future<void> leaveRoom({
+    required String sessionToken,
+    required String roomId,
+  }) async {
+    await _ensureConnected();
+    final response = await _send(
+      (message) => message.leaveRoomRequest = pb.LeaveRoomRequest(roomId: roomId),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+  }
+
+  @override
+  Future<RoomSnapshot> setRoomReady({
+    required String sessionToken,
+    required String roomId,
+    required bool ready,
+  }) async {
+    final response = await _send(
+      (message) => message.roomReadyRequest = pb.RoomReadyRequest(
+        roomId: roomId,
+        ready: ready,
+      ),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+    final snapshot = _mapSnapshot(response.operationResponse.snapshot);
+    _publishSnapshot(snapshot);
+    return snapshot;
+  }
+
+  @override
+  Future<RoomSnapshot> addBot({
+    required String sessionToken,
+    required String roomId,
+    required int seatIndex,
+    app.BotDifficulty botDifficulty = app.BotDifficulty.normal,
+  }) async {
+    final response = await _send(
+      (message) => message.addBotRequest = pb.AddBotRequest(
+        roomId: roomId,
+        seatIndex: seatIndex,
+        botDifficulty: switch (botDifficulty) {
+          app.BotDifficulty.easy => pbenum.BotDifficulty.BOT_DIFFICULTY_EASY,
+          app.BotDifficulty.hard => pbenum.BotDifficulty.BOT_DIFFICULTY_HARD,
+          app.BotDifficulty.normal => pbenum.BotDifficulty.BOT_DIFFICULTY_NORMAL,
+        },
+      ),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+    final snapshot = _mapSnapshot(response.operationResponse.snapshot);
+    _publishSnapshot(snapshot);
+    return snapshot;
+  }
+
+  @override
+  Future<RoomSnapshot> removePlayer({
+    required String sessionToken,
+    required String roomId,
+    required String playerId,
+  }) async {
+    final response = await _send(
+      (message) => message.removePlayerRequest = pb.RemovePlayerRequest(
+        roomId: roomId,
+        playerId: playerId,
+      ),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+    final snapshot = _mapSnapshot(response.operationResponse.snapshot);
+    _publishSnapshot(snapshot);
+    return snapshot;
+  }
+
+  @override
+  Future<List<app.OnlineUser>> fetchFriends({
+    required String sessionToken,
+  }) async {
+    final response = await _send(
+      (message) => message.listFriendsRequest = pb.ListFriendsRequest(),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+    if (!response.hasListFriendsResponse()) {
+      throw Exception('未收到好友列表');
+    }
+    return response.listFriendsResponse.users
+        .map(_mapOnlineUser)
+        .toList(growable: false);
+  }
+
+  @override
+  Future<app.OnlineUser> addFriend({
+    required String sessionToken,
+    required String account,
+  }) async {
+    final response = await _send(
+      (message) => message.addFriendRequest = pb.AddFriendRequest(
+        account: account,
+      ),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+    if (!response.hasAddFriendResponse() || !response.addFriendResponse.success) {
+      throw Exception(
+        response.hasAddFriendResponse()
+            ? response.addFriendResponse.message
+            : response.errorResponse.message,
+      );
+    }
+    return _mapOnlineUser(response.addFriendResponse.user);
+  }
+
+  @override
+  Future<void> invitePlayer({
+    required String sessionToken,
+    required String roomId,
+    required String targetAccount,
+    required int seatIndex,
+  }) async {
+    final response = await _send(
+      (message) => message.invitePlayerRequest = pb.InvitePlayerRequest(
+        roomId: roomId,
+        inviteeAccount: targetAccount,
+        seatIndex: seatIndex,
+      ),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+    if (!response.hasInvitePlayerResponse()) {
+      throw Exception('邀请请求没有返回结果');
+    }
+    if (!response.invitePlayerResponse.accepted) {
+      throw Exception(response.invitePlayerResponse.message);
+    }
+  }
+
+  @override
+  Future<RoomSnapshot?> respondInvitation({
+    required String sessionToken,
+    required String invitationId,
+    required bool accept,
+  }) async {
+    final response = await _send(
+      (message) =>
+          message.respondRoomInvitationRequest = pb.RespondRoomInvitationRequest(
+        invitationId: invitationId,
+        accept: accept,
+      ),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+    if (!response.hasRespondRoomInvitationResponse()) {
+      throw Exception('邀请响应没有返回结果');
+    }
+    if (!response.respondRoomInvitationResponse.success) {
+      throw Exception(response.respondRoomInvitationResponse.message);
+    }
+    if (response.respondRoomInvitationResponse.hasSnapshot()) {
+      final snapshot = _mapSnapshot(response.respondRoomInvitationResponse.snapshot);
+      _publishSnapshot(snapshot);
+      return snapshot;
+    }
+    return null;
   }
 
   @override
@@ -274,8 +523,7 @@ class WebSocketGameGateway implements GameGateway {
     }
     if (response.hasOperationResponse() &&
         response.operationResponse.hasSnapshot()) {
-      final snapshot = _mapSnapshot(response.operationResponse.snapshot);
-      _publishSnapshot(snapshot);
+      _publishSnapshot(_mapSnapshot(response.operationResponse.snapshot));
     }
   }
 
@@ -303,7 +551,8 @@ class WebSocketGameGateway implements GameGateway {
     }
     await _ensureConnected();
     return _send(
-      (message) => message.reconnectRequest = pb.ReconnectRequest(roomId: _lastRoomId),
+      (message) =>
+          message.reconnectRequest = pb.ReconnectRequest(roomId: _lastRoomId),
       sessionToken: _sessionToken,
     );
   }
@@ -323,12 +572,12 @@ class WebSocketGameGateway implements GameGateway {
     _pending[requestId] = completer;
     if (_channel == null) {
       _pending.remove(requestId);
-      throw Exception('服务器连接不可用');
+      throw Exception('服务连接不可用');
     }
     _channel!.sink.add(Uint8List.fromList(message.writeToBuffer()));
     return completer.future.timeout(_requestTimeout, onTimeout: () {
       _pending.remove(requestId);
-      throw Exception('服务器响应超时');
+      throw Exception('服务响应超时');
     });
   }
 
@@ -346,8 +595,21 @@ class WebSocketGameGateway implements GameGateway {
 
     final message = pb.ServerMessage.fromBuffer(bytes);
     if (message.hasRoomSnapshot()) {
-      final snapshot = _mapSnapshot(message.roomSnapshot);
-      _publishSnapshot(snapshot);
+      _publishSnapshot(_mapSnapshot(message.roomSnapshot));
+    }
+    if (message.hasRoomInvitationPush()) {
+      _notificationController.add(
+        RoomInvitationNotification(
+          _mapInvitation(message.roomInvitationPush),
+        ),
+      );
+    }
+    if (message.hasRoomInvitationResultPush()) {
+      _notificationController.add(
+        InvitationFeedbackNotification(
+          _mapInvitationFeedback(message.roomInvitationResultPush),
+        ),
+      );
     }
     if (message.requestId.isNotEmpty) {
       _pending.remove(message.requestId)?.complete(message);
@@ -379,7 +641,7 @@ class WebSocketGameGateway implements GameGateway {
       }
     } catch (error) {
       _handleDisconnect(error);
-      throw Exception('服务器连接失败，请检查地址或网络。');
+      throw Exception('服务连接失败，请检查地址或网络。');
     }
   }
 
@@ -406,18 +668,39 @@ class WebSocketGameGateway implements GameGateway {
     _snapshotController.add(snapshot);
   }
 
+  app.UserProfile _mapUserProfile(pb.UserProfile profile) => app.UserProfile(
+        userId: profile.userId,
+        account: profile.account,
+        nickname: profile.nickname,
+        coins: profile.totalScore,
+        landlordWins: profile.landlordWins,
+        landlordGames: profile.landlordGames,
+        farmerWins: profile.farmerWins,
+        farmerGames: profile.farmerGames,
+      );
+
+  app.OnlineUser _mapOnlineUser(pb.OnlineUser user) => app.OnlineUser(
+        userId: user.userId,
+        account: user.account,
+        nickname: user.nickname,
+        online: user.online,
+      );
+
   RoomSnapshot _mapSnapshot(pb.RoomSnapshot snapshot) {
     final players = snapshot.players
         .map(
           (player) => RoomPlayer(
             playerId: player.playerId,
-            displayName: player.displayName,
+            displayName: player.isBot ? '机器人' : player.displayName,
             isBot: player.isBot,
             role: player.role == pbenum.PlayerRole.PLAYER_ROLE_LANDLORD
                 ? app.PlayerRole.landlord
                 : app.PlayerRole.farmer,
             cardsLeft: player.cardsLeft,
             roundScore: player.roundScore,
+            seatIndex: player.seatIndex,
+            ready: player.ready,
+            occupied: player.occupied,
           ),
         )
         .toList();
@@ -426,21 +709,20 @@ class WebSocketGameGateway implements GameGateway {
     };
     return RoomSnapshot(
       roomId: snapshot.roomId,
+      roomCode: snapshot.roomCode,
+      ownerPlayerId: snapshot.ownerPlayerId,
       mode: snapshot.mode == pbenum.MatchMode.MATCH_MODE_VS_BOT
           ? app.MatchMode.vsBot
           : app.MatchMode.online,
       phase: switch (snapshot.phase) {
+        pbenum.RoomPhase.ROOM_PHASE_PREPARING => app.RoomPhase.preparing,
         pbenum.RoomPhase.ROOM_PHASE_FINISHED => app.RoomPhase.finished,
         pbenum.RoomPhase.ROOM_PHASE_PLAYING => app.RoomPhase.playing,
         _ => app.RoomPhase.waiting,
       },
       players: players,
-      selfCards: snapshot.selfCards
-          .map((card) => PlayingCard(id: card.id, rank: card.rank, suit: card.suit, value: card.value))
-          .toList(),
-      landlordCards: snapshot.landlordCards
-          .map((card) => PlayingCard(id: card.id, rank: card.rank, suit: card.suit, value: card.value))
-          .toList(),
+      selfCards: snapshot.selfCards.map(_mapCard).toList(),
+      landlordCards: snapshot.landlordCards.map(_mapCard).toList(),
       recentActions: snapshot.recentActions
           .map(
             (action) => TableAction(
@@ -451,9 +733,7 @@ class WebSocketGameGateway implements GameGateway {
                   ? app.ActionType.pass
                   : app.ActionType.play,
               patternLabel: action.pattern,
-              cards: action.cards
-                  .map((card) => PlayingCard(id: card.id, rank: card.rank, suit: card.suit, value: card.value))
-                  .toList(),
+              cards: action.cards.map(_mapCard).toList(),
               timestampMs: action.timestampMs.toInt(),
             ),
           )
@@ -464,7 +744,10 @@ class WebSocketGameGateway implements GameGateway {
         if (snapshot.springTriggered) '春天',
       ].join(snapshot.springTriggered ? ' · ' : ''),
       cardCounter: snapshot.cardCounter
-          .map((entry) => CardCounterEntry(rank: entry.rank, remaining: entry.remaining))
+          .map(
+            (entry) =>
+                CardCounterEntry(rank: entry.rank, remaining: entry.remaining),
+          )
           .toList(),
       baseScore: snapshot.baseScore,
       multiplier: snapshot.multiplier,
@@ -474,8 +757,48 @@ class WebSocketGameGateway implements GameGateway {
     );
   }
 
+  PlayingCard _mapCard(pb.Card card) => PlayingCard(
+        id: card.id,
+        rank: card.rank,
+        suit: card.suit,
+        value: card.value,
+      );
+
+  app.RoomInvitation _mapInvitation(pb.RoomInvitationPush invitation) =>
+      app.RoomInvitation(
+        invitationId: invitation.invitationId,
+        roomId: invitation.roomId,
+        roomCode: invitation.roomCode,
+        inviterUserId: invitation.inviterUserId,
+        inviterAccount: invitation.inviterAccount,
+        inviterNickname: invitation.inviterNickname,
+        seatIndex: invitation.seatIndex,
+      );
+
+  app.InvitationFeedback _mapInvitationFeedback(
+    pb.RoomInvitationResultPush feedback,
+  ) =>
+      app.InvitationFeedback(
+        invitationId: feedback.invitationId,
+        status: switch (feedback.result) {
+          pbenum.InvitationResult.INVITATION_RESULT_ACCEPTED =>
+            app.InvitationFeedbackStatus.accepted,
+          pbenum.InvitationResult.INVITATION_RESULT_REJECTED =>
+            app.InvitationFeedbackStatus.rejected,
+          pbenum.InvitationResult.INVITATION_RESULT_EXPIRED =>
+            app.InvitationFeedbackStatus.expired,
+          _ => app.InvitationFeedbackStatus.failed,
+        },
+        targetUserId: feedback.inviteeUserId,
+        targetAccount: feedback.inviteeAccount,
+        targetNickname: feedback.inviteeNickname,
+        detail: feedback.message,
+      );
+
   String _id() => base64Url.encode(
-        utf8.encode('${DateTime.now().microsecondsSinceEpoch}-${DateTime.now().hashCode}'),
+        utf8.encode(
+          '${DateTime.now().microsecondsSinceEpoch}-${DateTime.now().hashCode}',
+        ),
       );
 
   static String _resolveDefaultUrl() {

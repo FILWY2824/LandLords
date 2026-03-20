@@ -52,6 +52,9 @@ class RoomPlayer {
     required this.role,
     required this.cardsLeft,
     required this.roundScore,
+    required this.seatIndex,
+    required this.ready,
+    required this.occupied,
   });
 
   final String playerId;
@@ -60,8 +63,12 @@ class RoomPlayer {
   final PlayerRole role;
   final int cardsLeft;
   final int roundScore;
+  final int seatIndex;
+  final bool ready;
+  final bool occupied;
 
   bool get isLandlord => role == PlayerRole.landlord;
+  bool get isEmptySeat => !occupied;
 }
 
 class TableAction {
@@ -97,6 +104,8 @@ class CardCounterEntry {
 class RoomSnapshot {
   const RoomSnapshot({
     required this.roomId,
+    required this.roomCode,
+    required this.ownerPlayerId,
     required this.mode,
     required this.phase,
     required this.players,
@@ -114,6 +123,8 @@ class RoomSnapshot {
   });
 
   final String roomId;
+  final String roomCode;
+  final String ownerPlayerId;
   final MatchMode mode;
   final RoomPhase phase;
   final List<RoomPlayer> players;

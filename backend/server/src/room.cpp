@@ -78,7 +78,9 @@ std::string CardsText(const std::vector<core::Card>& cards) {
   return stream.str();
 }
 
-void FillRoomPlayer(const core::PlayerState& player, landlords::protocol::RoomPlayer* target) {
+void FillRoomPlayer(const core::PlayerState& player,
+                    int seat_index,
+                    landlords::protocol::RoomPlayer* target) {
   target->set_player_id(player.player_id);
   target->set_display_name(player.display_name);
   target->set_is_bot(player.is_bot);
@@ -86,6 +88,9 @@ void FillRoomPlayer(const core::PlayerState& player, landlords::protocol::RoomPl
                                       : landlords::protocol::PLAYER_ROLE_FARMER);
   target->set_cards_left(static_cast<int>(player.hand.size()));
   target->set_round_score(player.round_score);
+  target->set_seat_index(seat_index);
+  target->set_ready(true);
+  target->set_occupied(true);
 }
 
 bool SameSide(const core::PlayerState& left, const core::PlayerState& right) {
@@ -375,8 +380,8 @@ landlords::protocol::RoomSnapshot Room::BuildSnapshotFor(const std::string& play
   snapshot.set_spring_triggered(spring_triggered_);
   snapshot.set_turn_serial(turn_serial_);
 
-  for (const auto& player : players_) {
-    FillRoomPlayer(player, snapshot.add_players());
+  for (int index = 0; index < static_cast<int>(players_.size()); ++index) {
+    FillRoomPlayer(players_[static_cast<std::size_t>(index)], index, snapshot.add_players());
   }
   for (const auto& card : landlord_cards_) {
     core::FillProtoCard(card, snapshot.add_landlord_cards());

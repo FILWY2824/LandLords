@@ -53,6 +53,23 @@ final $typed_data.Uint8List matchModeDescriptor = $convert.base64Decode(
     'CglNYXRjaE1vZGUSGgoWTUFUQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEU1BVENIX01PREVfVl'
     'NfQk9UEAESEgoOTUFUQ0hfTU9ERV9QVlAQAg==');
 
+@$core.Deprecated('Use botDifficultyDescriptor instead')
+const BotDifficulty$json = {
+  '1': 'BotDifficulty',
+  '2': [
+    {'1': 'BOT_DIFFICULTY_UNSPECIFIED', '2': 0},
+    {'1': 'BOT_DIFFICULTY_EASY', '2': 1},
+    {'1': 'BOT_DIFFICULTY_NORMAL', '2': 2},
+    {'1': 'BOT_DIFFICULTY_HARD', '2': 3},
+  ],
+};
+
+/// Descriptor for `BotDifficulty`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List botDifficultyDescriptor = $convert.base64Decode(
+    'Cg1Cb3REaWZmaWN1bHR5Eh4KGkJPVF9ESUZGSUNVTFRZX1VOU1BFQ0lGSUVEEAASFwoTQk9UX0'
+    'RJRkZJQ1VMVFlfRUFTWRABEhkKFUJPVF9ESUZGSUNVTFRZX05PUk1BTBACEhcKE0JPVF9ESUZG'
+    'SUNVTFRZX0hBUkQQAw==');
+
 @$core.Deprecated('Use playerRoleDescriptor instead')
 const PlayerRole$json = {
   '1': 'PlayerRole',
@@ -73,17 +90,18 @@ const RoomPhase$json = {
   '1': 'RoomPhase',
   '2': [
     {'1': 'ROOM_PHASE_UNSPECIFIED', '2': 0},
-    {'1': 'ROOM_PHASE_WAITING', '2': 1},
-    {'1': 'ROOM_PHASE_PLAYING', '2': 2},
-    {'1': 'ROOM_PHASE_FINISHED', '2': 3},
+    {'1': 'ROOM_PHASE_PREPARING', '2': 1},
+    {'1': 'ROOM_PHASE_WAITING', '2': 2},
+    {'1': 'ROOM_PHASE_PLAYING', '2': 3},
+    {'1': 'ROOM_PHASE_FINISHED', '2': 4},
   ],
 };
 
 /// Descriptor for `RoomPhase`. Decode as a `google.protobuf.EnumDescriptorProto`.
 final $typed_data.Uint8List roomPhaseDescriptor = $convert.base64Decode(
-    'CglSb29tUGhhc2USGgoWUk9PTV9QSEFTRV9VTlNQRUNJRklFRBAAEhYKElJPT01fUEhBU0VfV0'
-    'FJVElORxABEhYKElJPT01fUEhBU0VfUExBWUlORxACEhcKE1JPT01fUEhBU0VfRklOSVNIRUQQ'
-    'Aw==');
+    'CglSb29tUGhhc2USGgoWUk9PTV9QSEFTRV9VTlNQRUNJRklFRBAAEhgKFFJPT01fUEhBU0VfUF'
+    'JFUEFSSU5HEAESFgoSUk9PTV9QSEFTRV9XQUlUSU5HEAISFgoSUk9PTV9QSEFTRV9QTEFZSU5H'
+    'EAMSFwoTUk9PTV9QSEFTRV9GSU5JU0hFRBAE');
 
 @$core.Deprecated('Use actionTypeDescriptor instead')
 const ActionType$json = {
@@ -134,34 +152,79 @@ final $typed_data.Uint8List patternTypeDescriptor = $convert.base64Decode(
     'VfRk9VUl9XSVRIX1RXT19TSU5HTEVTEAwSJAogUEFUVEVSTl9UWVBFX0ZPVVJfV0lUSF9UV09f'
     'UEFJUlMQDRIXChNQQVRURVJOX1RZUEVfUk9DS0VUEA4=');
 
+@$core.Deprecated('Use invitationResultDescriptor instead')
+const InvitationResult$json = {
+  '1': 'InvitationResult',
+  '2': [
+    {'1': 'INVITATION_RESULT_UNSPECIFIED', '2': 0},
+    {'1': 'INVITATION_RESULT_ACCEPTED', '2': 1},
+    {'1': 'INVITATION_RESULT_REJECTED', '2': 2},
+    {'1': 'INVITATION_RESULT_FAILED', '2': 3},
+    {'1': 'INVITATION_RESULT_EXPIRED', '2': 4},
+  ],
+};
+
+/// Descriptor for `InvitationResult`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List invitationResultDescriptor = $convert.base64Decode(
+    'ChBJbnZpdGF0aW9uUmVzdWx0EiEKHUlOVklUQVRJT05fUkVTVUxUX1VOU1BFQ0lGSUVEEAASHg'
+    'oaSU5WSVRBVElPTl9SRVNVTFRfQUNDRVBURUQQARIeChpJTlZJVEFUSU9OX1JFU1VMVF9SRUpF'
+    'Q1RFRBACEhwKGElOVklUQVRJT05fUkVTVUxUX0ZBSUxFRBADEh0KGUlOVklUQVRJT05fUkVTVU'
+    'xUX0VYUElSRUQQBA==');
+
 @$core.Deprecated('Use userProfileDescriptor instead')
 const UserProfile$json = {
   '1': 'UserProfile',
   '2': [
     {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
-    {'1': 'username', '3': 2, '4': 1, '5': 9, '10': 'username'},
-    {'1': 'total_score', '3': 3, '4': 1, '5': 5, '10': 'totalScore'},
+    {'1': 'account', '3': 2, '4': 1, '5': 9, '10': 'account'},
+    {'1': 'nickname', '3': 3, '4': 1, '5': 9, '10': 'nickname'},
+    {'1': 'total_score', '3': 4, '4': 1, '5': 5, '10': 'totalScore'},
+    {'1': 'landlord_wins', '3': 5, '4': 1, '5': 5, '10': 'landlordWins'},
+    {'1': 'landlord_games', '3': 6, '4': 1, '5': 5, '10': 'landlordGames'},
+    {'1': 'farmer_wins', '3': 7, '4': 1, '5': 5, '10': 'farmerWins'},
+    {'1': 'farmer_games', '3': 8, '4': 1, '5': 5, '10': 'farmerGames'},
   ],
 };
 
 /// Descriptor for `UserProfile`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List userProfileDescriptor = $convert.base64Decode(
-    'CgtVc2VyUHJvZmlsZRIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQSGgoIdXNlcm5hbWUYAiABKA'
-    'lSCHVzZXJuYW1lEh8KC3RvdGFsX3Njb3JlGAMgASgFUgp0b3RhbFNjb3Jl');
+    'CgtVc2VyUHJvZmlsZRIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQSGAoHYWNjb3VudBgCIAEoCV'
+    'IHYWNjb3VudBIaCghuaWNrbmFtZRgDIAEoCVIIbmlja25hbWUSHwoLdG90YWxfc2NvcmUYBCAB'
+    'KAVSCnRvdGFsU2NvcmUSIwoNbGFuZGxvcmRfd2lucxgFIAEoBVIMbGFuZGxvcmRXaW5zEiUKDm'
+    'xhbmRsb3JkX2dhbWVzGAYgASgFUg1sYW5kbG9yZEdhbWVzEh8KC2Zhcm1lcl93aW5zGAcgASgF'
+    'UgpmYXJtZXJXaW5zEiEKDGZhcm1lcl9nYW1lcxgIIAEoBVILZmFybWVyR2FtZXM=');
+
+@$core.Deprecated('Use onlineUserDescriptor instead')
+const OnlineUser$json = {
+  '1': 'OnlineUser',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'account', '3': 2, '4': 1, '5': 9, '10': 'account'},
+    {'1': 'nickname', '3': 3, '4': 1, '5': 9, '10': 'nickname'},
+    {'1': 'online', '3': 4, '4': 1, '5': 8, '10': 'online'},
+  ],
+};
+
+/// Descriptor for `OnlineUser`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List onlineUserDescriptor = $convert.base64Decode(
+    'CgpPbmxpbmVVc2VyEhcKB3VzZXJfaWQYASABKAlSBnVzZXJJZBIYCgdhY2NvdW50GAIgASgJUg'
+    'dhY2NvdW50EhoKCG5pY2tuYW1lGAMgASgJUghuaWNrbmFtZRIWCgZvbmxpbmUYBCABKAhSBm9u'
+    'bGluZQ==');
 
 @$core.Deprecated('Use registerRequestDescriptor instead')
 const RegisterRequest$json = {
   '1': 'RegisterRequest',
   '2': [
-    {'1': 'username', '3': 1, '4': 1, '5': 9, '10': 'username'},
-    {'1': 'password', '3': 2, '4': 1, '5': 9, '10': 'password'},
+    {'1': 'nickname', '3': 1, '4': 1, '5': 9, '10': 'nickname'},
+    {'1': 'account', '3': 2, '4': 1, '5': 9, '10': 'account'},
+    {'1': 'password', '3': 3, '4': 1, '5': 9, '10': 'password'},
   ],
 };
 
 /// Descriptor for `RegisterRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List registerRequestDescriptor = $convert.base64Decode(
-    'Cg9SZWdpc3RlclJlcXVlc3QSGgoIdXNlcm5hbWUYASABKAlSCHVzZXJuYW1lEhoKCHBhc3N3b3'
-    'JkGAIgASgJUghwYXNzd29yZA==');
+    'Cg9SZWdpc3RlclJlcXVlc3QSGgoIbmlja25hbWUYASABKAlSCG5pY2tuYW1lEhgKB2FjY291bn'
+    'QYAiABKAlSB2FjY291bnQSGgoIcGFzc3dvcmQYAyABKAlSCHBhc3N3b3Jk');
 
 @$core.Deprecated('Use registerResponseDescriptor instead')
 const RegisterResponse$json = {
@@ -190,15 +253,15 @@ final $typed_data.Uint8List registerResponseDescriptor = $convert.base64Decode(
 const LoginRequest$json = {
   '1': 'LoginRequest',
   '2': [
-    {'1': 'username', '3': 1, '4': 1, '5': 9, '10': 'username'},
+    {'1': 'account', '3': 1, '4': 1, '5': 9, '10': 'account'},
     {'1': 'password', '3': 2, '4': 1, '5': 9, '10': 'password'},
   ],
 };
 
 /// Descriptor for `LoginRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List loginRequestDescriptor = $convert.base64Decode(
-    'CgxMb2dpblJlcXVlc3QSGgoIdXNlcm5hbWUYASABKAlSCHVzZXJuYW1lEhoKCHBhc3N3b3JkGA'
-    'IgASgJUghwYXNzd29yZA==');
+    'CgxMb2dpblJlcXVlc3QSGAoHYWNjb3VudBgBIAEoCVIHYWNjb3VudBIaCghwYXNzd29yZBgCIA'
+    'EoCVIIcGFzc3dvcmQ=');
 
 @$core.Deprecated('Use loginResponseDescriptor instead')
 const LoginResponse$json = {
@@ -224,6 +287,34 @@ final $typed_data.Uint8List loginResponseDescriptor = $convert.base64Decode(
     'EoCVIHbWVzc2FnZRI5Cgdwcm9maWxlGAMgASgLMh8ubGFuZGxvcmRzLnByb3RvY29sLlVzZXJQ'
     'cm9maWxlUgdwcm9maWxlEiMKDXNlc3Npb25fdG9rZW4YBCABKAlSDHNlc3Npb25Ub2tlbg==');
 
+@$core.Deprecated('Use resetPasswordRequestDescriptor instead')
+const ResetPasswordRequest$json = {
+  '1': 'ResetPasswordRequest',
+  '2': [
+    {'1': 'account', '3': 1, '4': 1, '5': 9, '10': 'account'},
+    {'1': 'new_password', '3': 2, '4': 1, '5': 9, '10': 'newPassword'},
+  ],
+};
+
+/// Descriptor for `ResetPasswordRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List resetPasswordRequestDescriptor = $convert.base64Decode(
+    'ChRSZXNldFBhc3N3b3JkUmVxdWVzdBIYCgdhY2NvdW50GAEgASgJUgdhY2NvdW50EiEKDG5ld1'
+    '9wYXNzd29yZBgCIAEoCVILbmV3UGFzc3dvcmQ=');
+
+@$core.Deprecated('Use resetPasswordResponseDescriptor instead')
+const ResetPasswordResponse$json = {
+  '1': 'ResetPasswordResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+  ],
+};
+
+/// Descriptor for `ResetPasswordResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List resetPasswordResponseDescriptor = $convert.base64Decode(
+    'ChVSZXNldFBhc3N3b3JkUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIYCgdtZX'
+    'NzYWdlGAIgASgJUgdtZXNzYWdl');
+
 @$core.Deprecated('Use matchRequestDescriptor instead')
 const MatchRequest$json = {
   '1': 'MatchRequest',
@@ -236,13 +327,289 @@ const MatchRequest$json = {
       '6': '.landlords.protocol.MatchMode',
       '10': 'mode'
     },
+    {
+      '1': 'bot_difficulty',
+      '3': 2,
+      '4': 1,
+      '5': 14,
+      '6': '.landlords.protocol.BotDifficulty',
+      '10': 'botDifficulty'
+    },
   ],
 };
 
 /// Descriptor for `MatchRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List matchRequestDescriptor = $convert.base64Decode(
     'CgxNYXRjaFJlcXVlc3QSMQoEbW9kZRgBIAEoDjIdLmxhbmRsb3Jkcy5wcm90b2NvbC5NYXRjaE'
-    '1vZGVSBG1vZGU=');
+    '1vZGVSBG1vZGUSSAoOYm90X2RpZmZpY3VsdHkYAiABKA4yIS5sYW5kbG9yZHMucHJvdG9jb2wu'
+    'Qm90RGlmZmljdWx0eVINYm90RGlmZmljdWx0eQ==');
+
+@$core.Deprecated('Use createRoomRequestDescriptor instead')
+const CreateRoomRequest$json = {
+  '1': 'CreateRoomRequest',
+};
+
+/// Descriptor for `CreateRoomRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List createRoomRequestDescriptor =
+    $convert.base64Decode('ChFDcmVhdGVSb29tUmVxdWVzdA==');
+
+@$core.Deprecated('Use joinRoomRequestDescriptor instead')
+const JoinRoomRequest$json = {
+  '1': 'JoinRoomRequest',
+  '2': [
+    {'1': 'room_code', '3': 1, '4': 1, '5': 9, '10': 'roomCode'},
+  ],
+};
+
+/// Descriptor for `JoinRoomRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List joinRoomRequestDescriptor = $convert.base64Decode(
+    'Cg9Kb2luUm9vbVJlcXVlc3QSGwoJcm9vbV9jb2RlGAEgASgJUghyb29tQ29kZQ==');
+
+@$core.Deprecated('Use leaveRoomRequestDescriptor instead')
+const LeaveRoomRequest$json = {
+  '1': 'LeaveRoomRequest',
+  '2': [
+    {'1': 'room_id', '3': 1, '4': 1, '5': 9, '10': 'roomId'},
+  ],
+};
+
+/// Descriptor for `LeaveRoomRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List leaveRoomRequestDescriptor = $convert.base64Decode(
+    'ChBMZWF2ZVJvb21SZXF1ZXN0EhcKB3Jvb21faWQYASABKAlSBnJvb21JZA==');
+
+@$core.Deprecated('Use roomReadyRequestDescriptor instead')
+const RoomReadyRequest$json = {
+  '1': 'RoomReadyRequest',
+  '2': [
+    {'1': 'room_id', '3': 1, '4': 1, '5': 9, '10': 'roomId'},
+    {'1': 'ready', '3': 2, '4': 1, '5': 8, '10': 'ready'},
+  ],
+};
+
+/// Descriptor for `RoomReadyRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List roomReadyRequestDescriptor = $convert.base64Decode(
+    'ChBSb29tUmVhZHlSZXF1ZXN0EhcKB3Jvb21faWQYASABKAlSBnJvb21JZBIUCgVyZWFkeRgCIA'
+    'EoCFIFcmVhZHk=');
+
+@$core.Deprecated('Use addBotRequestDescriptor instead')
+const AddBotRequest$json = {
+  '1': 'AddBotRequest',
+  '2': [
+    {'1': 'room_id', '3': 1, '4': 1, '5': 9, '10': 'roomId'},
+    {
+      '1': 'bot_difficulty',
+      '3': 2,
+      '4': 1,
+      '5': 14,
+      '6': '.landlords.protocol.BotDifficulty',
+      '10': 'botDifficulty'
+    },
+    {'1': 'seat_index', '3': 3, '4': 1, '5': 5, '10': 'seatIndex'},
+  ],
+};
+
+/// Descriptor for `AddBotRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List addBotRequestDescriptor = $convert.base64Decode(
+    'Cg1BZGRCb3RSZXF1ZXN0EhcKB3Jvb21faWQYASABKAlSBnJvb21JZBJICg5ib3RfZGlmZmljdW'
+    'x0eRgCIAEoDjIhLmxhbmRsb3Jkcy5wcm90b2NvbC5Cb3REaWZmaWN1bHR5Ug1ib3REaWZmaWN1'
+    'bHR5Eh0KCnNlYXRfaW5kZXgYAyABKAVSCXNlYXRJbmRleA==');
+
+@$core.Deprecated('Use removePlayerRequestDescriptor instead')
+const RemovePlayerRequest$json = {
+  '1': 'RemovePlayerRequest',
+  '2': [
+    {'1': 'room_id', '3': 1, '4': 1, '5': 9, '10': 'roomId'},
+    {'1': 'player_id', '3': 2, '4': 1, '5': 9, '10': 'playerId'},
+  ],
+};
+
+/// Descriptor for `RemovePlayerRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List removePlayerRequestDescriptor = $convert.base64Decode(
+    'ChNSZW1vdmVQbGF5ZXJSZXF1ZXN0EhcKB3Jvb21faWQYASABKAlSBnJvb21JZBIbCglwbGF5ZX'
+    'JfaWQYAiABKAlSCHBsYXllcklk');
+
+@$core.Deprecated('Use listFriendsRequestDescriptor instead')
+const ListFriendsRequest$json = {
+  '1': 'ListFriendsRequest',
+};
+
+/// Descriptor for `ListFriendsRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listFriendsRequestDescriptor =
+    $convert.base64Decode('ChJMaXN0RnJpZW5kc1JlcXVlc3Q=');
+
+@$core.Deprecated('Use listFriendsResponseDescriptor instead')
+const ListFriendsResponse$json = {
+  '1': 'ListFriendsResponse',
+  '2': [
+    {
+      '1': 'users',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.landlords.protocol.OnlineUser',
+      '10': 'users'
+    },
+  ],
+};
+
+/// Descriptor for `ListFriendsResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List listFriendsResponseDescriptor = $convert.base64Decode(
+    'ChNMaXN0RnJpZW5kc1Jlc3BvbnNlEjQKBXVzZXJzGAEgAygLMh4ubGFuZGxvcmRzLnByb3RvY2'
+    '9sLk9ubGluZVVzZXJSBXVzZXJz');
+
+@$core.Deprecated('Use addFriendRequestDescriptor instead')
+const AddFriendRequest$json = {
+  '1': 'AddFriendRequest',
+  '2': [
+    {'1': 'account', '3': 1, '4': 1, '5': 9, '10': 'account'},
+  ],
+};
+
+/// Descriptor for `AddFriendRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List addFriendRequestDescriptor = $convert.base64Decode(
+    'ChBBZGRGcmllbmRSZXF1ZXN0EhgKB2FjY291bnQYASABKAlSB2FjY291bnQ=');
+
+@$core.Deprecated('Use addFriendResponseDescriptor instead')
+const AddFriendResponse$json = {
+  '1': 'AddFriendResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+    {
+      '1': 'user',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.OnlineUser',
+      '10': 'user'
+    },
+  ],
+};
+
+/// Descriptor for `AddFriendResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List addFriendResponseDescriptor = $convert.base64Decode(
+    'ChFBZGRGcmllbmRSZXNwb25zZRIYCgdzdWNjZXNzGAEgASgIUgdzdWNjZXNzEhgKB21lc3NhZ2'
+    'UYAiABKAlSB21lc3NhZ2USMgoEdXNlchgDIAEoCzIeLmxhbmRsb3Jkcy5wcm90b2NvbC5Pbmxp'
+    'bmVVc2VyUgR1c2Vy');
+
+@$core.Deprecated('Use invitePlayerRequestDescriptor instead')
+const InvitePlayerRequest$json = {
+  '1': 'InvitePlayerRequest',
+  '2': [
+    {'1': 'room_id', '3': 1, '4': 1, '5': 9, '10': 'roomId'},
+    {'1': 'invitee_account', '3': 2, '4': 1, '5': 9, '10': 'inviteeAccount'},
+    {'1': 'seat_index', '3': 3, '4': 1, '5': 5, '10': 'seatIndex'},
+  ],
+};
+
+/// Descriptor for `InvitePlayerRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List invitePlayerRequestDescriptor = $convert.base64Decode(
+    'ChNJbnZpdGVQbGF5ZXJSZXF1ZXN0EhcKB3Jvb21faWQYASABKAlSBnJvb21JZBInCg9pbnZpdG'
+    'VlX2FjY291bnQYAiABKAlSDmludml0ZWVBY2NvdW50Eh0KCnNlYXRfaW5kZXgYAyABKAVSCXNl'
+    'YXRJbmRleA==');
+
+@$core.Deprecated('Use invitePlayerResponseDescriptor instead')
+const InvitePlayerResponse$json = {
+  '1': 'InvitePlayerResponse',
+  '2': [
+    {'1': 'accepted', '3': 1, '4': 1, '5': 8, '10': 'accepted'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+  ],
+};
+
+/// Descriptor for `InvitePlayerResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List invitePlayerResponseDescriptor = $convert.base64Decode(
+    'ChRJbnZpdGVQbGF5ZXJSZXNwb25zZRIaCghhY2NlcHRlZBgBIAEoCFIIYWNjZXB0ZWQSGAoHbW'
+    'Vzc2FnZRgCIAEoCVIHbWVzc2FnZQ==');
+
+@$core.Deprecated('Use roomInvitationPushDescriptor instead')
+const RoomInvitationPush$json = {
+  '1': 'RoomInvitationPush',
+  '2': [
+    {'1': 'invitation_id', '3': 1, '4': 1, '5': 9, '10': 'invitationId'},
+    {'1': 'room_id', '3': 2, '4': 1, '5': 9, '10': 'roomId'},
+    {'1': 'room_code', '3': 3, '4': 1, '5': 9, '10': 'roomCode'},
+    {'1': 'inviter_user_id', '3': 4, '4': 1, '5': 9, '10': 'inviterUserId'},
+    {'1': 'inviter_account', '3': 5, '4': 1, '5': 9, '10': 'inviterAccount'},
+    {'1': 'inviter_nickname', '3': 6, '4': 1, '5': 9, '10': 'inviterNickname'},
+    {'1': 'seat_index', '3': 7, '4': 1, '5': 5, '10': 'seatIndex'},
+  ],
+};
+
+/// Descriptor for `RoomInvitationPush`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List roomInvitationPushDescriptor = $convert.base64Decode(
+    'ChJSb29tSW52aXRhdGlvblB1c2gSIwoNaW52aXRhdGlvbl9pZBgBIAEoCVIMaW52aXRhdGlvbk'
+    'lkEhcKB3Jvb21faWQYAiABKAlSBnJvb21JZBIbCglyb29tX2NvZGUYAyABKAlSCHJvb21Db2Rl'
+    'EiYKD2ludml0ZXJfdXNlcl9pZBgEIAEoCVINaW52aXRlclVzZXJJZBInCg9pbnZpdGVyX2FjY2'
+    '91bnQYBSABKAlSDmludml0ZXJBY2NvdW50EikKEGludml0ZXJfbmlja25hbWUYBiABKAlSD2lu'
+    'dml0ZXJOaWNrbmFtZRIdCgpzZWF0X2luZGV4GAcgASgFUglzZWF0SW5kZXg=');
+
+@$core.Deprecated('Use respondRoomInvitationRequestDescriptor instead')
+const RespondRoomInvitationRequest$json = {
+  '1': 'RespondRoomInvitationRequest',
+  '2': [
+    {'1': 'invitation_id', '3': 1, '4': 1, '5': 9, '10': 'invitationId'},
+    {'1': 'accept', '3': 2, '4': 1, '5': 8, '10': 'accept'},
+  ],
+};
+
+/// Descriptor for `RespondRoomInvitationRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List respondRoomInvitationRequestDescriptor =
+    $convert.base64Decode(
+        'ChxSZXNwb25kUm9vbUludml0YXRpb25SZXF1ZXN0EiMKDWludml0YXRpb25faWQYASABKAlSDG'
+        'ludml0YXRpb25JZBIWCgZhY2NlcHQYAiABKAhSBmFjY2VwdA==');
+
+@$core.Deprecated('Use respondRoomInvitationResponseDescriptor instead')
+const RespondRoomInvitationResponse$json = {
+  '1': 'RespondRoomInvitationResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+    {
+      '1': 'snapshot',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.RoomSnapshot',
+      '10': 'snapshot'
+    },
+  ],
+};
+
+/// Descriptor for `RespondRoomInvitationResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List respondRoomInvitationResponseDescriptor =
+    $convert.base64Decode(
+        'Ch1SZXNwb25kUm9vbUludml0YXRpb25SZXNwb25zZRIYCgdzdWNjZXNzGAEgASgIUgdzdWNjZX'
+        'NzEhgKB21lc3NhZ2UYAiABKAlSB21lc3NhZ2USPAoIc25hcHNob3QYAyABKAsyIC5sYW5kbG9y'
+        'ZHMucHJvdG9jb2wuUm9vbVNuYXBzaG90UghzbmFwc2hvdA==');
+
+@$core.Deprecated('Use roomInvitationResultPushDescriptor instead')
+const RoomInvitationResultPush$json = {
+  '1': 'RoomInvitationResultPush',
+  '2': [
+    {'1': 'invitation_id', '3': 1, '4': 1, '5': 9, '10': 'invitationId'},
+    {
+      '1': 'result',
+      '3': 2,
+      '4': 1,
+      '5': 14,
+      '6': '.landlords.protocol.InvitationResult',
+      '10': 'result'
+    },
+    {'1': 'invitee_user_id', '3': 3, '4': 1, '5': 9, '10': 'inviteeUserId'},
+    {'1': 'invitee_account', '3': 4, '4': 1, '5': 9, '10': 'inviteeAccount'},
+    {'1': 'invitee_nickname', '3': 5, '4': 1, '5': 9, '10': 'inviteeNickname'},
+    {'1': 'message', '3': 6, '4': 1, '5': 9, '10': 'message'},
+  ],
+};
+
+/// Descriptor for `RoomInvitationResultPush`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List roomInvitationResultPushDescriptor = $convert.base64Decode(
+    'ChhSb29tSW52aXRhdGlvblJlc3VsdFB1c2gSIwoNaW52aXRhdGlvbl9pZBgBIAEoCVIMaW52aX'
+    'RhdGlvbklkEjwKBnJlc3VsdBgCIAEoDjIkLmxhbmRsb3Jkcy5wcm90b2NvbC5JbnZpdGF0aW9u'
+    'UmVzdWx0UgZyZXN1bHQSJgoPaW52aXRlZV91c2VyX2lkGAMgASgJUg1pbnZpdGVlVXNlcklkEi'
+    'cKD2ludml0ZWVfYWNjb3VudBgEIAEoCVIOaW52aXRlZUFjY291bnQSKQoQaW52aXRlZV9uaWNr'
+    'bmFtZRgFIAEoCVIPaW52aXRlZU5pY2tuYW1lEhgKB21lc3NhZ2UYBiABKAlSB21lc3NhZ2U=');
 
 @$core.Deprecated('Use matchResponseDescriptor instead')
 const MatchResponse$json = {
@@ -305,6 +672,9 @@ const RoomPlayer$json = {
     },
     {'1': 'cards_left', '3': 5, '4': 1, '5': 5, '10': 'cardsLeft'},
     {'1': 'round_score', '3': 6, '4': 1, '5': 5, '10': 'roundScore'},
+    {'1': 'seat_index', '3': 7, '4': 1, '5': 5, '10': 'seatIndex'},
+    {'1': 'ready', '3': 8, '4': 1, '5': 8, '10': 'ready'},
+    {'1': 'occupied', '3': 9, '4': 1, '5': 8, '10': 'occupied'},
   ],
 };
 
@@ -313,7 +683,9 @@ final $typed_data.Uint8List roomPlayerDescriptor = $convert.base64Decode(
     'CgpSb29tUGxheWVyEhsKCXBsYXllcl9pZBgBIAEoCVIIcGxheWVySWQSIQoMZGlzcGxheV9uYW'
     '1lGAIgASgJUgtkaXNwbGF5TmFtZRIVCgZpc19ib3QYAyABKAhSBWlzQm90EjIKBHJvbGUYBCAB'
     'KA4yHi5sYW5kbG9yZHMucHJvdG9jb2wuUGxheWVyUm9sZVIEcm9sZRIdCgpjYXJkc19sZWZ0GA'
-    'UgASgFUgljYXJkc0xlZnQSHwoLcm91bmRfc2NvcmUYBiABKAVSCnJvdW5kU2NvcmU=');
+    'UgASgFUgljYXJkc0xlZnQSHwoLcm91bmRfc2NvcmUYBiABKAVSCnJvdW5kU2NvcmUSHQoKc2Vh'
+    'dF9pbmRleBgHIAEoBVIJc2VhdEluZGV4EhQKBXJlYWR5GAggASgIUgVyZWFkeRIaCghvY2N1cG'
+    'llZBgJIAEoCFIIb2NjdXBpZWQ=');
 
 @$core.Deprecated('Use cardDescriptor instead')
 const Card$json = {
@@ -469,6 +841,8 @@ const RoomSnapshot$json = {
     },
     {'1': 'spring_triggered', '3': 14, '4': 1, '5': 8, '10': 'springTriggered'},
     {'1': 'turn_serial', '3': 15, '4': 1, '5': 5, '10': 'turnSerial'},
+    {'1': 'room_code', '3': 16, '4': 1, '5': 9, '10': 'roomCode'},
+    {'1': 'owner_player_id', '3': 17, '4': 1, '5': 9, '10': 'ownerPlayerId'},
   ],
 };
 
@@ -487,7 +861,8 @@ final $typed_data.Uint8List roomSnapshotDescriptor = $convert.base64Decode(
     'HQoKYmFzZV9zY29yZRgLIAEoBVIJYmFzZVNjb3JlEh4KCm11bHRpcGxpZXIYDCABKAVSCm11bH'
     'RpcGxpZXISLgoTY3VycmVudF9yb3VuZF9zY29yZRgNIAEoBVIRY3VycmVudFJvdW5kU2NvcmUS'
     'KQoQc3ByaW5nX3RyaWdnZXJlZBgOIAEoCFIPc3ByaW5nVHJpZ2dlcmVkEh8KC3R1cm5fc2VyaW'
-    'FsGA8gASgFUgp0dXJuU2VyaWFs');
+    'FsGA8gASgFUgp0dXJuU2VyaWFsEhsKCXJvb21fY29kZRgQIAEoCVIIcm9vbUNvZGUSJgoPb3du'
+    'ZXJfcGxheWVyX2lkGBEgASgJUg1vd25lclBsYXllcklk');
 
 @$core.Deprecated('Use playCardsRequestDescriptor instead')
 const PlayCardsRequest$json = {
@@ -666,6 +1041,105 @@ const ClientMessage$json = {
       '9': 0,
       '10': 'heartbeatRequest'
     },
+    {
+      '1': 'reset_password_request',
+      '3': 17,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.ResetPasswordRequest',
+      '9': 0,
+      '10': 'resetPasswordRequest'
+    },
+    {
+      '1': 'create_room_request',
+      '3': 18,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.CreateRoomRequest',
+      '9': 0,
+      '10': 'createRoomRequest'
+    },
+    {
+      '1': 'join_room_request',
+      '3': 19,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.JoinRoomRequest',
+      '9': 0,
+      '10': 'joinRoomRequest'
+    },
+    {
+      '1': 'room_ready_request',
+      '3': 20,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.RoomReadyRequest',
+      '9': 0,
+      '10': 'roomReadyRequest'
+    },
+    {
+      '1': 'add_bot_request',
+      '3': 21,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.AddBotRequest',
+      '9': 0,
+      '10': 'addBotRequest'
+    },
+    {
+      '1': 'remove_player_request',
+      '3': 22,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.RemovePlayerRequest',
+      '9': 0,
+      '10': 'removePlayerRequest'
+    },
+    {
+      '1': 'list_friends_request',
+      '3': 23,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.ListFriendsRequest',
+      '9': 0,
+      '10': 'listFriendsRequest'
+    },
+    {
+      '1': 'add_friend_request',
+      '3': 24,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.AddFriendRequest',
+      '9': 0,
+      '10': 'addFriendRequest'
+    },
+    {
+      '1': 'invite_player_request',
+      '3': 25,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.InvitePlayerRequest',
+      '9': 0,
+      '10': 'invitePlayerRequest'
+    },
+    {
+      '1': 'respond_room_invitation_request',
+      '3': 26,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.RespondRoomInvitationRequest',
+      '9': 0,
+      '10': 'respondRoomInvitationRequest'
+    },
+    {
+      '1': 'leave_room_request',
+      '3': 27,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.LeaveRoomRequest',
+      '9': 0,
+      '10': 'leaveRoomRequest'
+    },
   ],
   '8': [
     {'1': 'payload'},
@@ -685,7 +1159,25 @@ final $typed_data.Uint8List clientMessageDescriptor = $convert.base64Decode(
     'c1JlcXVlc3RIAFILcGFzc1JlcXVlc3QSUwoRcmVjb25uZWN0X3JlcXVlc3QYDyABKAsyJC5sYW'
     '5kbG9yZHMucHJvdG9jb2wuUmVjb25uZWN0UmVxdWVzdEgAUhByZWNvbm5lY3RSZXF1ZXN0ElMK'
     'EWhlYXJ0YmVhdF9yZXF1ZXN0GBAgASgLMiQubGFuZGxvcmRzLnByb3RvY29sLkhlYXJ0YmVhdF'
-    'JlcXVlc3RIAFIQaGVhcnRiZWF0UmVxdWVzdEIJCgdwYXlsb2Fk');
+    'JlcXVlc3RIAFIQaGVhcnRiZWF0UmVxdWVzdBJgChZyZXNldF9wYXNzd29yZF9yZXF1ZXN0GBEg'
+    'ASgLMigubGFuZGxvcmRzLnByb3RvY29sLlJlc2V0UGFzc3dvcmRSZXF1ZXN0SABSFHJlc2V0UG'
+    'Fzc3dvcmRSZXF1ZXN0ElcKE2NyZWF0ZV9yb29tX3JlcXVlc3QYEiABKAsyJS5sYW5kbG9yZHMu'
+    'cHJvdG9jb2wuQ3JlYXRlUm9vbVJlcXVlc3RIAFIRY3JlYXRlUm9vbVJlcXVlc3QSUQoRam9pbl'
+    '9yb29tX3JlcXVlc3QYEyABKAsyIy5sYW5kbG9yZHMucHJvdG9jb2wuSm9pblJvb21SZXF1ZXN0'
+    'SABSD2pvaW5Sb29tUmVxdWVzdBJUChJyb29tX3JlYWR5X3JlcXVlc3QYFCABKAsyJC5sYW5kbG'
+    '9yZHMucHJvdG9jb2wuUm9vbVJlYWR5UmVxdWVzdEgAUhByb29tUmVhZHlSZXF1ZXN0EksKD2Fk'
+    'ZF9ib3RfcmVxdWVzdBgVIAEoCzIhLmxhbmRsb3Jkcy5wcm90b2NvbC5BZGRCb3RSZXF1ZXN0SA'
+    'BSDWFkZEJvdFJlcXVlc3QSXQoVcmVtb3ZlX3BsYXllcl9yZXF1ZXN0GBYgASgLMicubGFuZGxv'
+    'cmRzLnByb3RvY29sLlJlbW92ZVBsYXllclJlcXVlc3RIAFITcmVtb3ZlUGxheWVyUmVxdWVzdB'
+    'JaChRsaXN0X2ZyaWVuZHNfcmVxdWVzdBgXIAEoCzImLmxhbmRsb3Jkcy5wcm90b2NvbC5MaXN0'
+    'RnJpZW5kc1JlcXVlc3RIAFISbGlzdEZyaWVuZHNSZXF1ZXN0ElQKEmFkZF9mcmllbmRfcmVxdW'
+    'VzdBgYIAEoCzIkLmxhbmRsb3Jkcy5wcm90b2NvbC5BZGRGcmllbmRSZXF1ZXN0SABSEGFkZEZy'
+    'aWVuZFJlcXVlc3QSXQoVaW52aXRlX3BsYXllcl9yZXF1ZXN0GBkgASgLMicubGFuZGxvcmRzLn'
+    'Byb3RvY29sLkludml0ZVBsYXllclJlcXVlc3RIAFITaW52aXRlUGxheWVyUmVxdWVzdBJ5Ch9y'
+    'ZXNwb25kX3Jvb21faW52aXRhdGlvbl9yZXF1ZXN0GBogASgLMjAubGFuZGxvcmRzLnByb3RvY2'
+    '9sLlJlc3BvbmRSb29tSW52aXRhdGlvblJlcXVlc3RIAFIccmVzcG9uZFJvb21JbnZpdGF0aW9u'
+    'UmVxdWVzdBJUChJsZWF2ZV9yb29tX3JlcXVlc3QYGyABKAsyJC5sYW5kbG9yZHMucHJvdG9jb2'
+    'wuTGVhdmVSb29tUmVxdWVzdEgAUhBsZWF2ZVJvb21SZXF1ZXN0QgkKB3BheWxvYWQ=');
 
 @$core.Deprecated('Use serverMessageDescriptor instead')
 const ServerMessage$json = {
@@ -764,6 +1256,69 @@ const ServerMessage$json = {
       '9': 0,
       '10': 'heartbeatResponse'
     },
+    {
+      '1': 'reset_password_response',
+      '3': 18,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.ResetPasswordResponse',
+      '9': 0,
+      '10': 'resetPasswordResponse'
+    },
+    {
+      '1': 'list_friends_response',
+      '3': 19,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.ListFriendsResponse',
+      '9': 0,
+      '10': 'listFriendsResponse'
+    },
+    {
+      '1': 'add_friend_response',
+      '3': 20,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.AddFriendResponse',
+      '9': 0,
+      '10': 'addFriendResponse'
+    },
+    {
+      '1': 'invite_player_response',
+      '3': 21,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.InvitePlayerResponse',
+      '9': 0,
+      '10': 'invitePlayerResponse'
+    },
+    {
+      '1': 'room_invitation_push',
+      '3': 22,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.RoomInvitationPush',
+      '9': 0,
+      '10': 'roomInvitationPush'
+    },
+    {
+      '1': 'respond_room_invitation_response',
+      '3': 23,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.RespondRoomInvitationResponse',
+      '9': 0,
+      '10': 'respondRoomInvitationResponse'
+    },
+    {
+      '1': 'room_invitation_result_push',
+      '3': 24,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.RoomInvitationResultPush',
+      '9': 0,
+      '10': 'roomInvitationResultPush'
+    },
   ],
   '8': [
     {'1': 'payload'},
@@ -784,4 +1339,17 @@ final $typed_data.Uint8List serverMessageDescriptor = $convert.base64Decode(
     '9uc2VIAFIRb3BlcmF0aW9uUmVzcG9uc2USSgoOZXJyb3JfcmVzcG9uc2UYECABKAsyIS5sYW5k'
     'bG9yZHMucHJvdG9jb2wuRXJyb3JSZXNwb25zZUgAUg1lcnJvclJlc3BvbnNlElYKEmhlYXJ0Ym'
     'VhdF9yZXNwb25zZRgRIAEoCzIlLmxhbmRsb3Jkcy5wcm90b2NvbC5IZWFydGJlYXRSZXNwb25z'
-    'ZUgAUhFoZWFydGJlYXRSZXNwb25zZUIJCgdwYXlsb2Fk');
+    'ZUgAUhFoZWFydGJlYXRSZXNwb25zZRJjChdyZXNldF9wYXNzd29yZF9yZXNwb25zZRgSIAEoCz'
+    'IpLmxhbmRsb3Jkcy5wcm90b2NvbC5SZXNldFBhc3N3b3JkUmVzcG9uc2VIAFIVcmVzZXRQYXNz'
+    'd29yZFJlc3BvbnNlEl0KFWxpc3RfZnJpZW5kc19yZXNwb25zZRgTIAEoCzInLmxhbmRsb3Jkcy'
+    '5wcm90b2NvbC5MaXN0RnJpZW5kc1Jlc3BvbnNlSABSE2xpc3RGcmllbmRzUmVzcG9uc2USVwoT'
+    'YWRkX2ZyaWVuZF9yZXNwb25zZRgUIAEoCzIlLmxhbmRsb3Jkcy5wcm90b2NvbC5BZGRGcmllbm'
+    'RSZXNwb25zZUgAUhFhZGRGcmllbmRSZXNwb25zZRJgChZpbnZpdGVfcGxheWVyX3Jlc3BvbnNl'
+    'GBUgASgLMigubGFuZGxvcmRzLnByb3RvY29sLkludml0ZVBsYXllclJlc3BvbnNlSABSFGludm'
+    'l0ZVBsYXllclJlc3BvbnNlEloKFHJvb21faW52aXRhdGlvbl9wdXNoGBYgASgLMiYubGFuZGxv'
+    'cmRzLnByb3RvY29sLlJvb21JbnZpdGF0aW9uUHVzaEgAUhJyb29tSW52aXRhdGlvblB1c2gSfA'
+    'ogcmVzcG9uZF9yb29tX2ludml0YXRpb25fcmVzcG9uc2UYFyABKAsyMS5sYW5kbG9yZHMucHJv'
+    'dG9jb2wuUmVzcG9uZFJvb21JbnZpdGF0aW9uUmVzcG9uc2VIAFIdcmVzcG9uZFJvb21JbnZpdG'
+    'F0aW9uUmVzcG9uc2USbQobcm9vbV9pbnZpdGF0aW9uX3Jlc3VsdF9wdXNoGBggASgLMiwubGFu'
+    'ZGxvcmRzLnByb3RvY29sLlJvb21JbnZpdGF0aW9uUmVzdWx0UHVzaEgAUhhyb29tSW52aXRhdG'
+    'lvblJlc3VsdFB1c2hCCQoHcGF5bG9hZA==');

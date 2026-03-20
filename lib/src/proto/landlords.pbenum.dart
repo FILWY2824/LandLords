@@ -123,22 +123,25 @@ class PlayerRole extends $pb.ProtobufEnum {
 class RoomPhase extends $pb.ProtobufEnum {
   static const RoomPhase ROOM_PHASE_UNSPECIFIED =
       RoomPhase._(0, _omitEnumNames ? '' : 'ROOM_PHASE_UNSPECIFIED');
+  static const RoomPhase ROOM_PHASE_PREPARING =
+      RoomPhase._(1, _omitEnumNames ? '' : 'ROOM_PHASE_PREPARING');
   static const RoomPhase ROOM_PHASE_WAITING =
-      RoomPhase._(1, _omitEnumNames ? '' : 'ROOM_PHASE_WAITING');
+      RoomPhase._(2, _omitEnumNames ? '' : 'ROOM_PHASE_WAITING');
   static const RoomPhase ROOM_PHASE_PLAYING =
-      RoomPhase._(2, _omitEnumNames ? '' : 'ROOM_PHASE_PLAYING');
+      RoomPhase._(3, _omitEnumNames ? '' : 'ROOM_PHASE_PLAYING');
   static const RoomPhase ROOM_PHASE_FINISHED =
-      RoomPhase._(3, _omitEnumNames ? '' : 'ROOM_PHASE_FINISHED');
+      RoomPhase._(4, _omitEnumNames ? '' : 'ROOM_PHASE_FINISHED');
 
   static const $core.List<RoomPhase> values = <RoomPhase>[
     ROOM_PHASE_UNSPECIFIED,
+    ROOM_PHASE_PREPARING,
     ROOM_PHASE_WAITING,
     ROOM_PHASE_PLAYING,
     ROOM_PHASE_FINISHED,
   ];
 
   static final $core.List<RoomPhase?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 3);
+      $pb.ProtobufEnum.$_initByValueList(values, 4);
   static RoomPhase? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
@@ -223,6 +226,35 @@ class PatternType extends $pb.ProtobufEnum {
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
   const PatternType._(super.value, super.name);
+}
+
+class InvitationResult extends $pb.ProtobufEnum {
+  static const InvitationResult INVITATION_RESULT_UNSPECIFIED =
+      InvitationResult._(
+          0, _omitEnumNames ? '' : 'INVITATION_RESULT_UNSPECIFIED');
+  static const InvitationResult INVITATION_RESULT_ACCEPTED =
+      InvitationResult._(1, _omitEnumNames ? '' : 'INVITATION_RESULT_ACCEPTED');
+  static const InvitationResult INVITATION_RESULT_REJECTED =
+      InvitationResult._(2, _omitEnumNames ? '' : 'INVITATION_RESULT_REJECTED');
+  static const InvitationResult INVITATION_RESULT_FAILED =
+      InvitationResult._(3, _omitEnumNames ? '' : 'INVITATION_RESULT_FAILED');
+  static const InvitationResult INVITATION_RESULT_EXPIRED =
+      InvitationResult._(4, _omitEnumNames ? '' : 'INVITATION_RESULT_EXPIRED');
+
+  static const $core.List<InvitationResult> values = <InvitationResult>[
+    INVITATION_RESULT_UNSPECIFIED,
+    INVITATION_RESULT_ACCEPTED,
+    INVITATION_RESULT_REJECTED,
+    INVITATION_RESULT_FAILED,
+    INVITATION_RESULT_EXPIRED,
+  ];
+
+  static final $core.List<InvitationResult?> _byValue =
+      $pb.ProtobufEnum.$_initByValueList(values, 4);
+  static InvitationResult? valueOf($core.int value) =>
+      value < 0 || value >= _byValue.length ? null : _byValue[value];
+
+  const InvitationResult._(super.value, super.name);
 }
 
 const $core.bool _omitEnumNames =

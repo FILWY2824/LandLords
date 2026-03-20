@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/app_models.dart';
 import '../models/game_models.dart';
@@ -12,6 +13,8 @@ import '../state/app_controller.dart';
 import '../utils/app_log.dart';
 import '../utils/browser_background.dart';
 import '../utils/current_trick_view.dart';
+import '../widgets/fixed_stage.dart';
+import '../widgets/seat_assignment_dialog.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key, required this.controller});
@@ -52,6 +55,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   String? _presentationRoomId;
   String? _activePresentationActionId;
   String? _bgmRoomId;
+  bool _sortDescending = false;
 
   void _showBanner(String text, {int milliseconds = 1800}) {
     _bannerTimer?.cancel();
@@ -82,7 +86,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     _bannerTimer?.cancel();
     _errorTimer?.cancel();
     _browserBackgroundSubscription?.cancel();
-    unawaited(_voice.dispose());
+    unawaited(_voice.dispose(releaseBackgroundMusic: true));
     super.dispose();
   }
 
@@ -429,6 +433,24 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     });
   }
 
+  void _clearSelectedCards() {
+    if (_selectedIds.isEmpty && _suggestedIds.isEmpty) {
+      return;
+    }
+    setState(() {
+      _selectedIds.clear();
+      _suggestedIds.clear();
+    });
+  }
+
+  void _toggleSortOrder() {
+    setState(() => _sortDescending = !_sortDescending);
+  }
+
+  Future<void> _handleBackToLobby() async {
+    await widget.controller.backToLobby();
+  }
+
   int? _handIndexAtPosition(
     List<PlayingCard> cards,
     double dx,
@@ -478,6 +500,12 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       return const Scaffold(body: SizedBox.shrink());
     }
 
+    if (snapshot.phase == RoomPhase.preparing) {
+      _sync(snapshot);
+      _syncGameError();
+      return _buildPreparingRoomView(snapshot, profile);
+    }
+
     final me = snapshot.players.firstWhere(
       (player) => player.playerId == profile.userId,
     );
@@ -491,7 +519,11 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     final myTurn = snapshot.currentTurnPlayerId == me.playerId;
     final managed = _isManaged(snapshot, me.playerId);
     final waitingMyBid = snapshot.phase == RoomPhase.waiting && myTurn;
-    final selfCards = [...snapshot.selfCards]..sort(_compareSelfCards);
+    final selfCards = [...snapshot.selfCards]
+      ..sort((left, right) {
+        final value = _compareSelfCards(left, right);
+        return _sortDescending ? value : -value;
+      });
 
     _sync(snapshot);
     _syncGameError();
@@ -531,17 +563,21 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                         children: [
                           Column(
                             children: [
-                              _buildTopHud(snapshot),
+                              _buildTopHudView(snapshot),
                               Expanded(
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                                   child: LayoutBuilder(
                                     builder: (context, constraints) {
-                                      final compact = false;
-                                      const seatWidth = 248.0;
-                                      const playedWidth = 112.0;
-                                      const sideTrayWidth = 336.0;
-                                      const selfTrayWidth = 560.0;
+                                      const seatWidth = 236.0;
+                                      const playedWidth = 126.0;
+                                      const sideTrayWidth = 332.0;
+                                      const selfTrayWidth = 468.0;
+                                      const sideSeatInset = 22.0;
+                                      const sideSeatTop = 18.0;
+                                      const sideTrayGap = 18.0;
+                                      const sideTrayTop = 124.0;
+                                      const selfTrayBottom = 18.0;
                                       final trayLayouts = <_PlayedTrayLayout>[
                                         _PlayedTrayLayout(
                                           position: _PlayedTrayPosition.left,
@@ -618,8 +654,8 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                             child: _buildTable(snapshot.mode),
                                           ),
                                           Positioned(
-                                            left: 22,
-                                            top: 18,
+                                            left: sideSeatInset,
+                                            top: sideSeatTop,
                                             child: _buildSeat(
                                               snapshot,
                                               leftPlayer,
@@ -631,8 +667,8 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                             ),
                                           ),
                                           Positioned(
-                                            right: 22,
-                                            top: 18,
+                                            right: sideSeatInset,
+                                            top: sideSeatTop,
                                             child: _buildSeat(
                                               snapshot,
                                               rightPlayer,
@@ -666,33 +702,71 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                               ),
                                             ),
                                           for (final layout in trayLayouts)
-                                            Align(
-                                              alignment: _trayAlignment(
-                                                compact: compact,
-                                                position: layout.position,
-                                                emphasis:
-                                                    layout.displayAction!.emphasis,
-                                              ),
-                                              child: SizedBox(
-                                                width: layout.width,
-                                                child: _buildPlayedTray(
-                                                  player: layout.player,
-                                                  action: layout.displayAction!.action,
-                                                  emphasis:
-                                                      layout.displayAction!.emphasis,
-                                                  active: layout.active,
-                                                  towardCenter:
-                                                      layout.towardCenter,
-                                                  centered: layout.centered,
-                                                  cardWidth: layout.position ==
-                                                          _PlayedTrayPosition.self
-                                                      ? playedWidth
-                                                      : playedWidth - 10,
-                                                  maxWidth: layout.width,
-                                                  isLeadingPlay:
-                                                      layout.isLeadingPlay,
-                                                ),
-                                              ),
+                                            Positioned(
+                                              left: switch (layout.position) {
+                                                _PlayedTrayPosition.left =>
+                                                  sideSeatInset + seatWidth + sideTrayGap,
+                                                _PlayedTrayPosition.self => 0,
+                                                _PlayedTrayPosition.right => null,
+                                              },
+                                              right: switch (layout.position) {
+                                                _PlayedTrayPosition.right =>
+                                                  sideSeatInset + seatWidth + sideTrayGap,
+                                                _PlayedTrayPosition.self => 0,
+                                                _PlayedTrayPosition.left => null,
+                                              },
+                                              top: layout.position == _PlayedTrayPosition.self
+                                                  ? null
+                                                  : sideTrayTop,
+                                              bottom: layout.position == _PlayedTrayPosition.self
+                                                  ? selfTrayBottom
+                                                  : null,
+                                              child: layout.position ==
+                                                      _PlayedTrayPosition.self
+                                                  ? Center(
+                                                      child: SizedBox(
+                                                        width: layout.width,
+                                                        child: _buildPlayedTray(
+                                                          player: layout.player,
+                                                          action: layout
+                                                              .displayAction!
+                                                              .action,
+                                                          emphasis: layout
+                                                              .displayAction!
+                                                              .emphasis,
+                                                          active: layout.active,
+                                                          towardCenter:
+                                                              layout.towardCenter,
+                                                          centered:
+                                                              layout.centered,
+                                                          cardWidth: playedWidth,
+                                                          maxWidth: layout.width,
+                                                          isLeadingPlay:
+                                                              layout.isLeadingPlay,
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : SizedBox(
+                                                      width: layout.width,
+                                                      child: _buildPlayedTray(
+                                                        player: layout.player,
+                                                        action: layout
+                                                            .displayAction!
+                                                            .action,
+                                                        emphasis: layout
+                                                            .displayAction!
+                                                            .emphasis,
+                                                        active: layout.active,
+                                                        towardCenter:
+                                                            layout.towardCenter,
+                                                        centered:
+                                                            layout.centered,
+                                                        cardWidth: playedWidth,
+                                                        maxWidth: layout.width,
+                                                        isLeadingPlay:
+                                                            layout.isLeadingPlay,
+                                                      ),
+                                                    ),
                                             ),
                                           if (snapshot.phase == RoomPhase.finished)
                                             Positioned.fill(
@@ -704,7 +778,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                   ),
                                 ),
                               ),
-                              _buildBottomDock(
+                              _buildBottomDockView(
                                 snapshot,
                                 me,
                                 selfCards: selfCards,
@@ -742,13 +816,1347 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     );
   }
 
+  Future<void> _showInvitePlayerDialog(RoomSnapshot snapshot) async {
+    final users = await widget.controller.fetchFriends();
+    if (!mounted) {
+      return;
+    }
+    if (users.isEmpty) {
+      _showBanner('当前没有可邀请的在线玩家', milliseconds: 1400);
+      return;
+    }
+    final selected = await showDialog<OnlineUser>(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: StagePanel(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+            radius: 26,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        '邀请在线玩家',
+                        style: TextStyle(
+                          color: Color(0xFF173A59),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 24,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  '选择一位在线玩家发送入桌邀请，对方确认后即可加入当前房间。',
+                  style: TextStyle(
+                    color: Color(0xFF587790),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 320),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        for (final user in users) ...[
+                          InkWell(
+                            borderRadius: BorderRadius.circular(18),
+                            onTap: () => Navigator.of(context).pop(user),
+                            child: Ink(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(18),
+                                color: Colors.white.withValues(alpha: 0.92),
+                                border: Border.all(color: const Color(0xFFD7EBFF)),
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 22,
+                                    backgroundColor: const Color(0xFF2B7FFF),
+                                    child: Text(
+                                      (user.username.isEmpty
+                                              ? 'P'
+                                              : user.username.substring(0, 1))
+                                          .toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      user.username,
+                                      style: const TextStyle(
+                                        color: Color(0xFF173A59),
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    size: 16,
+                                    color: Color(0xFF2B7FFF),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (user != users.last) const SizedBox(height: 8),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (!mounted || selected == null) {
+      return;
+    }
+    await widget.controller.invitePlayerToRoom(
+      account: selected.account,
+      seatIndex: snapshot.players.indexWhere((player) => !player.occupied),
+    );
+    if (!mounted || widget.controller.errorText != null) {
+      return;
+    }
+    _showBanner('已向 ${selected.username} 发送邀请', milliseconds: 1400);
+  }
+
+  Future<void> _showSeatAssignmentForSeat(
+    RoomSnapshot snapshot,
+    int seatIndex,
+  ) async {
+    final result = await showSeatAssignmentDialog(
+      context,
+      controller: widget.controller,
+      snapshot: snapshot,
+      seatIndex: seatIndex,
+    );
+    if (!mounted || result == null) {
+      return;
+    }
+    _showBanner(result.message, milliseconds: 1400);
+  }
+
+  // ignore: unused_element
+  Widget _buildPreparingRoom(RoomSnapshot snapshot, UserProfile profile) {
+    final me = snapshot.players.firstWhere(
+      (player) => player.playerId == profile.userId,
+    );
+    final isOwner = snapshot.ownerPlayerId == profile.userId;
+    final occupiedCount =
+        snapshot.players.where((player) => player.occupied).length;
+    final readyCount = snapshot.players
+        .where((player) => player.occupied && player.ready)
+        .length;
+    final hasEmptySeat = snapshot.players.any((player) => !player.occupied);
+
+    return Scaffold(
+      body: FixedStageBackdrop(
+        child: FixedStage(
+          width: 1360,
+          height: 800,
+          padding: const EdgeInsets.all(14),
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  StagePanel(
+                    padding: const EdgeInsets.fromLTRB(22, 18, 22, 16),
+                    radius: 28,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '房间准备',
+                                style: TextStyle(
+                                  color: Color(0xFF173A59),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 28,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                _preparingStatusText(snapshot.statusText),
+                                style: const TextStyle(
+                                  color: Color(0xFF587790),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  height: 1.45,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            color: const Color(0xFFEAF5FF),
+                            border: Border.all(color: const Color(0xFFD1E9FF)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '房间号',
+                                style: TextStyle(
+                                  color: Color(0xFF587790),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                snapshot.roomCode.isEmpty
+                                    ? snapshot.roomId
+                                    : snapshot.roomCode,
+                                style: const TextStyle(
+                                  color: Color(0xFF173A59),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 22,
+                                  letterSpacing: 1.6,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            final code = snapshot.roomCode.isEmpty
+                                ? snapshot.roomId
+                                : snapshot.roomCode;
+                            await Clipboard.setData(ClipboardData(text: code));
+                            if (!mounted) {
+                              return;
+                            }
+                            _showBanner('房间号已复制', milliseconds: 1100);
+                          },
+                          icon: const Icon(Icons.copy_rounded, size: 18),
+                          label: const Text('复制'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 11,
+                          child: StagePanel(
+                            padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
+                            radius: 30,
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    _buildPreparingSummaryChip(
+                                      label: '入座人数',
+                                      value: '$occupiedCount / 3',
+                                    ),
+                                    const SizedBox(width: 10),
+                                    _buildPreparingSummaryChip(
+                                      label: '准备人数',
+                                      value: '$readyCount / 3',
+                                    ),
+                                    const Spacer(),
+                                    const Text(
+                                      '所有玩家准备后自动开局',
+                                      style: TextStyle(
+                                        color: Color(0xFF587790),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      for (var index = 0;
+                                          index < snapshot.players.length;
+                                          index++) ...[
+                                        Expanded(
+                                          child: _buildPreparingSeatCard(
+                                            snapshot: snapshot,
+                                            player: snapshot.players[index],
+                                            seatLabel: switch (index) {
+                                              0 => '一号位',
+                                              1 => '二号位',
+                                              _ => '三号位',
+                                            },
+                                            isOwner: isOwner,
+                                            isSelf: snapshot.players[index].playerId ==
+                                                profile.userId,
+                                          ),
+                                        ),
+                                        if (index != snapshot.players.length - 1)
+                                          const SizedBox(width: 14),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        SizedBox(
+                          width: 282,
+                          child: StagePanel(
+                            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                            radius: 28,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '本桌信息',
+                                  style: TextStyle(
+                                    color: Color(0xFF173A59),
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 22,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  isOwner
+                                      ? '你是房主，可以邀请在线玩家，也可以直接补入 DouZero。'
+                                      : '等待房主安排座位，准备完成后即可进入正式对局。',
+                                  style: const TextStyle(
+                                    color: Color(0xFF587790),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    height: 1.45,
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(24),
+                                    color: const Color(0xFFF3F9FF),
+                                    border: Border.all(color: const Color(0xFFD7EBFF)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        isOwner ? '当前身份' : '当前状态',
+                                        style: const TextStyle(
+                                          color: Color(0xFF587790),
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        isOwner ? '房主' : (me.ready ? '已准备' : '等待准备'),
+                                        style: const TextStyle(
+                                          color: Color(0xFF173A59),
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Spacer(),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton(
+                                    onPressed: widget.controller.isBusy
+                                        ? null
+                                        : () => widget.controller.setRoomReady(!me.ready),
+                                    child: Text(me.ready ? '取消准备' : '准备'),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                if (isOwner && hasEmptySeat)
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: widget.controller.isBusy
+                                          ? null
+                                          : () => _showInvitePlayerDialog(snapshot),
+                                      icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                                      label: const Text('邀请玩家'),
+                                    ),
+                                  ),
+                                if (isOwner && hasEmptySeat) const SizedBox(height: 10),
+                                if (isOwner && hasEmptySeat)
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: widget.controller.isBusy
+                                          ? null
+                                          : () => widget.controller.addBotToRoom(
+                                                seatIndex: snapshot.players
+                                                    .firstWhere(
+                                                      (player) => !player.occupied,
+                                                    )
+                                                    .seatIndex,
+                                              ),
+                                      icon: const Icon(Icons.smart_toy_rounded, size: 18),
+                                      label: const Text('加入 DouZero'),
+                                    ),
+                                  ),
+                                if (isOwner && hasEmptySeat) const SizedBox(height: 10),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton(
+                                    onPressed: widget.controller.isBusy
+                                        ? null
+                                        : widget.controller.backToLobby,
+                                    child: const Text('返回大厅'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (widget.controller.isBusy)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  ),
+                ),
+              if (_bannerText != null)
+                Positioned(
+                  top: 18,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: Center(
+                      child: _bannerPill(_bannerText!),
+                    ),
+                  ),
+                ),
+              if (_errorNotice != null)
+                Positioned(
+                  top: 92,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: Center(
+                      child: _buildErrorNotice(_errorNotice!),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreparingSeatCard({
+    required RoomSnapshot snapshot,
+    required RoomPlayer player,
+    required String seatLabel,
+    required bool isOwner,
+    required bool isSelf,
+  }) {
+    final isEmpty = !player.occupied;
+    final canRemoveBot = isOwner && player.isBot && player.occupied;
+    final accent = isSelf ? const Color(0xFF64B4FF) : const Color(0xFFD7EBFF);
+    final title = isEmpty ? '空位' : player.displayName;
+    final detail = isEmpty
+        ? (isOwner
+            ? '你可以邀请在线玩家，或者直接补入 DouZero。'
+            : '等待房主安排玩家或 DouZero 入座。')
+        : player.isBot
+            ? 'DouZero 已接入这个座位，房主可以随时将其移除。'
+            : isSelf
+                ? '你可以先准备，等待其他玩家全部就位。'
+                : '等待该玩家确认准备后即可开局。';
+    final pillText = isEmpty
+        ? '空位'
+        : player.ready
+            ? '已准备'
+            : '待准备';
+    final pillColor = isEmpty
+        ? const Color(0xFF2B7FFF)
+        : player.ready
+            ? const Color(0xFF237A4B)
+            : const Color(0xFFB56A18);
+    final pillBackground = isEmpty
+        ? const Color(0xFFEAF5FF)
+        : player.ready
+            ? const Color(0xFFE7F7EE)
+            : const Color(0xFFFFF4E8);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        color: Colors.white.withValues(alpha: 0.92),
+        border: Border.all(color: accent, width: isSelf ? 1.8 : 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14397BA8),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Text(
+                seatLabel,
+                style: const TextStyle(
+                  color: Color(0xFF587790),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
+              ),
+              const Spacer(),
+              if (canRemoveBot)
+                IconButton(
+                  tooltip: '移除机器人',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: widget.controller.isBusy
+                      ? null
+                      : () => widget.controller.removePlayerFromRoom(player.playerId),
+                  icon: const Icon(
+                    Icons.person_remove_alt_1_rounded,
+                    color: Color(0xFF2B7FFF),
+                  ),
+                ),
+            ],
+          ),
+          const Spacer(),
+          Container(
+            width: 84,
+            height: 84,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: isEmpty
+                    ? [const Color(0xFFEAF5FF), const Color(0xFFD8EEFF)]
+                    : [const Color(0xFF80D0FF), const Color(0xFF2B7FFF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: isEmpty
+                ? const Icon(
+                    Icons.add_rounded,
+                    size: 42,
+                    color: Color(0xFF2B7FFF),
+                  )
+                : Text(
+                    title.substring(0, 1).toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 30,
+                    ),
+                  ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF173A59),
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: pillBackground,
+            ),
+            child: Text(
+              pillText,
+              style: TextStyle(
+                color: pillColor,
+                fontWeight: FontWeight.w900,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            detail,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF587790),
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ),
+          const Spacer(),
+          if (isEmpty && isOwner)
+            Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: widget.controller.isBusy
+                        ? null
+                        : () => _showInvitePlayerDialog(snapshot),
+                    icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                    label: const Text('邀请玩家'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    onPressed: widget.controller.isBusy
+                        ? null
+                        : () => widget.controller.addBotToRoom(
+                              seatIndex: player.seatIndex,
+                            ),
+                    icon: const Icon(Icons.smart_toy_rounded, size: 18),
+                    label: const Text('加入 DouZero'),
+                  ),
+                ),
+              ],
+            )
+          else
+            const SizedBox(height: 82),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreparingRoomView(RoomSnapshot snapshot, UserProfile profile) {
+    final me = snapshot.players.firstWhere(
+      (player) => player.playerId == profile.userId,
+    );
+    final isOwner = snapshot.ownerPlayerId == profile.userId;
+    final occupiedCount =
+        snapshot.players.where((player) => player.occupied).length;
+    final readyCount = snapshot.players
+        .where((player) => player.occupied && player.ready)
+        .length;
+    final roomCode =
+        snapshot.roomCode.isEmpty ? snapshot.roomId : snapshot.roomCode;
+
+    return Scaffold(
+      body: FixedStageBackdrop(
+        child: FixedStage(
+          width: 1240,
+          height: 740,
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              StagePanel(
+                padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
+                radius: 28,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '真人房间',
+                            style: TextStyle(
+                              color: Color(0xFF173A59),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 30,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _preparingStatusTextView(snapshot.statusText),
+                            style: const TextStyle(
+                              color: Color(0xFF587790),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              height: 1.45,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        color: const Color(0xFFEAF5FF),
+                        border: Border.all(color: const Color(0xFFD1E9FF)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '房间号',
+                            style: TextStyle(
+                              color: Color(0xFF587790),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            roomCode,
+                            style: const TextStyle(
+                              color: Color(0xFF173A59),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 28,
+                              letterSpacing: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        await Clipboard.setData(ClipboardData(text: roomCode));
+                        if (!mounted) {
+                          return;
+                        }
+                        _showBanner('房间号已复制', milliseconds: 1200);
+                      },
+                      icon: const Icon(Icons.copy_rounded, size: 18),
+                      label: const Text('复制房号'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(164, 66),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 10,
+                      child: StagePanel(
+                        padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
+                        radius: 30,
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                _buildPreparingSummaryChipView(
+                                  label: '已入座',
+                                  value: '$occupiedCount / 3',
+                                ),
+                                const SizedBox(width: 10),
+                                _buildPreparingSummaryChipView(
+                                  label: '已准备',
+                                  value: '$readyCount / 3',
+                                ),
+                                const Spacer(),
+                                const Text(
+                                  '所有玩家准备后自动开局',
+                                  style: TextStyle(
+                                    color: Color(0xFF587790),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  for (var index = 0;
+                                      index < snapshot.players.length;
+                                      index++) ...[
+                                    Expanded(
+                                      child: _buildPreparingSeatCardView(
+                                        snapshot: snapshot,
+                                        player: snapshot.players[index],
+                                        isOwner: isOwner,
+                                        isSelf: snapshot.players[index].playerId ==
+                                            profile.userId,
+                                      ),
+                                    ),
+                                    if (index != snapshot.players.length - 1)
+                                      const SizedBox(width: 14),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    SizedBox(
+                      width: 304,
+                      child: StagePanel(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                        radius: 28,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '房间操作',
+                              style: TextStyle(
+                                color: Color(0xFF173A59),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 24,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              isOwner
+                                  ? '点击空位即可安排好友或补入 DouZero，准备后等待其余玩家就绪。'
+                                  : '等待房主安排座位。入座后点击准备，所有人准备后自动开始。',
+                              style: const TextStyle(
+                                color: Color(0xFF587790),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                height: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                color: const Color(0xFFF4FAFF),
+                                border: Border.all(color: const Color(0xFFD7EBFF)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '当前玩家：${me.displayName}',
+                                    style: const TextStyle(
+                                      color: Color(0xFF173A59),
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    me.ready ? '状态：已准备' : '状态：未准备',
+                                    style: TextStyle(
+                                      color: me.ready
+                                          ? const Color(0xFF237A4B)
+                                          : const Color(0xFFB56A18),
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Spacer(),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton(
+                                onPressed: widget.controller.isBusy
+                                    ? null
+                                    : () => widget.controller.setRoomReady(
+                                          !me.ready,
+                                        ),
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(58),
+                                ),
+                                child: Text(me.ready ? '取消准备' : '准备'),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: widget.controller.isBusy
+                                    ? null
+                                    : () => unawaited(_handleBackToLobby()),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(56),
+                                ),
+                                child: const Text('退出房间'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreparingSeatCardView({
+    required RoomSnapshot snapshot,
+    required RoomPlayer player,
+    required bool isOwner,
+    required bool isSelf,
+  }) {
+    final isEmpty = !player.occupied;
+    final canRemoveBot = isOwner && player.isBot && player.occupied;
+    final accent = isSelf ? const Color(0xFF64B4FF) : const Color(0xFFD7EBFF);
+    final title = isEmpty ? '空位' : player.displayName;
+    final detail = isEmpty
+        ? (isOwner ? '点击安排好友入座，或补入 DouZero。' : '等待房主安排座位。')
+        : player.isBot
+            ? 'DouZero 已接入该位置，可由房主移除。'
+            : isSelf
+                ? '你已经入座，准备后等待其余玩家。'
+                : '等待这位玩家点击准备。';
+    final pillText = isEmpty ? '空位' : (player.ready ? '已准备' : '待准备');
+    final pillColor = isEmpty
+        ? const Color(0xFF2B7FFF)
+        : player.ready
+            ? const Color(0xFF237A4B)
+            : const Color(0xFFB56A18);
+    final pillBackground = isEmpty
+        ? const Color(0xFFEAF5FF)
+        : player.ready
+            ? const Color(0xFFE7F7EE)
+            : const Color(0xFFFFF4E8);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        color: Colors.white.withValues(alpha: 0.92),
+        border: Border.all(color: accent, width: isSelf ? 1.8 : 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14397BA8),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Text(
+                _seatLabelForIndex(player.seatIndex),
+                style: const TextStyle(
+                  color: Color(0xFF587790),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
+              ),
+              const Spacer(),
+              if (canRemoveBot)
+                IconButton(
+                  onPressed: widget.controller.isBusy
+                      ? null
+                      : () => widget.controller.removePlayerFromRoom(
+                            player.playerId,
+                          ),
+                  icon: const Icon(
+                    Icons.person_remove_alt_1_rounded,
+                    color: Color(0xFF2B7FFF),
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+            ],
+          ),
+          const Spacer(),
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: isEmpty
+                    ? [const Color(0xFFEAF5FF), const Color(0xFFD8EEFF)]
+                    : [const Color(0xFF80D0FF), const Color(0xFF2B7FFF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: isEmpty
+                ? const Icon(
+                    Icons.add_rounded,
+                    size: 44,
+                    color: Color(0xFF2B7FFF),
+                  )
+                : Text(
+                    title.substring(0, 1).toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 30,
+                    ),
+                  ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF173A59),
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: pillBackground,
+            ),
+            child: Text(
+              pillText,
+              style: TextStyle(
+                color: pillColor,
+                fontWeight: FontWeight.w900,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            detail,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF587790),
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ),
+          const Spacer(),
+          if (isEmpty && isOwner)
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                onPressed: widget.controller.isBusy
+                    ? null
+                    : () => _showSeatAssignmentForSeat(
+                          snapshot,
+                          player.seatIndex,
+                        ),
+                icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                label: const Text('安排座位'),
+              ),
+            )
+          else
+            const SizedBox(height: 48),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreparingSummaryChipView({
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        color: const Color(0xFFEAF5FF),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF587790),
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFF173A59),
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _preparingStatusTextView(String status) {
+    return switch (status) {
+      'waiting_for_players' => '等待玩家加入房间，未坐满时可以继续补入席位。',
+      'waiting_for_ready' => '玩家已到齐，等待所有玩家点击准备。',
+      'ready_to_start' => '所有玩家均已准备，正在进入牌桌。',
+      _ => '房间状态已更新，请继续完成本桌准备。',
+    };
+  }
+
+  String _seatLabelForIndex(int seatIndex) => switch (seatIndex) {
+        0 => '一号位',
+        1 => '二号位',
+        _ => '三号位',
+      };
+
+  Widget _buildPreparingSummaryChip({
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        color: const Color(0xFFEAF5FF),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF587790),
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFF173A59),
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _preparingStatusText(String status) {
+    return switch (status) {
+      'waiting_for_players' => '等待所有座位坐满，你可以邀请玩家或补入 DouZero。',
+      'waiting_for_ready' => '玩家已到齐，请等待所有人点击准备。',
+      'ready_to_start' => '所有人都已准备，牌桌即将开始。',
+      _ => '房间状态已更新，请继续完成本桌准备。',
+    };
+  }
+
+  Widget _buildTopHudView(RoomSnapshot snapshot) {
+    const tileHeight = 82.0;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 112,
+            height: tileHeight,
+            child: OutlinedButton.icon(
+              onPressed: () => unawaited(_handleBackToLobby()),
+              icon: const Icon(Icons.arrow_back_rounded, size: 18),
+              label: const Text('大厅'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 236,
+            height: tileHeight,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              color: Colors.white.withValues(alpha: 0.92),
+              border: Border.all(color: const Color(0xFFD7EBFF)),
+            ),
+            child: Row(
+              children: [
+                const Text(
+                  '底牌',
+                  style: TextStyle(
+                    color: Color(0xFF245E90),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                for (var index = 0; index < snapshot.landlordCards.length; index++) ...[
+                  _miniCard(
+                    snapshot.landlordCards[index].rankLabel,
+                    snapshot.landlordCards[index].isRed,
+                  ),
+                  if (index != snapshot.landlordCards.length - 1)
+                    const SizedBox(width: 4),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _showCounter
+                ? _buildCounterStripView(snapshot.cardCounter)
+                : _hudInfoTile('剩余牌统计已隐藏'),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 150,
+            height: tileHeight,
+            child: OutlinedButton.icon(
+              onPressed: () => setState(() => _showCounter = !_showCounter),
+              icon: Icon(
+                _showCounter
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                size: 18,
+              ),
+              label: Text(_showCounter ? '隐藏牌况' : '显示牌况'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 150,
+            height: tileHeight,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                setState(() => _musicEnabled = !_musicEnabled);
+                if (_musicEnabled) {
+                  unawaited(_voice.startBackgroundMusic());
+                } else {
+                  unawaited(_voice.stopBackgroundMusic());
+                }
+              },
+              icon: Icon(
+                _musicEnabled
+                    ? Icons.music_off_rounded
+                    : Icons.music_note_rounded,
+                size: 18,
+              ),
+              label: Text(_musicEnabled ? '关闭音乐' : '开启音乐'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCounterStripView(List<CardCounterEntry> entries) {
+    final sorted = [...entries]
+      ..sort((a, b) => _weight(b.rank).compareTo(_weight(a.rank)));
+    return Container(
+      height: 82,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: Colors.white.withValues(alpha: 0.92),
+        border: Border.all(color: const Color(0xFFD7EBFF)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: const Color(0xFFF2F8FF),
+              border: Border.all(color: const Color(0xFFD7EBFF)),
+            ),
+            child: const Text(
+              '剩余牌统计',
+              style: TextStyle(
+                color: Color(0xFF245E90),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (var index = 0; index < sorted.length; index++) ...[
+                    _counterPill(
+                      sorted[index],
+                      compact: false,
+                      singleLine: true,
+                    ),
+                    if (index != sorted.length - 1) const SizedBox(width: 4),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ignore: unused_element
   Widget _buildTopHud(RoomSnapshot snapshot) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxWidth < 1260;
+          final hudTileWidth = compact ? 176.0 : 208.0;
           final landlordCards = Container(
+            width: double.infinity,
             height: compact ? 58 : 62,
             padding: EdgeInsets.symmetric(
               horizontal: compact ? 10 : 12,
@@ -788,18 +2196,20 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                 Icons.arrow_back_rounded,
                 '\u5927\u5385',
                 widget.controller.backToLobby,
+                width: compact ? 108 : 120,
               ),
               SizedBox(width: compact ? 6 : 8),
-              landlordCards,
+              SizedBox(width: hudTileWidth, child: landlordCards),
               SizedBox(width: compact ? 6 : 8),
-              Expanded(
+              SizedBox(
+                width: hudTileWidth,
                 child: _showCounter
                     ? _buildCounter(
                         snapshot.cardCounter,
                         compact: compact,
                         singleLine: true,
                       )
-                    : const SizedBox.shrink(),
+                    : _hudInfoTile('\u5269\u4f59\u724c\u7edf\u8ba1\u5df2\u9690\u85cf'),
               ),
               SizedBox(width: compact ? 6 : 8),
               _hudButton(
@@ -808,6 +2218,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                     : Icons.visibility_outlined,
                 _showCounter ? '\u9690\u85cf\u724c\u51b5' : '\u663e\u793a\u724c\u51b5',
                 () => setState(() => _showCounter = !_showCounter),
+                width: hudTileWidth,
               ),
               SizedBox(width: compact ? 6 : 8),
               _hudButton(
@@ -823,6 +2234,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                     unawaited(_voice.stopBackgroundMusic());
                   }
                 },
+                width: hudTileWidth,
               ),
             ],
           );
@@ -895,108 +2307,104 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   }) {
     final managed = _isManaged(snapshot, player.playerId);
     final roleText = player.isLandlord ? '\u5730\u4e3b' : '\u519c\u6c11';
-    return AnimatedScale(
+    return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
-      scale: active ? 1.02 : 1,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        width: width,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: LinearGradient(
-            colors: active
-                ? [
-                    Colors.white,
-                    const Color(0xFFF4FAFF),
-                    const Color(0xFFE6F3FF),
-                  ]
-                : [
-                    Colors.white.withValues(alpha: 0.95),
-                    Colors.white.withValues(alpha: 0.90),
-                  ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border.all(
-            color: active ? const Color(0xFF2B7FFF) : const Color(0xFFD7EBFF),
-            width: active ? 2.4 : 1.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: active ? const Color(0x2E2B7FFF) : const Color(0x123678A3),
-              blurRadius: active ? 28 : 14,
-              offset: const Offset(0, 10),
-            ),
-          ],
+      width: width,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          colors: active
+              ? [
+                  Colors.white,
+                  const Color(0xFFF4FAFF),
+                  const Color(0xFFE6F3FF),
+                ]
+              : [
+                  Colors.white.withValues(alpha: 0.95),
+                  Colors.white.withValues(alpha: 0.90),
+                ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Column(
-          crossAxisAlignment:
-              towardCenter ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: const Color(0xFF2B7FFF),
-                  child: Text(
-                    player.displayName.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 26,
+        border: Border.all(
+          color: active ? const Color(0xFF2B7FFF) : const Color(0xFFD7EBFF),
+          width: active ? 2.4 : 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: active ? const Color(0x2E2B7FFF) : const Color(0x123678A3),
+            blurRadius: active ? 28 : 14,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment:
+            towardCenter ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: const Color(0xFF2B7FFF),
+                child: Text(
+                  player.displayName.substring(0, 1).toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 26,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      player.displayName,
+                      style: const TextStyle(
+                        color: Color(0xFF173A59),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        player.displayName,
-                        style: const TextStyle(
-                          color: Color(0xFF173A59),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 18,
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$roleText / ${player.cardsLeft} \u5f20',
+                      style: const TextStyle(
+                        color: Color(0xFF5A7894),
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$roleText / ${player.cardsLeft} \u5f20',
-                        style: const TextStyle(
-                          color: Color(0xFF5A7894),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                if (active) _turnDial(managed: managed),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _seatTag(roleText, player.isLandlord
-                    ? const Color(0xFFF6B24B)
-                    : const Color(0xFF6FAAFF)),
-                if (player.isBot)
-                  _seatTag('\u673a\u5668\u4eba', const Color(0xFF8BA4BE)),
-                if (managed) _seatTag('\u6258\u7ba1\u4e2d', const Color(0xFF2B7FFF)),
-                if (active) _seatTag('\u8f6e\u5230\u51fa\u724c', const Color(0xFF2B7FFF)),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Align(
-              alignment:
-                  towardCenter ? Alignment.centerLeft : Alignment.centerRight,
-              child: _backFan(player.cardsLeft, towardCenter: towardCenter),
-            ),
-          ],
-        ),
+              ),
+              if (active) _turnDial(managed: managed),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _seatTag(roleText, player.isLandlord
+                  ? const Color(0xFFF6B24B)
+                  : const Color(0xFF6FAAFF)),
+              if (player.isBot)
+                _seatTag('\u673a\u5668\u4eba', const Color(0xFF8BA4BE)),
+              if (managed) _seatTag('\u6258\u7ba1\u4e2d', const Color(0xFF2B7FFF)),
+              if (active) _seatTag('\u8f6e\u5230\u51fa\u724c', const Color(0xFF2B7FFF)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Align(
+            alignment:
+                towardCenter ? Alignment.centerLeft : Alignment.centerRight,
+            child: _backFan(player.cardsLeft, towardCenter: towardCenter),
+          ),
+        ],
       ),
     );
   }
@@ -1032,6 +2440,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     );
   }
 
+  // ignore: unused_element
   Alignment _trayAlignment({
     required bool compact,
     required _PlayedTrayPosition position,
@@ -1040,133 +2449,139 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     final primary = emphasis == TrickActionEmphasis.primary;
     return switch (position) {
       _PlayedTrayPosition.left => compact
-          ? Alignment(primary ? -0.18 : -0.82, primary ? -0.02 : 0.18)
-          : Alignment(primary ? -0.16 : -0.80, primary ? -0.02 : 0.16),
+          ? Alignment(primary ? -0.22 : -0.64, primary ? -0.02 : -0.02)
+          : Alignment(primary ? -0.22 : -0.66, primary ? -0.04 : -0.02),
       _PlayedTrayPosition.right => compact
-          ? Alignment(primary ? 0.18 : 0.82, primary ? -0.02 : 0.18)
-          : Alignment(primary ? 0.16 : 0.80, primary ? -0.02 : 0.16),
+          ? Alignment(primary ? 0.22 : 0.64, primary ? -0.02 : -0.02)
+          : Alignment(primary ? 0.22 : 0.66, primary ? -0.04 : -0.02),
       _PlayedTrayPosition.self => compact
           ? Alignment(0, primary ? 0.12 : 0.42)
           : Alignment(0, primary ? 0.10 : 0.38),
     };
   }
 
-  Widget _buildBidChooser() => Container(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          color: Colors.white.withValues(alpha: 0.96),
-          border: Border.all(color: const Color(0xFFD7EBFF)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x223678A3),
-              blurRadius: 28,
-              offset: Offset(0, 14),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '\u8bf7\u53eb\u5206',
-              style: TextStyle(
-                color: Color(0xFF173A59),
-                fontWeight: FontWeight.w900,
-                fontSize: 20,
+  Widget _buildBidChooser() => ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 430),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            color: Colors.white.withValues(alpha: 0.96),
+            border: Border.all(color: const Color(0xFFD7EBFF)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x223678A3),
+                blurRadius: 28,
+                offset: Offset(0, 14),
               ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
-              children: [
-                _actionButton(
-                  '\u4e0d\u53eb',
-                  widget.controller.isBusy
-                      ? null
-                      : () => widget.controller.callScore(0),
-                  primary: false,
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '\u8bf7\u53eb\u5206',
+                style: TextStyle(
+                  color: Color(0xFF173A59),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 20,
                 ),
-                _actionButton(
-                  '1 \u5206',
-                  widget.controller.isBusy
-                      ? null
-                      : () => widget.controller.callScore(1),
-                  primary: false,
-                ),
-                _actionButton(
-                  '2 \u5206',
-                  widget.controller.isBusy
-                      ? null
-                      : () => widget.controller.callScore(2),
-                  primary: false,
-                ),
-                _actionButton(
-                  '3 \u5206',
-                  widget.controller.isBusy
-                      ? null
-                      : () => widget.controller.callScore(3),
-                  primary: true,
-                ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.center,
+                children: [
+                  _actionButton(
+                    '\u4e0d\u53eb',
+                    widget.controller.isBusy
+                        ? null
+                        : () => widget.controller.callScore(0),
+                    primary: false,
+                  ),
+                  _actionButton(
+                    '1 \u5206',
+                    widget.controller.isBusy
+                        ? null
+                        : () => widget.controller.callScore(1),
+                    primary: false,
+                  ),
+                  _actionButton(
+                    '2 \u5206',
+                    widget.controller.isBusy
+                        ? null
+                        : () => widget.controller.callScore(2),
+                    primary: false,
+                  ),
+                  _actionButton(
+                    '3 \u5206',
+                    widget.controller.isBusy
+                        ? null
+                        : () => widget.controller.callScore(3),
+                    primary: true,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       );
 
-  Widget _buildTurnActionChooser() => Container(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          color: Colors.white.withValues(alpha: 0.96),
-          border: Border.all(color: const Color(0xFFD7EBFF)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x223678A3),
-              blurRadius: 28,
-              offset: Offset(0, 14),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '\u8f6e\u5230\u4f60',
-              style: TextStyle(
-                color: Color(0xFF173A59),
-                fontWeight: FontWeight.w900,
-                fontSize: 20,
+  Widget _buildTurnActionChooser() => ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            color: Colors.white.withValues(alpha: 0.96),
+            border: Border.all(color: const Color(0xFFD7EBFF)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x223678A3),
+                blurRadius: 28,
+                offset: Offset(0, 14),
               ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
-              children: [
-                _actionButton(
-                  '\u4e0d\u51fa',
-                  widget.controller.isBusy ? null : widget.controller.pass,
-                  primary: false,
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '\u8f6e\u5230\u4f60',
+                style: TextStyle(
+                  color: Color(0xFF173A59),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 20,
                 ),
-                _actionButton(
-                  '\u51fa\u724c',
-                  _selectedIds.isNotEmpty && !widget.controller.isBusy
-                      ? () async {
-                          await widget.controller.playCards(_selectedIds.toList());
-                          if (mounted) {
-                            setState(_selectedIds.clear);
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.center,
+                children: [
+                  _actionButton(
+                    '\u4e0d\u51fa',
+                    widget.controller.isBusy ? null : widget.controller.pass,
+                    primary: false,
+                  ),
+                  _actionButton(
+                    '\u51fa\u724c',
+                    _selectedIds.isNotEmpty && !widget.controller.isBusy
+                        ? () async {
+                            await widget.controller.playCards(_selectedIds.toList());
+                            if (mounted) {
+                              setState(_selectedIds.clear);
+                            }
                           }
-                        }
-                      : null,
-                  primary: true,
-                ),
-              ],
-            ),
-          ],
+                        : null,
+                    primary: true,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       );
 
@@ -1194,14 +2609,8 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             : primary
                 ? const Color(0xFF355A78)
                 : const Color(0xFF6585A6);
-    final displayCardWidth = primary
-        ? cardWidth
-        : centered
-            ? cardWidth * 0.68
-            : cardWidth * 0.56;
-    final fanMaxWidth = primary
-        ? maxWidth
-        : math.min(maxWidth * (centered ? 0.54 : 0.42), 228.0);
+    final displayCardWidth = cardWidth;
+    final fanMaxWidth = math.min(maxWidth, 332.0);
     return TweenAnimationBuilder<double>(
       key: ValueKey(action.actionId),
       tween: Tween<double>(begin: 0.94, end: 1),
@@ -1212,11 +2621,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           opacity: value,
           child: Transform.translate(
             offset: Offset(0, (1 - value) * 12),
-            child: AnimatedScale(
-              duration: const Duration(milliseconds: 220),
-              scale: primary && (active || isLeadingPlay) && hasCards ? 1.02 : 1,
-              child: child,
-            ),
+            child: child,
           ),
         );
       },
@@ -1230,6 +2635,30 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                   : CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (!centered) ...[
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: Colors.white.withValues(alpha: primary ? 0.96 : 0.88),
+                  border: Border.all(
+                    color: toneColor.withValues(alpha: primary ? 0.22 : 0.16),
+                  ),
+                ),
+                child: Text(
+                  player.displayName,
+                  style: TextStyle(
+                    color: toneColor,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
             if (hasCards)
               Align(
                 alignment: centered
@@ -1266,8 +2695,8 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   }) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: primary ? 18 : 14,
-        vertical: primary ? 12 : 10,
+        horizontal: primary ? 16 : 14,
+        vertical: 10,
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
@@ -1282,7 +2711,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         style: TextStyle(
           color: color.withValues(alpha: 0.78),
           fontWeight: FontWeight.w900,
-          fontSize: primary ? 22 : 16,
+          fontSize: primary ? 20 : 16,
           letterSpacing: 2,
         ),
       ),
@@ -1397,10 +2826,10 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   Widget _counterPill(CardCounterEntry entry,
       {required bool compact, required bool singleLine}) {
     return Container(
-      width: singleLine ? (compact ? 52 : 56) : null,
+      width: singleLine ? (compact ? 58 : 64) : null,
       padding: EdgeInsets.symmetric(
         horizontal: singleLine ? (compact ? 6 : 7) : (compact ? 5 : 8),
-        vertical: singleLine ? (compact ? 5 : 6) : (compact ? 5 : 7),
+        vertical: singleLine ? (compact ? 7 : 8) : (compact ? 5 : 7),
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -1414,14 +2843,14 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              color: Colors.white,
-              border: Border.all(color: const Color(0xFFDDEBFA)),
+              color: const Color(0xFFEAF4FF),
+              border: Border.all(color: const Color(0xFFD1E6FB)),
             ),
             child: Text(
               _counter(entry.rank),
               style: TextStyle(
-                color: const Color(0xFF5A7894),
-                fontWeight: FontWeight.w700,
+                color: const Color(0xFF245E90),
+                fontWeight: FontWeight.w800,
                 fontSize:
                     singleLine ? (compact ? 13 : 14) : (compact ? 12 : 13),
               ),
@@ -1433,7 +2862,8 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             style: TextStyle(
               color: const Color(0xFF173A59),
               fontWeight: FontWeight.w900,
-              fontSize: singleLine ? (compact ? 16 : 18) : 16,
+              fontSize: singleLine ? (compact ? 17 : 19) : 16,
+              height: 1,
             ),
           ),
         ],
@@ -1441,6 +2871,298 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     );
   }
 
+  Widget _buildBottomDockView(
+    RoomSnapshot snapshot,
+    RoomPlayer me, {
+    required List<PlayingCard> selfCards,
+    required bool waitingMyBid,
+    required bool myTurn,
+    required bool managed,
+    required bool showTurnChooser,
+  }) {
+    final statusText = waitingMyBid
+        ? '请叫分'
+        : managed
+            ? '托管中'
+            : myTurn
+                ? '到你出牌'
+                : '等待中';
+    final showChooser = showTurnChooser || waitingMyBid;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showChooser)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Center(
+              child: waitingMyBid
+                  ? _buildBidChooser()
+                  : _buildTurnActionChooser(),
+            ),
+          ),
+        Container(
+          margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(32),
+            gradient: LinearGradient(
+              colors: myTurn && !managed
+                  ? const [Colors.white, Color(0xFFEFF7FF)]
+                  : const [Colors.white, Color(0xFFF4FAFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: myTurn && !managed
+                  ? const Color(0xFF8CC8FF)
+                  : const Color(0xFFD7EBFF),
+              width: myTurn && !managed ? 1.4 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: myTurn && !managed
+                    ? const Color(0x222B7FFF)
+                    : const Color(0x143678A3),
+                blurRadius: myTurn && !managed ? 28 : 22,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 168,
+                child: Column(
+                  children: [
+                    _buildSelfIdentityCardView(me, active: myTurn),
+                    const SizedBox(height: 8),
+                    _buildMatchMetaCardView(snapshot),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          '你的手牌',
+                          style: TextStyle(
+                            color: Color(0xFF173A59),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (snapshot.phase != RoomPhase.finished)
+                          _chip(statusText, filled: myTurn || managed),
+                        if (myTurn && snapshot.phase != RoomPhase.finished) ...[
+                          const SizedBox(width: 8),
+                          _turnStateChip(compact: false),
+                        ],
+                        const Spacer(),
+                        OutlinedButton(
+                          onPressed: widget.controller.isBusy
+                              ? null
+                              : _toggleSortOrder,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(92, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(_sortDescending ? '逆序' : '顺序'),
+                        ),
+                        const SizedBox(width: 6),
+                        OutlinedButton(
+                          onPressed: widget.controller.isBusy
+                              ? null
+                              : _clearSelectedCards,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(120, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: const Text('取消选中'),
+                        ),
+                        const SizedBox(width: 6),
+                        OutlinedButton(
+                          onPressed: snapshot.phase == RoomPhase.playing &&
+                                  myTurn &&
+                                  !managed &&
+                                  !widget.controller.isBusy
+                              ? _toggleSuggestedSelection
+                              : null,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(96, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(
+                            _isSuggestedSelectionActive() ? '取消提示' : '提示',
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        FilledButton.tonal(
+                          onPressed: widget.controller.isBusy
+                              ? null
+                              : () {
+                                  if (!managed) {
+                                    _clearSelectedCards();
+                                  }
+                                  widget.controller.setManaged(!managed);
+                                },
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(108, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(managed ? '取消托管' : '托管'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    _selfFan(selfCards, disabled: waitingMyBid || managed),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSelfIdentityCardView(
+    RoomPlayer me, {
+    required bool active,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: Colors.white.withValues(alpha: 0.94),
+        border: Border.all(
+          color: active ? const Color(0xFF2B7FFF) : const Color(0xFFD7EBFF),
+          width: active ? 2 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: const Color(0xFF2B7FFF),
+            child: Text(
+              me.displayName.substring(0, 1).toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  me.displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF173A59),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  me.isLandlord ? '地主' : '农民',
+                  style: const TextStyle(
+                    color: Color(0xFF5A7894),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchMetaCardView(RoomSnapshot snapshot) {
+    final modeText = snapshot.mode == MatchMode.online
+        ? '真人对局'
+        : widget.controller.botDifficulty.label;
+    final rows = <MapEntry<String, String>>[
+      MapEntry('模式', modeText),
+      MapEntry('底分', '${snapshot.baseScore}'),
+      MapEntry('倍数', '${snapshot.multiplier}'),
+      MapEntry('本轮', '${snapshot.currentRoundScore}'),
+      MapEntry('剩余牌数', '${snapshot.selfCards.length}'),
+    ];
+    if (snapshot.springTriggered) {
+      rows.add(const MapEntry('春天', '已触发'));
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: const Color(0xFFF3F9FF),
+        border: Border.all(color: const Color(0xFFD7EBFF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var index = 0; index < rows.length; index++) ...[
+            Row(
+              children: [
+                SizedBox(
+                  width: 70,
+                  child: Text(
+                    rows[index].key,
+                    style: const TextStyle(
+                      color: Color(0xFF5A7894),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    rows[index].value,
+                    style: const TextStyle(
+                      color: Color(0xFF173A59),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (index != rows.length - 1) const SizedBox(height: 8),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ignore: unused_element
   Widget _buildBottomDock(
     RoomSnapshot snapshot,
     RoomPlayer me, {
@@ -1457,6 +3179,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             : myTurn
                 ? '\u5230\u4f60\u51fa\u724c'
                 : '\u7b49\u5f85\u4e2d';
+    const selfInfoWidth = 196.0;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -1497,7 +3220,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                width: 238,
+                width: selfInfoWidth,
                 child: Column(
                   children: [
                     _buildSelfIdentityCard(
@@ -1666,16 +3389,19 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
 
   Widget _buildMatchMetaCard(RoomSnapshot snapshot) {
     final modeText = snapshot.mode == MatchMode.online
-        ? '\u771f\u4eba'
-        : widget.controller.botDifficulty.gameChip;
+        ? '真人模式'
+        : '${widget.controller.botDifficulty.label}：${widget.controller.botDifficulty.modelFamily}';
+    final coins = widget.controller.profile?.coins ?? 0;
     final rows = <MapEntry<String, String>>[
-      MapEntry('\u6a21\u5f0f', modeText),
-      MapEntry('\u5e95\u5206', '${snapshot.baseScore}'),
-      MapEntry('\u500d\u6570', '${snapshot.multiplier}'),
-      MapEntry('\u672c\u8f6e', '${snapshot.currentRoundScore}'),
+      MapEntry('模式', modeText),
+      MapEntry('底分', '${snapshot.baseScore}'),
+      MapEntry('倍数', '${snapshot.multiplier}'),
+      MapEntry('本轮', '${snapshot.currentRoundScore}'),
+      MapEntry('剩余牌数', '${snapshot.selfCards.length}'),
+      MapEntry('本人金币', '$coins'),
     ];
     if (snapshot.springTriggered) {
-      rows.add(const MapEntry('\u72b6\u6001', '\u6625\u5929'));
+      rows.add(const MapEntry('状态', '春天'));
     }
     return Container(
       width: double.infinity,
@@ -1692,7 +3418,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             Row(
               children: [
                 SizedBox(
-                  width: 64,
+                  width: 76,
                   child: Text(
                     '${rows[index].key}：',
                     style: const TextStyle(
@@ -1804,14 +3530,14 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           onPointerCancel: disabled ? null : (_) => _endDragSelection(),
           child: SizedBox(
             width: availableWidth,
-            height: width * 1.46,
+            height: width * 1.42 + 8,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
                 for (var index = 0; index < cards.length; index++)
                   Positioned(
                     left: leftInset + index * spacing,
-                    top: _selectedIds.contains(cards[index].id) ? 0 : 9,
+                    top: _selectedIds.contains(cards[index].id) ? 0 : 8,
                     child: _cardFace(
                       cards[index],
                       width,
@@ -2086,12 +3812,39 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         ),
       );
 
-  Widget _hudButton(IconData icon, String label, VoidCallback onTap) =>
+  Widget _hudInfoTile(String label) => Container(
+        height: 82,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white.withValues(alpha: 0.88),
+          border: Border.all(color: const Color(0xFFD7EBFF)),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xFF5A7894),
+            fontWeight: FontWeight.w800,
+            fontSize: 15,
+            height: 1.3,
+          ),
+        ),
+      );
+
+  Widget _hudButton(
+        IconData icon,
+        String label,
+        VoidCallback onTap, {
+        double? width,
+      }) =>
       InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Ink(
-          height: 60,
+          width: width,
+          height: 66,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),

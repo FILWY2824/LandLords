@@ -34,9 +34,10 @@ enum PlayerRole {
 
 enum RoomPhase {
   ROOM_PHASE_UNSPECIFIED = 0;
-  ROOM_PHASE_WAITING = 1;
-  ROOM_PHASE_PLAYING = 2;
-  ROOM_PHASE_FINISHED = 3;
+  ROOM_PHASE_PREPARING = 1;
+  ROOM_PHASE_WAITING = 2;
+  ROOM_PHASE_PLAYING = 3;
+  ROOM_PHASE_FINISHED = 4;
 }
 
 enum ActionType {
@@ -63,15 +64,36 @@ enum PatternType {
   PATTERN_TYPE_ROCKET = 14;
 }
 
+enum InvitationResult {
+  INVITATION_RESULT_UNSPECIFIED = 0;
+  INVITATION_RESULT_ACCEPTED = 1;
+  INVITATION_RESULT_REJECTED = 2;
+  INVITATION_RESULT_FAILED = 3;
+  INVITATION_RESULT_EXPIRED = 4;
+}
+
 message UserProfile {
   string user_id = 1;
-  string username = 2;
-  int32 total_score = 3;
+  string account = 2;
+  string nickname = 3;
+  int32 total_score = 4;
+  int32 landlord_wins = 5;
+  int32 landlord_games = 6;
+  int32 farmer_wins = 7;
+  int32 farmer_games = 8;
+}
+
+message OnlineUser {
+  string user_id = 1;
+  string account = 2;
+  string nickname = 3;
+  bool online = 4;
 }
 
 message RegisterRequest {
-  string username = 1;
-  string password = 2;
+  string nickname = 1;
+  string account = 2;
+  string password = 3;
 }
 
 message RegisterResponse {
@@ -81,7 +103,7 @@ message RegisterResponse {
 }
 
 message LoginRequest {
-  string username = 1;
+  string account = 1;
   string password = 2;
 }
 
@@ -92,9 +114,102 @@ message LoginResponse {
   string session_token = 4;
 }
 
+message ResetPasswordRequest {
+  string account = 1;
+  string new_password = 2;
+}
+
+message ResetPasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
 message MatchRequest {
   MatchMode mode = 1;
   BotDifficulty bot_difficulty = 2;
+}
+
+message CreateRoomRequest {}
+
+message JoinRoomRequest {
+  string room_code = 1;
+}
+
+message LeaveRoomRequest {
+  string room_id = 1;
+}
+
+message RoomReadyRequest {
+  string room_id = 1;
+  bool ready = 2;
+}
+
+message AddBotRequest {
+  string room_id = 1;
+  BotDifficulty bot_difficulty = 2;
+  int32 seat_index = 3;
+}
+
+message RemovePlayerRequest {
+  string room_id = 1;
+  string player_id = 2;
+}
+
+message ListFriendsRequest {}
+
+message ListFriendsResponse {
+  repeated OnlineUser users = 1;
+}
+
+message AddFriendRequest {
+  string account = 1;
+}
+
+message AddFriendResponse {
+  bool success = 1;
+  string message = 2;
+  OnlineUser user = 3;
+}
+
+message InvitePlayerRequest {
+  string room_id = 1;
+  string invitee_account = 2;
+  int32 seat_index = 3;
+}
+
+message InvitePlayerResponse {
+  bool accepted = 1;
+  string message = 2;
+}
+
+message RoomInvitationPush {
+  string invitation_id = 1;
+  string room_id = 2;
+  string room_code = 3;
+  string inviter_user_id = 4;
+  string inviter_account = 5;
+  string inviter_nickname = 6;
+  int32 seat_index = 7;
+}
+
+message RespondRoomInvitationRequest {
+  string invitation_id = 1;
+  bool accept = 2;
+}
+
+message RespondRoomInvitationResponse {
+  bool success = 1;
+  string message = 2;
+  RoomSnapshot snapshot = 3;
+}
+
+message RoomInvitationResultPush {
+  string invitation_id = 1;
+  InvitationResult result = 2;
+  string invitee_user_id = 3;
+  string invitee_account = 4;
+  string invitee_nickname = 5;
+  string message = 6;
 }
 
 message MatchResponse {
@@ -115,6 +230,9 @@ message RoomPlayer {
   PlayerRole role = 4;
   int32 cards_left = 5;
   int32 round_score = 6;
+  int32 seat_index = 7;
+  bool ready = 8;
+  bool occupied = 9;
 }
 
 message Card {
@@ -155,6 +273,8 @@ message RoomSnapshot {
   int32 current_round_score = 13;
   bool spring_triggered = 14;
   int32 turn_serial = 15;
+  string room_code = 16;
+  string owner_player_id = 17;
 }
 
 message PlayCardsRequest {
@@ -200,6 +320,17 @@ message ClientMessage {
     PassRequest pass_request = 14;
     ReconnectRequest reconnect_request = 15;
     HeartbeatRequest heartbeat_request = 16;
+    ResetPasswordRequest reset_password_request = 17;
+    CreateRoomRequest create_room_request = 18;
+    JoinRoomRequest join_room_request = 19;
+    RoomReadyRequest room_ready_request = 20;
+    AddBotRequest add_bot_request = 21;
+    RemovePlayerRequest remove_player_request = 22;
+    ListFriendsRequest list_friends_request = 23;
+    AddFriendRequest add_friend_request = 24;
+    InvitePlayerRequest invite_player_request = 25;
+    RespondRoomInvitationRequest respond_room_invitation_request = 26;
+    LeaveRoomRequest leave_room_request = 27;
   }
 }
 
@@ -214,5 +345,12 @@ message ServerMessage {
     OperationResponse operation_response = 15;
     ErrorResponse error_response = 16;
     HeartbeatResponse heartbeat_response = 17;
+    ResetPasswordResponse reset_password_response = 18;
+    ListFriendsResponse list_friends_response = 19;
+    AddFriendResponse add_friend_response = 20;
+    InvitePlayerResponse invite_player_response = 21;
+    RoomInvitationPush room_invitation_push = 22;
+    RespondRoomInvitationResponse respond_room_invitation_response = 23;
+    RoomInvitationResultPush room_invitation_result_push = 24;
   }
 }

@@ -1,9 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import 'models/app_models.dart';
 import 'pages/game_page.dart';
 import 'pages/lobby_page.dart';
 import 'pages/login_page.dart';
@@ -24,6 +25,9 @@ class _LandlordsAppState extends State<LandlordsApp>
   late final AppController _controller;
   final GlobalKey _captureBoundaryKey = GlobalKey();
   bool _capturedFirstFrame = false;
+  AppStage? _lastCapturedStage;
+  bool _showingInvitationDialog = false;
+  bool _showingInvitationFeedbackDialog = false;
 
   @override
   void initState() {
@@ -31,6 +35,7 @@ class _LandlordsAppState extends State<LandlordsApp>
     WidgetsBinding.instance.addObserver(this);
     appLog(AppLogLevel.info, 'app', 'initState');
     _controller = AppController(gateway: createGateway());
+    _controller.addListener(_handleControllerChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -49,6 +54,7 @@ class _LandlordsAppState extends State<LandlordsApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     appLog(AppLogLevel.info, 'app', 'dispose');
+    _controller.removeListener(_handleControllerChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -75,8 +81,8 @@ class _LandlordsAppState extends State<LandlordsApp>
       title: '欢乐斗地主',
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'LandlordsUiSubset',
         colorScheme: scheme,
+        fontFamily: 'LandlordsUiSubset',
         scaffoldBackgroundColor: const Color(0xFFF3F9FF),
         textTheme: ThemeData.light().textTheme.apply(
               bodyColor: const Color(0xFF14304B),
@@ -110,6 +116,9 @@ class _LandlordsAppState extends State<LandlordsApp>
             AppStage.lobby || AppStage.matching => LobbyPage(controller: _controller),
             AppStage.game => GamePage(controller: _controller),
           };
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            unawaited(_captureStageFrame(_controller.stage));
+          });
           return RepaintBoundary(
             key: _captureBoundaryKey,
             child: _LandscapeGuard(child: child),
@@ -117,6 +126,64 @@ class _LandlordsAppState extends State<LandlordsApp>
         },
       ),
     );
+  }
+
+  void _handleControllerChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        return;
+      }
+      await _maybeShowInvitationDialog();
+      await _maybeShowInvitationFeedbackDialog();
+    });
+  }
+
+  Future<void> _maybeShowInvitationDialog() async {
+    final invitation = _controller.activeInvitation;
+    if (_showingInvitationDialog || invitation == null) {
+      return;
+    }
+    _showingInvitationDialog = true;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _InvitationDialog(
+        invitation: invitation,
+        onAccept: () async {
+          await _controller.respondToInvitation(
+            invitationId: invitation.invitationId,
+            accept: true,
+          );
+        },
+        onReject: () async {
+          await _controller.respondToInvitation(
+            invitationId: invitation.invitationId,
+            accept: false,
+          );
+        },
+      ),
+    );
+    _showingInvitationDialog = false;
+    if (_controller.activeInvitation?.invitationId == invitation.invitationId) {
+      _controller.dismissActiveInvitation();
+    }
+  }
+
+  Future<void> _maybeShowInvitationFeedbackDialog() async {
+    final feedback = _controller.activeInvitationFeedback;
+    if (_showingInvitationFeedbackDialog || feedback == null) {
+      return;
+    }
+    _showingInvitationFeedbackDialog = true;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => _InvitationFeedbackDialog(feedback: feedback),
+    );
+    _showingInvitationFeedbackDialog = false;
+    if (_controller.activeInvitationFeedback?.invitationId ==
+        feedback.invitationId) {
+      _controller.dismissActiveInvitationFeedback();
+    }
   }
 
   Future<void> _captureFirstFrame() async {
@@ -151,6 +218,35 @@ class _LandlordsAppState extends State<LandlordsApp>
       appLog(AppLogLevel.info, 'app', 'first frame dump complete');
     } catch (error) {
       appLog(AppLogLevel.error, 'app', 'first frame dump failed: $error');
+    }
+  }
+
+  Future<void> _captureStageFrame(AppStage stage) async {
+    if (!kDebugMode || !mounted || _lastCapturedStage == stage) {
+      return;
+    }
+    _lastCapturedStage = stage;
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    if (!mounted) {
+      return;
+    }
+    final renderObject = _captureBoundaryKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderRepaintBoundary) {
+      return;
+    }
+    try {
+      await dumpRenderBoundaryToFile(renderObject, 'stage_${stage.name}');
+      appLog(
+        AppLogLevel.info,
+        'app',
+        'stage frame dump complete stage=${stage.name}',
+      );
+    } catch (error) {
+      appLog(
+        AppLogLevel.warn,
+        'app',
+        'stage frame dump failed stage=${stage.name}: $error',
+      );
     }
   }
 }
@@ -228,7 +324,7 @@ class _LandscapeGuard extends StatelessWidget {
                 ),
                 SizedBox(height: 10),
                 Text(
-                  '横过来继续',
+                  '横过来继续体验完整牌桌。',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Color(0xFF5A7894),
@@ -238,6 +334,163 @@ class _LandscapeGuard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+}
+
+class _InvitationDialog extends StatelessWidget {
+  const _InvitationDialog({
+    required this.invitation,
+    required this.onAccept,
+    required this.onReject,
+  });
+
+  final RoomInvitation invitation;
+  final Future<void> Function() onAccept;
+  final Future<void> Function() onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x143678A3),
+                blurRadius: 28,
+                offset: Offset(0, 14),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '收到邀请',
+                style: TextStyle(
+                  color: Color(0xFF173A59),
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '${invitation.inviterName}（账号 ${invitation.inviterAccount}）邀请你加入房间 ${invitation.roomCode}。',
+                style: const TextStyle(
+                  color: Color(0xFF587790),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        await onReject();
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: const Text('拒绝'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () async {
+                        await onAccept();
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: const Text('同意'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InvitationFeedbackDialog extends StatelessWidget {
+  const _InvitationFeedbackDialog({required this.feedback});
+
+  final InvitationFeedback feedback;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = switch (feedback.status) {
+      InvitationFeedbackStatus.accepted => '邀请已接受',
+      InvitationFeedbackStatus.rejected => '邀请被拒绝',
+      InvitationFeedbackStatus.expired => '邀请已失效',
+      InvitationFeedbackStatus.failed => '邀请未成功',
+    };
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x143678A3),
+                blurRadius: 28,
+                offset: Offset(0, 14),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFF173A59),
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '${feedback.targetName}：${feedback.detail}',
+                style: const TextStyle(
+                  color: Color(0xFF587790),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('知道了'),
+                ),
+              ),
+            ],
           ),
         ),
       ),

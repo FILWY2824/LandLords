@@ -47,9 +47,15 @@ struct CardPattern {
 
 struct UserRecord {
   std::string user_id;
-  std::string username;
+  std::string account;
+  std::string nickname;
   std::string password_hash;
   int total_score = 0;
+  int landlord_wins = 0;
+  int landlord_games = 0;
+  int farmer_wins = 0;
+  int farmer_games = 0;
+  std::vector<std::string> friend_user_ids;
 };
 
 struct PlayerState {

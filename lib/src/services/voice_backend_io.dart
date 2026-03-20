@@ -60,7 +60,6 @@ class _ChannelVoiceBackend implements VoiceBackend {
   @override
   Future<void> dispose() async {
     await stopSpeech();
-    await stopBackgroundMusic();
   }
 }
 

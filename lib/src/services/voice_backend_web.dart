@@ -138,7 +138,6 @@ class _WebVoiceBackend implements VoiceBackend {
   Future<void> dispose() async {
     try {
       await stopSpeech();
-      await stopBackgroundMusic();
       _removeUnlockHooks();
     } catch (_) {
       // Ignore browser cleanup failures.
