@@ -10,13 +10,19 @@ import 'pages/game_page.dart';
 import 'pages/lobby_page.dart';
 import 'pages/login_page.dart';
 import 'services/gateway_factory.dart';
+import 'services/game_gateway.dart';
 import 'state/app_controller.dart';
 import 'utils/app_log.dart';
 import 'utils/render_dump.dart';
 import 'widgets/responsive_modal.dart';
 
 class LandlordsApp extends StatefulWidget {
-  const LandlordsApp({super.key});
+  const LandlordsApp({
+    super.key,
+    this.gateway,
+  });
+
+  final GameGateway? gateway;
 
   @override
   State<LandlordsApp> createState() => _LandlordsAppState();
@@ -26,6 +32,7 @@ class _LandlordsAppState extends State<LandlordsApp>
     with WidgetsBindingObserver {
   late final AppController _controller;
   final GlobalKey _captureBoundaryKey = GlobalKey();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   bool _capturedFirstFrame = false;
   AppStage? _lastCapturedStage;
   bool _showingInvitationDialog = false;
@@ -37,7 +44,7 @@ class _LandlordsAppState extends State<LandlordsApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     appLog(AppLogLevel.info, 'app', 'initState');
-    _controller = AppController(gateway: createGateway());
+    _controller = AppController(gateway: widget.gateway ?? createGateway());
     _controller.addListener(_handleControllerChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -83,6 +90,7 @@ class _LandlordsAppState extends State<LandlordsApp>
     );
 
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       title: '欢乐斗地主',
       scrollBehavior: const _LandlordsScrollBehavior(),
@@ -172,10 +180,15 @@ class _LandlordsAppState extends State<LandlordsApp>
     if (_showingInvitationDialog || invitation == null) {
       return;
     }
+    final dialogContext = _navigatorKey.currentContext;
+    if (dialogContext == null) {
+      return;
+    }
     _showingInvitationDialog = true;
     try {
       await showDialog<void>(
-        context: context,
+        context: dialogContext,
+        useRootNavigator: true,
         barrierDismissible: false,
         builder: (context) => _InvitationDialog(
           invitation: invitation,
@@ -210,10 +223,15 @@ class _LandlordsAppState extends State<LandlordsApp>
     if (_showingInvitationFeedbackDialog || feedback == null) {
       return;
     }
+    final dialogContext = _navigatorKey.currentContext;
+    if (dialogContext == null) {
+      return;
+    }
     _showingInvitationFeedbackDialog = true;
     try {
       await showDialog<void>(
-        context: context,
+        context: dialogContext,
+        useRootNavigator: true,
         builder: (context) => _InvitationFeedbackDialog(feedback: feedback),
       );
     } finally {
@@ -233,10 +251,15 @@ class _LandlordsAppState extends State<LandlordsApp>
     if (_showingPopupNoticeDialog || notice == null) {
       return;
     }
+    final dialogContext = _navigatorKey.currentContext;
+    if (dialogContext == null) {
+      return;
+    }
     _showingPopupNoticeDialog = true;
     try {
       await showDialog<void>(
-        context: context,
+        context: dialogContext,
+        useRootNavigator: true,
         barrierDismissible: false,
         builder: (context) => _PopupNoticeDialog(notice: notice),
       );

@@ -127,7 +127,7 @@ class _FriendCenterDialogState extends State<_FriendCenterDialog> {
       _noticeText = null;
       _noticeSuccess = false;
     });
-    final friends = await widget.controller.fetchFriends();
+    final friends = (await widget.controller.fetchFriends()).toList();
     if (!mounted) {
       return;
     }
