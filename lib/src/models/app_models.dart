@@ -170,3 +170,15 @@ class InvitationFeedback {
   String get targetName =>
       targetNickname.isNotEmpty ? targetNickname : targetAccount;
 }
+
+class AppDialogNotice {
+  const AppDialogNotice({
+    required this.title,
+    required this.message,
+    this.actionLabel = '知道了',
+  });
+
+  final String title;
+  final String message;
+  final String actionLabel;
+}

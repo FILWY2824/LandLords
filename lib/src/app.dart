@@ -1,6 +1,7 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -12,6 +13,7 @@ import 'services/gateway_factory.dart';
 import 'state/app_controller.dart';
 import 'utils/app_log.dart';
 import 'utils/render_dump.dart';
+import 'widgets/responsive_modal.dart';
 
 class LandlordsApp extends StatefulWidget {
   const LandlordsApp({super.key});
@@ -28,6 +30,7 @@ class _LandlordsAppState extends State<LandlordsApp>
   AppStage? _lastCapturedStage;
   bool _showingInvitationDialog = false;
   bool _showingInvitationFeedbackDialog = false;
+  bool _showingPopupNoticeDialog = false;
 
   @override
   void initState() {
@@ -62,6 +65,9 @@ class _LandlordsAppState extends State<LandlordsApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     appLog(AppLogLevel.info, 'app', 'lifecycle=${state.name}');
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_handleAppResumed());
+    }
   }
 
   @override
@@ -79,10 +85,17 @@ class _LandlordsAppState extends State<LandlordsApp>
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: '欢乐斗地主',
+      scrollBehavior: const _LandlordsScrollBehavior(),
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: scheme,
-        fontFamily: 'LandlordsUiSubset',
+        fontFamilyFallback: const [
+          'PingFang SC',
+          'Microsoft YaHei',
+          'Noto Sans SC',
+          'Noto Sans CJK SC',
+          'sans-serif',
+        ],
         scaffoldBackgroundColor: const Color(0xFFF3F9FF),
         textTheme: ThemeData.light().textTheme.apply(
               bodyColor: const Color(0xFF14304B),
@@ -135,6 +148,22 @@ class _LandlordsAppState extends State<LandlordsApp>
       }
       await _maybeShowInvitationDialog();
       await _maybeShowInvitationFeedbackDialog();
+      await _maybeShowPopupNoticeDialog();
+    });
+  }
+
+  Future<void> _handleAppResumed() async {
+    await _controller.recoverConnection();
+    if (!mounted) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        return;
+      }
+      await _maybeShowInvitationDialog();
+      await _maybeShowInvitationFeedbackDialog();
+      await _maybeShowPopupNoticeDialog();
     });
   }
 
@@ -144,28 +173,35 @@ class _LandlordsAppState extends State<LandlordsApp>
       return;
     }
     _showingInvitationDialog = true;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => _InvitationDialog(
-        invitation: invitation,
-        onAccept: () async {
-          await _controller.respondToInvitation(
-            invitationId: invitation.invitationId,
-            accept: true,
-          );
-        },
-        onReject: () async {
-          await _controller.respondToInvitation(
-            invitationId: invitation.invitationId,
-            accept: false,
-          );
-        },
-      ),
-    );
-    _showingInvitationDialog = false;
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => _InvitationDialog(
+          invitation: invitation,
+          onAccept: () async {
+            return _controller.respondToInvitation(
+              invitationId: invitation.invitationId,
+              accept: true,
+            );
+          },
+          onReject: () async {
+            return _controller.respondToInvitation(
+              invitationId: invitation.invitationId,
+              accept: false,
+            );
+          },
+        ),
+      );
+    } finally {
+      _showingInvitationDialog = false;
+    }
     if (_controller.activeInvitation?.invitationId == invitation.invitationId) {
       _controller.dismissActiveInvitation();
+    }
+    // After dismiss, check if there is another queued invitation to show.
+    if (mounted) {
+      await _maybeShowInvitationDialog();
     }
   }
 
@@ -175,14 +211,44 @@ class _LandlordsAppState extends State<LandlordsApp>
       return;
     }
     _showingInvitationFeedbackDialog = true;
-    await showDialog<void>(
-      context: context,
-      builder: (context) => _InvitationFeedbackDialog(feedback: feedback),
-    );
-    _showingInvitationFeedbackDialog = false;
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => _InvitationFeedbackDialog(feedback: feedback),
+      );
+    } finally {
+      _showingInvitationFeedbackDialog = false;
+    }
     if (_controller.activeInvitationFeedback?.invitationId ==
         feedback.invitationId) {
       _controller.dismissActiveInvitationFeedback();
+    }
+    if (mounted) {
+      await _maybeShowInvitationFeedbackDialog();
+    }
+  }
+
+  Future<void> _maybeShowPopupNoticeDialog() async {
+    final notice = _controller.activePopupNotice;
+    if (_showingPopupNoticeDialog || notice == null) {
+      return;
+    }
+    _showingPopupNoticeDialog = true;
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => _PopupNoticeDialog(notice: notice),
+      );
+    } finally {
+      _showingPopupNoticeDialog = false;
+    }
+    if (_controller.activePopupNotice?.title == notice.title &&
+        _controller.activePopupNotice?.message == notice.message) {
+      _controller.dismissActivePopupNotice();
+    }
+    if (mounted) {
+      await _maybeShowPopupNoticeDialog();
     }
   }
 
@@ -222,7 +288,11 @@ class _LandlordsAppState extends State<LandlordsApp>
   }
 
   Future<void> _captureStageFrame(AppStage stage) async {
-    if (!kDebugMode || !mounted || _lastCapturedStage == stage) {
+    final bindingName = WidgetsBinding.instance.runtimeType.toString();
+    if (!kDebugMode ||
+        !mounted ||
+        _lastCapturedStage == stage ||
+        bindingName.contains('TestWidgetsFlutterBinding')) {
       return;
     }
     _lastCapturedStage = stage;
@@ -249,6 +319,19 @@ class _LandlordsAppState extends State<LandlordsApp>
       );
     }
   }
+}
+
+class _LandlordsScrollBehavior extends MaterialScrollBehavior {
+  const _LandlordsScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => const {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.invertedStylus,
+        PointerDeviceKind.unknown,
+      };
 }
 
 class _LandscapeGuard extends StatelessWidget {
@@ -350,29 +433,19 @@ class _InvitationDialog extends StatelessWidget {
   });
 
   final RoomInvitation invitation;
-  final Future<void> Function() onAccept;
-  final Future<void> Function() onReject;
+  final Future<bool> Function() onAccept;
+  final Future<bool> Function() onReject;
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x143678A3),
-                blurRadius: 28,
-                offset: Offset(0, 14),
-              ),
-            ],
-          ),
-          child: Column(
+    return ResponsiveDialogPanel(
+      maxWidth: 420,
+      maxHeight: 420,
+      widthFactor: 0.86,
+      heightFactor: 0.56,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+      scrollable: false,
+      child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -400,8 +473,8 @@ class _InvitationDialog extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () async {
-                        await onReject();
-                        if (context.mounted) {
+                        final handled = await onReject();
+                        if (handled && context.mounted) {
                           Navigator.of(context).pop();
                         }
                       },
@@ -412,8 +485,8 @@ class _InvitationDialog extends StatelessWidget {
                   Expanded(
                     child: FilledButton(
                       onPressed: () async {
-                        await onAccept();
-                        if (context.mounted) {
+                        final handled = await onAccept();
+                        if (handled && context.mounted) {
                           Navigator.of(context).pop();
                         }
                       },
@@ -424,8 +497,6 @@ class _InvitationDialog extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }
@@ -443,24 +514,14 @@ class _InvitationFeedbackDialog extends StatelessWidget {
       InvitationFeedbackStatus.expired => '邀请已失效',
       InvitationFeedbackStatus.failed => '邀请未成功',
     };
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 400),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x143678A3),
-                blurRadius: 28,
-                offset: Offset(0, 14),
-              ),
-            ],
-          ),
-          child: Column(
+    return ResponsiveDialogPanel(
+      maxWidth: 400,
+      maxHeight: 380,
+      widthFactor: 0.84,
+      heightFactor: 0.52,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+      scrollable: false,
+      child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -492,8 +553,56 @@ class _InvitationFeedbackDialog extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
+    );
+  }
+}
+
+class _PopupNoticeDialog extends StatelessWidget {
+  const _PopupNoticeDialog({required this.notice});
+
+  final AppDialogNotice notice;
+
+  @override
+  Widget build(BuildContext context) {
+    return ResponsiveDialogPanel(
+      maxWidth: 420,
+      maxHeight: 400,
+      widthFactor: 0.86,
+      heightFactor: 0.54,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+      scrollable: false,
+      child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                notice.title,
+                style: const TextStyle(
+                  color: Color(0xFF173A59),
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                notice.message,
+                style: const TextStyle(
+                  color: Color(0xFF587790),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(notice.actionLabel),
+                ),
+              ),
+            ],
+          ),
     );
   }
 }

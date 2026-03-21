@@ -8,7 +8,7 @@ void main() {
     await tester.pumpWidget(const LandlordsApp());
 
     expect(find.text('欢乐斗地主'), findsOneWidget);
-    expect(find.text('进入大厅'), findsWidgets);
-    expect(find.widgetWithText(FilledButton, '进入大厅'), findsOneWidget);
+    expect(find.text('登录进入大厅'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '登录进入大厅'), findsOneWidget);
   });
 }

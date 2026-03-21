@@ -24,6 +24,7 @@ class SocketGameGateway implements GameGateway {
   static const String _cancelMatchCommand = 'match:cancel';
   static const String _presentationAckPrefix = '__presented__:';
   static const Duration _requestTimeout = Duration(seconds: 45);
+  static const Duration _staleConnectionThreshold = Duration(seconds: 25);
 
   final StreamController<RoomSnapshot> _snapshotController =
       StreamController<RoomSnapshot>.broadcast();
@@ -39,6 +40,7 @@ class SocketGameGateway implements GameGateway {
   String? _sessionToken;
   String? _lastRoomId;
   RoomSnapshot? _latestSnapshot;
+  DateTime? _lastInboundAt;
 
   @override
   Stream<RoomSnapshot> get roomSnapshots => _snapshotController.stream;
@@ -131,6 +133,29 @@ class SocketGameGateway implements GameGateway {
             : response.errorResponse.message,
       );
     }
+  }
+
+  @override
+  Future<app.UserProfile> updateNickname({
+    required String sessionToken,
+    required String nickname,
+  }) async {
+    await _ensureConnected();
+    final response = await _send(
+      (message) => message.updateNicknameRequest = pb.UpdateNicknameRequest(
+        nickname: nickname,
+      ),
+      sessionToken: sessionToken,
+    );
+    if (!response.hasUpdateNicknameResponse() ||
+        !response.updateNicknameResponse.success) {
+      throw Exception(
+        response.hasUpdateNicknameResponse()
+            ? response.updateNicknameResponse.message
+            : response.errorResponse.message,
+      );
+    }
+    return _mapUserProfile(response.updateNicknameResponse.profile);
   }
 
   @override
@@ -531,6 +556,22 @@ class SocketGameGateway implements GameGateway {
   }
 
   @override
+  Future<void> recoverConnection() async {
+    if (_sessionToken == null) {
+      return;
+    }
+    _handleDisconnect(error: Exception('connection refresh requested'));
+    await _ensureConnected();
+    if (_lastRoomId == null) {
+      return;
+    }
+    final response = await reconnect();
+    if (response.hasRoomSnapshot()) {
+      _publishSnapshot(_mapSnapshot(response.roomSnapshot));
+    }
+  }
+
+  @override
   Future<RoomSnapshot?> refreshCurrentRoom() async {
     if (_sessionToken == null || _lastRoomId == null) {
       return null;
@@ -547,6 +588,13 @@ class SocketGameGateway implements GameGateway {
   @override
   RoomSnapshot? currentSnapshot(String roomId) =>
       _latestSnapshot?.roomId == roomId ? _latestSnapshot : null;
+
+  @override
+  Future<void> close() async {
+    _handleDisconnect();
+    await _snapshotController.close();
+    await _notificationController.close();
+  }
 
   Future<pb.ServerMessage> reconnect() async {
     if (_sessionToken == null || _lastRoomId == null) {
@@ -565,6 +613,7 @@ class SocketGameGateway implements GameGateway {
     String? sessionToken,
   }) async {
     await _ensureConnected();
+    await _refreshStaleConnectionIfNeeded();
     final requestId = _id();
     final message = pb.ClientMessage(
       requestId: requestId,
@@ -580,16 +629,27 @@ class SocketGameGateway implements GameGateway {
       _pending.remove(requestId);
       throw Exception('服务连接不可用');
     }
-    _socket!.add(header.buffer.asUint8List());
-    _socket!.add(payload);
-    await _socket!.flush();
+    try {
+      _socket!.add(header.buffer.asUint8List());
+      _socket!.add(payload);
+      await _socket!.flush();
+    } catch (error) {
+      _pending.remove(requestId);
+      _handleDisconnect(error: error);
+      throw Exception('服务连接不可用');
+    }
     return completer.future.timeout(_requestTimeout, onTimeout: () {
       _pending.remove(requestId);
+      _handleDisconnect(error: Exception('服务响应超时'));
       throw Exception('服务响应超时');
     });
   }
 
-  void _onData(List<int> data) {
+  void _onData(Socket socket, List<int> data) {
+    if (!identical(socket, _socket)) {
+      return;
+    }
+    _lastInboundAt = DateTime.now();
     _buffer.addAll(data);
     final bytes = Uint8List.fromList(_buffer);
     var offset = 0;
@@ -632,11 +692,18 @@ class SocketGameGateway implements GameGateway {
   }
 
   Future<void> _openConnection() async {
-    _socket = await Socket.connect(host, port, timeout: const Duration(seconds: 5));
-    _subscription = _socket!.listen(
-      _onData,
-      onDone: _handleDisconnect,
-      onError: (Object error, StackTrace stackTrace) => _handleDisconnect(error),
+    final socket = await Socket.connect(
+      host,
+      port,
+      timeout: const Duration(seconds: 5),
+    );
+    _socket = socket;
+    _lastInboundAt = DateTime.now();
+    _subscription = socket.listen(
+      (data) => _onData(socket, data),
+      onDone: () => _handleDisconnect(socket: socket),
+      onError: (Object error, StackTrace stackTrace) =>
+          _handleDisconnect(error: error, socket: socket),
       cancelOnError: true,
     );
     _heartbeatTimer?.cancel();
@@ -649,18 +716,19 @@ class SocketGameGateway implements GameGateway {
         ).ignore();
       }
     });
-    if (_sessionToken != null && _lastRoomId != null) {
-      unawaited(reconnect());
-    }
   }
 
-  void _handleDisconnect([Object? error]) {
+  void _handleDisconnect({Object? error, Socket? socket}) {
+    if (socket != null && !identical(socket, _socket)) {
+      return;
+    }
     _socket?.destroy();
     _socket = null;
     _subscription?.cancel();
     _subscription = null;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _lastInboundAt = null;
     _buffer.clear();
     final pending = Map<String, Completer<pb.ServerMessage>>.from(_pending);
     _pending.clear();
@@ -676,6 +744,20 @@ class SocketGameGateway implements GameGateway {
     _latestSnapshot = snapshot;
     _lastRoomId = snapshot.roomId;
     _snapshotController.add(snapshot);
+  }
+
+  Future<void> _refreshStaleConnectionIfNeeded() async {
+    if (_sessionToken == null || _pending.isNotEmpty) {
+      return;
+    }
+    final lastInboundAt = _lastInboundAt;
+    if (lastInboundAt == null ||
+        DateTime.now().difference(lastInboundAt) <
+            _staleConnectionThreshold) {
+      return;
+    }
+    _handleDisconnect(error: Exception('stale connection refresh'));
+    await _ensureConnected();
   }
 
   app.UserProfile _mapUserProfile(pb.UserProfile profile) => app.UserProfile(

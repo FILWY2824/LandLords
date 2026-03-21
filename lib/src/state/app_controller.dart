@@ -18,11 +18,13 @@ class AppController extends ChangeNotifier {
   }
 
   static const int _matchingTimeoutSeconds = 20;
+  static const String _busyOperationError = 'operation in progress';
 
   final GameGateway _gateway;
   final Queue<RoomInvitation> _invitationQueue = Queue<RoomInvitation>();
   final Queue<InvitationFeedback> _feedbackQueue =
       Queue<InvitationFeedback>();
+  final Queue<AppDialogNotice> _popupNoticeQueue = Queue<AppDialogNotice>();
 
   StreamSubscription<RoomSnapshot>? _roomSubscription;
   StreamSubscription<GatewayNotification>? _notificationSubscription;
@@ -41,6 +43,7 @@ class AppController extends ChangeNotifier {
   String? _lastSettledRoomId;
   RoomInvitation? _activeInvitation;
   InvitationFeedback? _activeInvitationFeedback;
+  AppDialogNotice? _activePopupNotice;
 
   AppStage get stage => _stage;
   UserProfile? get profile => _profile;
@@ -51,6 +54,7 @@ class AppController extends ChangeNotifier {
   BotDifficulty get botDifficulty => _botDifficulty;
   RoomInvitation? get activeInvitation => _activeInvitation;
   InvitationFeedback? get activeInvitationFeedback => _activeInvitationFeedback;
+  AppDialogNotice? get activePopupNotice => _activePopupNotice;
   bool get isBusy => _busyText != null;
   bool get isMatching => _stage == AppStage.matching;
   int get matchingElapsedSeconds => _matchingElapsedSeconds;
@@ -66,6 +70,7 @@ class AppController extends ChangeNotifier {
     _matchingTimer?.cancel();
     _roomSubscription?.cancel();
     _notificationSubscription?.cancel();
+    unawaited(_gateway.close());
     super.dispose();
   }
 
@@ -88,6 +93,22 @@ class AppController extends ChangeNotifier {
     });
   }
 
+  Future<void> updateNickname(String nickname) async {
+    if (_profile == null || _sessionToken == null) {
+      return;
+    }
+    final normalizedNickname = nickname.trim();
+    if (normalizedNickname.isEmpty) {
+      return;
+    }
+    await _guard('姝ｅ湪鏇存柊鏄电О...', () async {
+      _profile = await _gateway.updateNickname(
+        sessionToken: _sessionToken!,
+        nickname: normalizedNickname,
+      );
+    });
+  }
+
   Future<void> login(String account, String password) async {
     await _guard('正在进入大厅...', () async {
       final result = await _gateway.login(account: account, password: password);
@@ -101,6 +122,8 @@ class AppController extends ChangeNotifier {
       _feedbackQueue.clear();
       _activeInvitation = null;
       _activeInvitationFeedback = null;
+      _activePopupNotice = null;
+      _popupNoticeQueue.clear();
       _roomSubscription ??= _gateway.roomSnapshots.listen((snapshot) {
         _roomSnapshot = snapshot;
         _errorText = null;
@@ -127,6 +150,10 @@ class AppController extends ChangeNotifier {
       _errorText = null;
       _lobbyNotice = null;
       notifyListeners();
+      return;
+    }
+    if (mode != MatchMode.online && hasResumeRoom) {
+      _showLobbyNotice('你有一局正在进行的对局，请先恢复对局。');
       return;
     }
     if (mode == MatchMode.vsBot) {
@@ -229,6 +256,12 @@ class AppController extends ChangeNotifier {
       _stage = AppStage.game;
       _lobbyNotice = null;
     });
+    await _recoverFromTransportFailure();
+    if (_stage == AppStage.lobby && _errorText != null) {
+      final msg = _friendlyRoomActionMessage(_errorText!);
+      _errorText = null;
+      showDialogNotice(message: msg, deduplicate: false);
+    }
   }
 
   Future<void> joinRoom(String roomCode) async {
@@ -243,6 +276,12 @@ class AppController extends ChangeNotifier {
       _stage = AppStage.game;
       _lobbyNotice = null;
     });
+    await _recoverFromTransportFailure();
+    if (_stage == AppStage.lobby && _errorText != null) {
+      final msg = _friendlyRoomActionMessage(_errorText!);
+      _errorText = null;
+      showDialogNotice(message: msg, deduplicate: false);
+    }
   }
 
   Future<void> setRoomReady(bool ready) async {
@@ -256,6 +295,7 @@ class AppController extends ChangeNotifier {
         ready: ready,
       );
     });
+    await _recoverFromTransportFailure();
   }
 
   Future<void> addBotToRoom({
@@ -320,6 +360,7 @@ class AppController extends ChangeNotifier {
 
   Future<void> invitePlayerToRoom({
     required String account,
+    String? displayName,
     required int seatIndex,
   }) async {
     if (_sessionToken == null || _roomSnapshot == null) {
@@ -333,14 +374,24 @@ class AppController extends ChangeNotifier {
         seatIndex: seatIndex,
       );
     });
+    await _recoverFromTransportFailure();
+    if (_errorText == null) {
+      final label = (displayName == null || displayName.trim().isEmpty)
+          ? account
+          : displayName.trim();
+      showDialogNotice(
+        title: '邀请已发送',
+        message: '已向 $label 发送入座邀请，请等待对方确认。',
+      );
+    }
   }
 
-  Future<void> respondToInvitation({
+  Future<bool> respondToInvitation({
     required String invitationId,
     required bool accept,
   }) async {
     if (_sessionToken == null) {
-      return;
+      return false;
     }
     await _guard(
       accept ? '正在加入房间...' : '正在拒绝邀请...',
@@ -357,7 +408,29 @@ class AppController extends ChangeNotifier {
         }
       },
     );
+    await _recoverFromTransportFailure();
+    if (_errorText != null) {
+      showDialogNotice(
+        title: '邀请处理失败',
+        message: _friendlyRoomActionMessage(_errorText!),
+      );
+      return false;
+    }
     dismissActiveInvitation();
+    return true;
+  }
+
+  Future<void> recoverConnection() async {
+    if (_sessionToken == null) {
+      return;
+    }
+    try {
+      await _gateway.recoverConnection();
+      _errorText = null;
+    } catch (error) {
+      _errorText = error.toString().replaceFirst('Exception: ', '');
+    }
+    notifyListeners();
   }
 
   void dismissActiveInvitation() {
@@ -372,6 +445,41 @@ class AppController extends ChangeNotifier {
     _activeInvitationFeedback = null;
     if (_feedbackQueue.isNotEmpty) {
       _activeInvitationFeedback = _feedbackQueue.removeFirst();
+    }
+    notifyListeners();
+  }
+
+  void showDialogNotice({
+    String title = '提示',
+    required String message,
+    String actionLabel = '知道了',
+    bool deduplicate = true,
+  }) {
+    final notice = AppDialogNotice(
+      title: title,
+      message: message,
+      actionLabel: actionLabel,
+    );
+    if (deduplicate &&
+        (_noticeMatches(_activePopupNotice, notice) ||
+            _popupNoticeQueue.any((item) => _noticeMatches(item, notice)))) {
+      return;
+    }
+    if (_activePopupNotice == null) {
+      _activePopupNotice = notice;
+    } else {
+      _popupNoticeQueue.addLast(notice);
+    }
+    notifyListeners();
+  }
+
+  void dismissActivePopupNotice() {
+    if (_activePopupNotice == null) {
+      return;
+    }
+    _activePopupNotice = null;
+    if (_popupNoticeQueue.isNotEmpty) {
+      _activePopupNotice = _popupNoticeQueue.removeFirst();
     }
     notifyListeners();
   }
@@ -561,6 +669,8 @@ class AppController extends ChangeNotifier {
     _feedbackQueue.clear();
     _activeInvitation = null;
     _activeInvitationFeedback = null;
+    _activePopupNotice = null;
+    _popupNoticeQueue.clear();
     _stage = AppStage.login;
     notifyListeners();
   }
@@ -592,8 +702,15 @@ class AppController extends ChangeNotifier {
   }
 
   void _showLobbyNotice(String text) {
-    _lobbyNotice = text;
-    notifyListeners();
+    _lobbyNotice = null;
+    showDialogNotice(message: text);
+  }
+
+  bool _noticeMatches(AppDialogNotice? left, AppDialogNotice right) {
+    return left != null &&
+        left.title == right.title &&
+        left.message == right.message &&
+        left.actionLabel == right.actionLabel;
   }
 
   void _handleGatewayNotification(GatewayNotification notification) {
@@ -623,9 +740,35 @@ class AppController extends ChangeNotifier {
       return '暂时没有匹配到玩家，请稍后再试。';
     }
     if (text.contains('already in room')) {
-      return '你已经在牌桌里了，可以直接恢复牌桌。';
+      return '你已经在牌桌里了，可以直接恢复对局。';
     }
     return '匹配暂时没有成功，请稍后再试。';
+  }
+
+  String _friendlyRoomActionMessage(String raw) {
+    final text = raw.replaceFirst('Exception: ', '');
+    if (text.contains('already in room')) {
+      return '你当前已经在房间中，可以先退出当前房间后再重新创建或加入。';
+    }
+    if (text.contains('room not found')) {
+      return '没有找到这个房间，请检查房间号是否正确。';
+    }
+    if (text.contains('room is full')) {
+      return '房间已经满员了，请换一个房间号再试。';
+    }
+    if (text.contains('timeout')) {
+      return '请求超时了，请检查网络后重新尝试。';
+    }
+    if (text.contains('login required')) {
+      return '登录状态已失效，请重新登录后再试。';
+    }
+    if (_looksLikeTransportError(text)) {
+      return '当前连接不稳定，已尝试自动重连，请稍后再试一次。';
+    }
+    if (text == _busyOperationError) {
+      return '当前还有操作正在处理中，请稍候再试。';
+    }
+    return text;
   }
 
   void _syncProfileFromSnapshot(RoomSnapshot snapshot) {
@@ -656,8 +799,42 @@ class AppController extends ChangeNotifier {
     );
   }
 
+  Future<void> _recoverFromTransportFailure() async {
+    if (_sessionToken == null || !_looksLikeTransportError(_errorText)) {
+      return;
+    }
+    try {
+      await _gateway.recoverConnection();
+    } catch (_) {
+      // Keep the original action error visible to the user.
+    }
+  }
+
+  bool _looksLikeTransportError(String? raw) {
+    if (raw == null || raw.isEmpty) {
+      return false;
+    }
+    final text = raw.replaceFirst('Exception: ', '').toLowerCase();
+    return text.contains('timeout') ||
+        text.contains('timed out') ||
+        text.contains('socketexception') ||
+        text.contains('websocket') ||
+        text.contains('connection') ||
+        text.contains('broken pipe') ||
+        text.contains('service unavailable') ||
+        text.contains('连接') ||
+        text.contains('超时');
+  }
+
   Future<void> _guard(String busyText, Future<void> Function() action) async {
     if (_busyText != null) {
+      _errorText = _busyOperationError;
+      appLog(
+        AppLogLevel.warn,
+        'app_controller',
+        'guard blocked requested="$busyText" current="$_busyText"',
+      );
+      notifyListeners();
       return;
     }
     _errorText = null;

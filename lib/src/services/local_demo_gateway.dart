@@ -100,6 +100,21 @@ class LocalDemoGateway implements GameGateway {
   }
 
   @override
+  Future<UserProfile> updateNickname({
+    required String sessionToken,
+    required String nickname,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    final userId = _requireUserId(sessionToken);
+    final entry = _usersByName.entries.firstWhere(
+      (item) => item.value.profile.userId == userId,
+    );
+    final updatedProfile = entry.value.profile.copyWith(nickname: nickname);
+    entry.value.profile = updatedProfile;
+    return updatedProfile;
+  }
+
+  @override
   Future<RoomSnapshot> startMatch({
     required String sessionToken,
     required UserProfile profile,
@@ -353,6 +368,9 @@ class LocalDemoGateway implements GameGateway {
   }) async {}
 
   @override
+  Future<void> recoverConnection() async {}
+
+  @override
   Future<RoomSnapshot?> refreshCurrentRoom() async {
     final roomId = _roomsById.keys.isEmpty ? null : _roomsById.keys.last;
     if (roomId == null) {
@@ -365,6 +383,12 @@ class LocalDemoGateway implements GameGateway {
   RoomSnapshot? currentSnapshot(String roomId) => _roomsById[roomId]?.snapshotFor(
         _roomsById[roomId]!.ownerId,
       );
+
+  @override
+  Future<void> close() async {
+    await _snapshotController.close();
+    await _notificationController.close();
+  }
 
   void _persistRoundScoreIfNeeded(_DemoRoom room, String userId) {
     if (room.phase != RoomPhase.finished) {

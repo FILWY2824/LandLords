@@ -315,6 +315,42 @@ final $typed_data.Uint8List resetPasswordResponseDescriptor = $convert.base64Dec
     'ChVSZXNldFBhc3N3b3JkUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIYCgdtZX'
     'NzYWdlGAIgASgJUgdtZXNzYWdl');
 
+@$core.Deprecated('Use updateNicknameRequestDescriptor instead')
+const UpdateNicknameRequest$json = {
+  '1': 'UpdateNicknameRequest',
+  '2': [
+    {'1': 'nickname', '3': 1, '4': 1, '5': 9, '10': 'nickname'},
+  ],
+};
+
+/// Descriptor for `UpdateNicknameRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List updateNicknameRequestDescriptor =
+    $convert.base64Decode(
+        'ChVVcGRhdGVOaWNrbmFtZVJlcXVlc3QSGgoIbmlja25hbWUYASABKAlSCG5pY2tuYW1l');
+
+@$core.Deprecated('Use updateNicknameResponseDescriptor instead')
+const UpdateNicknameResponse$json = {
+  '1': 'UpdateNicknameResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+    {
+      '1': 'profile',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.UserProfile',
+      '10': 'profile'
+    },
+  ],
+};
+
+/// Descriptor for `UpdateNicknameResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List updateNicknameResponseDescriptor = $convert.base64Decode(
+    'ChZVcGRhdGVOaWNrbmFtZVJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3MSGAoHbW'
+    'Vzc2FnZRgCIAEoCVIHbWVzc2FnZRI5Cgdwcm9maWxlGAMgASgLMh8ubGFuZGxvcmRzLnByb3Rv'
+    'Y29sLlVzZXJQcm9maWxlUgdwcm9maWxl');
+
 @$core.Deprecated('Use matchRequestDescriptor instead')
 const MatchRequest$json = {
   '1': 'MatchRequest',
@@ -1140,6 +1176,15 @@ const ClientMessage$json = {
       '9': 0,
       '10': 'leaveRoomRequest'
     },
+    {
+      '1': 'update_nickname_request',
+      '3': 28,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.UpdateNicknameRequest',
+      '9': 0,
+      '10': 'updateNicknameRequest'
+    },
   ],
   '8': [
     {'1': 'payload'},
@@ -1177,7 +1222,9 @@ final $typed_data.Uint8List clientMessageDescriptor = $convert.base64Decode(
     'ZXNwb25kX3Jvb21faW52aXRhdGlvbl9yZXF1ZXN0GBogASgLMjAubGFuZGxvcmRzLnByb3RvY2'
     '9sLlJlc3BvbmRSb29tSW52aXRhdGlvblJlcXVlc3RIAFIccmVzcG9uZFJvb21JbnZpdGF0aW9u'
     'UmVxdWVzdBJUChJsZWF2ZV9yb29tX3JlcXVlc3QYGyABKAsyJC5sYW5kbG9yZHMucHJvdG9jb2'
-    'wuTGVhdmVSb29tUmVxdWVzdEgAUhBsZWF2ZVJvb21SZXF1ZXN0QgkKB3BheWxvYWQ=');
+    'wuTGVhdmVSb29tUmVxdWVzdEgAUhBsZWF2ZVJvb21SZXF1ZXN0EmMKF3VwZGF0ZV9uaWNrbmFt'
+    'ZV9yZXF1ZXN0GBwgASgLMikubGFuZGxvcmRzLnByb3RvY29sLlVwZGF0ZU5pY2tuYW1lUmVxdW'
+    'VzdEgAUhV1cGRhdGVOaWNrbmFtZVJlcXVlc3RCCQoHcGF5bG9hZA==');
 
 @$core.Deprecated('Use serverMessageDescriptor instead')
 const ServerMessage$json = {
@@ -1319,6 +1366,15 @@ const ServerMessage$json = {
       '9': 0,
       '10': 'roomInvitationResultPush'
     },
+    {
+      '1': 'update_nickname_response',
+      '3': 25,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.UpdateNicknameResponse',
+      '9': 0,
+      '10': 'updateNicknameResponse'
+    },
   ],
   '8': [
     {'1': 'payload'},
@@ -1352,4 +1408,6 @@ final $typed_data.Uint8List serverMessageDescriptor = $convert.base64Decode(
     'dG9jb2wuUmVzcG9uZFJvb21JbnZpdGF0aW9uUmVzcG9uc2VIAFIdcmVzcG9uZFJvb21JbnZpdG'
     'F0aW9uUmVzcG9uc2USbQobcm9vbV9pbnZpdGF0aW9uX3Jlc3VsdF9wdXNoGBggASgLMiwubGFu'
     'ZGxvcmRzLnByb3RvY29sLlJvb21JbnZpdGF0aW9uUmVzdWx0UHVzaEgAUhhyb29tSW52aXRhdG'
-    'lvblJlc3VsdFB1c2hCCQoHcGF5bG9hZA==');
+    'lvblJlc3VsdFB1c2gSZgoYdXBkYXRlX25pY2tuYW1lX3Jlc3BvbnNlGBkgASgLMioubGFuZGxv'
+    'cmRzLnByb3RvY29sLlVwZGF0ZU5pY2tuYW1lUmVzcG9uc2VIAFIWdXBkYXRlTmlja25hbWVSZX'
+    'Nwb25zZUIJCgdwYXlsb2Fk');

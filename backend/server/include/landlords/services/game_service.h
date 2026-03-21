@@ -65,12 +65,15 @@ class GameService {
 
   std::optional<SessionState*> RequireSession(const std::string& session_token);
   std::optional<SessionState*> FindSessionByUserId(const std::string& user_id);
+  std::vector<SessionState*> FindSessionsByUserId(const std::string& user_id);
   void HandleRegister(const std::shared_ptr<network::IConnection>& connection,
                       const landlords::protocol::ClientMessage& message);
   void HandleLogin(const std::shared_ptr<network::IConnection>& connection,
                    const landlords::protocol::ClientMessage& message);
   void HandleResetPassword(const std::shared_ptr<network::IConnection>& connection,
                            const landlords::protocol::ClientMessage& message);
+  void HandleUpdateNickname(const std::shared_ptr<network::IConnection>& connection,
+                            const landlords::protocol::ClientMessage& message);
   void HandleMatch(const std::shared_ptr<network::IConnection>& connection,
                    const landlords::protocol::ClientMessage& message);
   void HandleCreateRoom(const std::shared_ptr<network::IConnection>& connection,

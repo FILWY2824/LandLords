@@ -32,6 +32,8 @@ dependencies:
     sdk: flutter
   fixnum: ^1.1.1
   protobuf: ^6.0.0
+  flutter_svg: ^2.0.10+1
+  url_launcher: ^6.3.0
   web_socket_channel: ^3.0.3
 
   # The following adds the Cupertino Icons font to your application.

@@ -37,6 +37,11 @@ abstract class GameGateway {
     required String newPassword,
   });
 
+  Future<UserProfile> updateNickname({
+    required String sessionToken,
+    required String nickname,
+  });
+
   Future<RoomSnapshot> startMatch({
     required String sessionToken,
     required UserProfile profile,
@@ -137,7 +142,11 @@ abstract class GameGateway {
     required String actionId,
   });
 
+  Future<void> recoverConnection();
+
   Future<RoomSnapshot?> refreshCurrentRoom();
 
   RoomSnapshot? currentSnapshot(String roomId);
+
+  Future<void> close();
 }

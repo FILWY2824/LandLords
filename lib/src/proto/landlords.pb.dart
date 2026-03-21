@@ -707,6 +707,145 @@ class ResetPasswordResponse extends $pb.GeneratedMessage {
   void clearMessage() => $_clearField(2);
 }
 
+class UpdateNicknameRequest extends $pb.GeneratedMessage {
+  factory UpdateNicknameRequest({
+    $core.String? nickname,
+  }) {
+    final result = create();
+    if (nickname != null) result.nickname = nickname;
+    return result;
+  }
+
+  UpdateNicknameRequest._();
+
+  factory UpdateNicknameRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory UpdateNicknameRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'UpdateNicknameRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'nickname')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  UpdateNicknameRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  UpdateNicknameRequest copyWith(
+          void Function(UpdateNicknameRequest) updates) =>
+      super.copyWith((message) => updates(message as UpdateNicknameRequest))
+          as UpdateNicknameRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static UpdateNicknameRequest create() => UpdateNicknameRequest._();
+  @$core.override
+  UpdateNicknameRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static UpdateNicknameRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<UpdateNicknameRequest>(create);
+  static UpdateNicknameRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get nickname => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set nickname($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasNickname() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearNickname() => $_clearField(1);
+}
+
+class UpdateNicknameResponse extends $pb.GeneratedMessage {
+  factory UpdateNicknameResponse({
+    $core.bool? success,
+    $core.String? message,
+    UserProfile? profile,
+  }) {
+    final result = create();
+    if (success != null) result.success = success;
+    if (message != null) result.message = message;
+    if (profile != null) result.profile = profile;
+    return result;
+  }
+
+  UpdateNicknameResponse._();
+
+  factory UpdateNicknameResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory UpdateNicknameResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'UpdateNicknameResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..aOM<UserProfile>(3, _omitFieldNames ? '' : 'profile',
+        subBuilder: UserProfile.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  UpdateNicknameResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  UpdateNicknameResponse copyWith(
+          void Function(UpdateNicknameResponse) updates) =>
+      super.copyWith((message) => updates(message as UpdateNicknameResponse))
+          as UpdateNicknameResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static UpdateNicknameResponse create() => UpdateNicknameResponse._();
+  @$core.override
+  UpdateNicknameResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static UpdateNicknameResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<UpdateNicknameResponse>(create);
+  static UpdateNicknameResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  UserProfile get profile => $_getN(2);
+  @$pb.TagNumber(3)
+  set profile(UserProfile value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasProfile() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearProfile() => $_clearField(3);
+  @$pb.TagNumber(3)
+  UserProfile ensureProfile() => $_ensure(2);
+}
+
 class MatchRequest extends $pb.GeneratedMessage {
   factory MatchRequest({
     MatchMode? mode,
@@ -3157,6 +3296,7 @@ enum ClientMessage_Payload {
   invitePlayerRequest,
   respondRoomInvitationRequest,
   leaveRoomRequest,
+  updateNicknameRequest,
   notSet
 }
 
@@ -3182,6 +3322,7 @@ class ClientMessage extends $pb.GeneratedMessage {
     InvitePlayerRequest? invitePlayerRequest,
     RespondRoomInvitationRequest? respondRoomInvitationRequest,
     LeaveRoomRequest? leaveRoomRequest,
+    UpdateNicknameRequest? updateNicknameRequest,
   }) {
     final result = create();
     if (requestId != null) result.requestId = requestId;
@@ -3209,6 +3350,8 @@ class ClientMessage extends $pb.GeneratedMessage {
     if (respondRoomInvitationRequest != null)
       result.respondRoomInvitationRequest = respondRoomInvitationRequest;
     if (leaveRoomRequest != null) result.leaveRoomRequest = leaveRoomRequest;
+    if (updateNicknameRequest != null)
+      result.updateNicknameRequest = updateNicknameRequest;
     return result;
   }
 
@@ -3241,6 +3384,7 @@ class ClientMessage extends $pb.GeneratedMessage {
     25: ClientMessage_Payload.invitePlayerRequest,
     26: ClientMessage_Payload.respondRoomInvitationRequest,
     27: ClientMessage_Payload.leaveRoomRequest,
+    28: ClientMessage_Payload.updateNicknameRequest,
     0: ClientMessage_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -3266,7 +3410,8 @@ class ClientMessage extends $pb.GeneratedMessage {
       24,
       25,
       26,
-      27
+      27,
+      28
     ])
     ..aOS(1, _omitFieldNames ? '' : 'requestId')
     ..aOS(2, _omitFieldNames ? '' : 'sessionToken')
@@ -3308,6 +3453,9 @@ class ClientMessage extends $pb.GeneratedMessage {
         subBuilder: RespondRoomInvitationRequest.create)
     ..aOM<LeaveRoomRequest>(27, _omitFieldNames ? '' : 'leaveRoomRequest',
         subBuilder: LeaveRoomRequest.create)
+    ..aOM<UpdateNicknameRequest>(
+        28, _omitFieldNames ? '' : 'updateNicknameRequest',
+        subBuilder: UpdateNicknameRequest.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -3347,6 +3495,7 @@ class ClientMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(25)
   @$pb.TagNumber(26)
   @$pb.TagNumber(27)
+  @$pb.TagNumber(28)
   ClientMessage_Payload whichPayload() =>
       _ClientMessage_PayloadByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(10)
@@ -3367,6 +3516,7 @@ class ClientMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(25)
   @$pb.TagNumber(26)
   @$pb.TagNumber(27)
+  @$pb.TagNumber(28)
   void clearPayload() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -3586,6 +3736,18 @@ class ClientMessage extends $pb.GeneratedMessage {
   void clearLeaveRoomRequest() => $_clearField(27);
   @$pb.TagNumber(27)
   LeaveRoomRequest ensureLeaveRoomRequest() => $_ensure(19);
+
+  @$pb.TagNumber(28)
+  UpdateNicknameRequest get updateNicknameRequest => $_getN(20);
+  @$pb.TagNumber(28)
+  set updateNicknameRequest(UpdateNicknameRequest value) =>
+      $_setField(28, value);
+  @$pb.TagNumber(28)
+  $core.bool hasUpdateNicknameRequest() => $_has(20);
+  @$pb.TagNumber(28)
+  void clearUpdateNicknameRequest() => $_clearField(28);
+  @$pb.TagNumber(28)
+  UpdateNicknameRequest ensureUpdateNicknameRequest() => $_ensure(20);
 }
 
 enum ServerMessage_Payload {
@@ -3604,6 +3766,7 @@ enum ServerMessage_Payload {
   roomInvitationPush,
   respondRoomInvitationResponse,
   roomInvitationResultPush,
+  updateNicknameResponse,
   notSet
 }
 
@@ -3625,6 +3788,7 @@ class ServerMessage extends $pb.GeneratedMessage {
     RoomInvitationPush? roomInvitationPush,
     RespondRoomInvitationResponse? respondRoomInvitationResponse,
     RoomInvitationResultPush? roomInvitationResultPush,
+    UpdateNicknameResponse? updateNicknameResponse,
   }) {
     final result = create();
     if (requestId != null) result.requestId = requestId;
@@ -3649,6 +3813,8 @@ class ServerMessage extends $pb.GeneratedMessage {
       result.respondRoomInvitationResponse = respondRoomInvitationResponse;
     if (roomInvitationResultPush != null)
       result.roomInvitationResultPush = roomInvitationResultPush;
+    if (updateNicknameResponse != null)
+      result.updateNicknameResponse = updateNicknameResponse;
     return result;
   }
 
@@ -3678,6 +3844,7 @@ class ServerMessage extends $pb.GeneratedMessage {
     22: ServerMessage_Payload.roomInvitationPush,
     23: ServerMessage_Payload.respondRoomInvitationResponse,
     24: ServerMessage_Payload.roomInvitationResultPush,
+    25: ServerMessage_Payload.updateNicknameResponse,
     0: ServerMessage_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -3685,7 +3852,7 @@ class ServerMessage extends $pb.GeneratedMessage {
       package:
           const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
       createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24])
+    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25])
     ..aOS(1, _omitFieldNames ? '' : 'requestId')
     ..aOM<RegisterResponse>(10, _omitFieldNames ? '' : 'registerResponse',
         subBuilder: RegisterResponse.create)
@@ -3721,6 +3888,9 @@ class ServerMessage extends $pb.GeneratedMessage {
     ..aOM<RoomInvitationResultPush>(
         24, _omitFieldNames ? '' : 'roomInvitationResultPush',
         subBuilder: RoomInvitationResultPush.create)
+    ..aOM<UpdateNicknameResponse>(
+        25, _omitFieldNames ? '' : 'updateNicknameResponse',
+        subBuilder: UpdateNicknameResponse.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -3757,6 +3927,7 @@ class ServerMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(22)
   @$pb.TagNumber(23)
   @$pb.TagNumber(24)
+  @$pb.TagNumber(25)
   ServerMessage_Payload whichPayload() =>
       _ServerMessage_PayloadByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(10)
@@ -3774,6 +3945,7 @@ class ServerMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(22)
   @$pb.TagNumber(23)
   @$pb.TagNumber(24)
+  @$pb.TagNumber(25)
   void clearPayload() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -3953,6 +4125,18 @@ class ServerMessage extends $pb.GeneratedMessage {
   void clearRoomInvitationResultPush() => $_clearField(24);
   @$pb.TagNumber(24)
   RoomInvitationResultPush ensureRoomInvitationResultPush() => $_ensure(15);
+
+  @$pb.TagNumber(25)
+  UpdateNicknameResponse get updateNicknameResponse => $_getN(16);
+  @$pb.TagNumber(25)
+  set updateNicknameResponse(UpdateNicknameResponse value) =>
+      $_setField(25, value);
+  @$pb.TagNumber(25)
+  $core.bool hasUpdateNicknameResponse() => $_has(16);
+  @$pb.TagNumber(25)
+  void clearUpdateNicknameResponse() => $_clearField(25);
+  @$pb.TagNumber(25)
+  UpdateNicknameResponse ensureUpdateNicknameResponse() => $_ensure(16);
 }
 
 const $core.bool _omitFieldNames =

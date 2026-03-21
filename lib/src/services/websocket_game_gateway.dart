@@ -22,6 +22,7 @@ class WebSocketGameGateway implements GameGateway {
   static const String _cancelMatchCommand = 'match:cancel';
   static const String _presentationAckPrefix = '__presented__:';
   static const Duration _requestTimeout = Duration(seconds: 45);
+  static const Duration _staleConnectionThreshold = Duration(seconds: 25);
 
   final StreamController<RoomSnapshot> _snapshotController =
       StreamController<RoomSnapshot>.broadcast();
@@ -36,6 +37,7 @@ class WebSocketGameGateway implements GameGateway {
   String? _sessionToken;
   String? _lastRoomId;
   RoomSnapshot? _latestSnapshot;
+  DateTime? _lastInboundAt;
 
   @override
   Stream<RoomSnapshot> get roomSnapshots => _snapshotController.stream;
@@ -128,6 +130,29 @@ class WebSocketGameGateway implements GameGateway {
             : response.errorResponse.message,
       );
     }
+  }
+
+  @override
+  Future<app.UserProfile> updateNickname({
+    required String sessionToken,
+    required String nickname,
+  }) async {
+    await _ensureConnected();
+    final response = await _send(
+      (message) => message.updateNicknameRequest = pb.UpdateNicknameRequest(
+        nickname: nickname,
+      ),
+      sessionToken: sessionToken,
+    );
+    if (!response.hasUpdateNicknameResponse() ||
+        !response.updateNicknameResponse.success) {
+      throw Exception(
+        response.hasUpdateNicknameResponse()
+            ? response.updateNicknameResponse.message
+            : response.errorResponse.message,
+      );
+    }
+    return _mapUserProfile(response.updateNicknameResponse.profile);
   }
 
   @override
@@ -528,6 +553,22 @@ class WebSocketGameGateway implements GameGateway {
   }
 
   @override
+  Future<void> recoverConnection() async {
+    if (_sessionToken == null) {
+      return;
+    }
+    _handleDisconnect(error: Exception('connection refresh requested'));
+    await _ensureConnected();
+    if (_lastRoomId == null) {
+      return;
+    }
+    final response = await reconnect();
+    if (response.hasRoomSnapshot()) {
+      _publishSnapshot(_mapSnapshot(response.roomSnapshot));
+    }
+  }
+
+  @override
   Future<RoomSnapshot?> refreshCurrentRoom() async {
     if (_sessionToken == null || _lastRoomId == null) {
       return null;
@@ -544,6 +585,13 @@ class WebSocketGameGateway implements GameGateway {
   @override
   RoomSnapshot? currentSnapshot(String roomId) =>
       _latestSnapshot?.roomId == roomId ? _latestSnapshot : null;
+
+  @override
+  Future<void> close() async {
+    _handleDisconnect();
+    await _snapshotController.close();
+    await _notificationController.close();
+  }
 
   Future<pb.ServerMessage> reconnect() async {
     if (_sessionToken == null || _lastRoomId == null) {
@@ -562,6 +610,7 @@ class WebSocketGameGateway implements GameGateway {
     String? sessionToken,
   }) async {
     await _ensureConnected();
+    await _refreshStaleConnectionIfNeeded();
     final requestId = _id();
     final message = pb.ClientMessage(
       requestId: requestId,
@@ -574,14 +623,25 @@ class WebSocketGameGateway implements GameGateway {
       _pending.remove(requestId);
       throw Exception('服务连接不可用');
     }
-    _channel!.sink.add(Uint8List.fromList(message.writeToBuffer()));
+    try {
+      _channel!.sink.add(Uint8List.fromList(message.writeToBuffer()));
+    } catch (error) {
+      _pending.remove(requestId);
+      _handleDisconnect(error: error);
+      throw Exception('服务连接不可用');
+    }
     return completer.future.timeout(_requestTimeout, onTimeout: () {
       _pending.remove(requestId);
+      _handleDisconnect(error: Exception('服务响应超时'));
       throw Exception('服务响应超时');
     });
   }
 
-  void _onMessage(dynamic data) {
+  void _onMessage(WebSocketChannel channel, dynamic data) {
+    if (!identical(channel, _channel)) {
+      return;
+    }
+    _lastInboundAt = DateTime.now();
     final List<int> bytes;
     if (data is Uint8List) {
       bytes = data;
@@ -618,12 +678,15 @@ class WebSocketGameGateway implements GameGateway {
 
   Future<void> _openConnection() async {
     try {
-      _channel = WebSocketChannel.connect(Uri.parse(url));
-      await _channel!.ready;
-      _subscription = _channel!.stream.listen(
-        _onMessage,
-        onError: (Object error, StackTrace stackTrace) => _handleDisconnect(error),
-        onDone: _handleDisconnect,
+      final channel = WebSocketChannel.connect(Uri.parse(url));
+      _channel = channel;
+      await channel.ready;
+      _lastInboundAt = DateTime.now();
+      _subscription = channel.stream.listen(
+        (data) => _onMessage(channel, data),
+        onError: (Object error, StackTrace stackTrace) =>
+            _handleDisconnect(error: error, channel: channel),
+        onDone: () => _handleDisconnect(channel: channel),
         cancelOnError: true,
       );
       _heartbeatTimer?.cancel();
@@ -636,22 +699,23 @@ class WebSocketGameGateway implements GameGateway {
           ).ignore();
         }
       });
-      if (_sessionToken != null && _lastRoomId != null) {
-        unawaited(reconnect());
-      }
     } catch (error) {
-      _handleDisconnect(error);
+      _handleDisconnect(error: error);
       throw Exception('服务连接失败，请检查地址或网络。');
     }
   }
 
-  void _handleDisconnect([Object? error]) {
+  void _handleDisconnect({Object? error, WebSocketChannel? channel}) {
+    if (channel != null && !identical(channel, _channel)) {
+      return;
+    }
     _channel?.sink.close();
     _channel = null;
     _subscription?.cancel();
     _subscription = null;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _lastInboundAt = null;
     final pending = Map<String, Completer<pb.ServerMessage>>.from(_pending);
     _pending.clear();
     final failure = error ?? Exception('连接已断开');
@@ -666,6 +730,20 @@ class WebSocketGameGateway implements GameGateway {
     _latestSnapshot = snapshot;
     _lastRoomId = snapshot.roomId;
     _snapshotController.add(snapshot);
+  }
+
+  Future<void> _refreshStaleConnectionIfNeeded() async {
+    if (_sessionToken == null || _pending.isNotEmpty) {
+      return;
+    }
+    final lastInboundAt = _lastInboundAt;
+    if (lastInboundAt == null ||
+        DateTime.now().difference(lastInboundAt) <
+            _staleConnectionThreshold) {
+      return;
+    }
+    _handleDisconnect(error: Exception('stale connection refresh'));
+    await _ensureConnected();
   }
 
   app.UserProfile _mapUserProfile(pb.UserProfile profile) => app.UserProfile(
@@ -810,12 +888,15 @@ class WebSocketGameGateway implements GameGateway {
       return 'ws://127.0.0.1:23002/ws';
     }
     final scheme = base.scheme == 'https' ? 'wss' : 'ws';
-    final port = _resolvedPort(base);
+    final port = _resolvePort(base);
     final authority = port == null ? base.host : '${base.host}:$port';
     return '$scheme://$authority/ws';
   }
 
-  static int? _resolvedPort(Uri base) {
+  static int? _resolvePort(Uri base) {
+    if (_shouldUseDedicatedBackendPort(base)) {
+      return 23002;
+    }
     if (base.hasPort) {
       return base.port;
     }
@@ -826,5 +907,16 @@ class WebSocketGameGateway implements GameGateway {
       return 443;
     }
     return null;
+  }
+
+  static bool _shouldUseDedicatedBackendPort(Uri base) {
+    final host = base.host.toLowerCase();
+    final isLocalHost = host == 'localhost' || host == '127.0.0.1';
+    if (!isLocalHost || !base.hasPort) {
+      return false;
+    }
+    // Flutter's local web dev server uses a random localhost port without
+    // proxying /ws, while the backend still listens on 23002.
+    return base.port != 23000 && base.port != 80 && base.port != 443;
   }
 }

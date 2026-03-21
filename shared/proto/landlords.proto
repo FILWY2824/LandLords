@@ -124,6 +124,16 @@ message ResetPasswordResponse {
   string message = 2;
 }
 
+message UpdateNicknameRequest {
+  string nickname = 1;
+}
+
+message UpdateNicknameResponse {
+  bool success = 1;
+  string message = 2;
+  UserProfile profile = 3;
+}
+
 message MatchRequest {
   MatchMode mode = 1;
   BotDifficulty bot_difficulty = 2;
@@ -331,6 +341,7 @@ message ClientMessage {
     InvitePlayerRequest invite_player_request = 25;
     RespondRoomInvitationRequest respond_room_invitation_request = 26;
     LeaveRoomRequest leave_room_request = 27;
+    UpdateNicknameRequest update_nickname_request = 28;
   }
 }
 
@@ -352,5 +363,6 @@ message ServerMessage {
     RoomInvitationPush room_invitation_push = 22;
     RespondRoomInvitationResponse respond_room_invitation_response = 23;
     RoomInvitationResultPush room_invitation_result_push = 24;
+    UpdateNicknameResponse update_nickname_response = 25;
   }
 }

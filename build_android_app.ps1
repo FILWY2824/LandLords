@@ -1,37 +1,78 @@
+param(
+  [ValidateSet("debug", "release")]
+  [string]$Mode = "debug",
+
+  [string]$WsUrl = "",
+
+  [switch]$SplitPerAbi
+)
+
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 $env:DART_SUPPRESS_ANALYTICS = "true"
 
 $root = Split-Path -Parent $PSCommandPath
-$wsUrl = if ($env:LANDLORDS_WS_URL) {
-  $env:LANDLORDS_WS_URL
-} elseif ($env:LANDLORDS_MOBILE_WS_URL) {
-  $env:LANDLORDS_MOBILE_WS_URL
-} else {
-  ""
+
+if ([string]::IsNullOrWhiteSpace($WsUrl)) {
+  if ($env:LANDLORDS_WS_URL) {
+    $WsUrl = $env:LANDLORDS_WS_URL
+  } elseif ($env:LANDLORDS_MOBILE_WS_URL) {
+    $WsUrl = $env:LANDLORDS_MOBILE_WS_URL
+  }
+}
+
+$flutterArgs = @("build", "apk", "--$Mode")
+if ($SplitPerAbi) {
+  $flutterArgs += "--split-per-abi"
+}
+if (-not [string]::IsNullOrWhiteSpace($WsUrl)) {
+  $flutterArgs += "--dart-define=LANDLORDS_WS_URL=$WsUrl"
 }
 
 Push-Location $root
 try {
-  if ([string]::IsNullOrWhiteSpace($wsUrl)) {
-    Write-Warning "LANDLORDS_WS_URL 未设置，Android 将回退到默认本地地址 ws://10.0.2.2:23002/ws。"
-    Write-Warning "如果你要连 Cloudflare，请先设置：`$env:LANDLORDS_WS_URL = 'wss://你的域名/ws'"
-    & flutter build apk --debug
-  } else {
-    Write-Host "[landlords-build] flutter build apk --debug --dart-define=LANDLORDS_WS_URL=$wsUrl"
-    & flutter build apk --debug --dart-define="LANDLORDS_WS_URL=$wsUrl"
+  if ([string]::IsNullOrWhiteSpace($WsUrl)) {
+    Write-Warning "LANDLORDS_WS_URL is not set. Android will use the app default WebSocket URL."
+    Write-Warning "If you need a remote server, set it first, for example:"
+    Write-Warning '$env:LANDLORDS_WS_URL = "wss://your-domain/ws"'
   }
+
+  Write-Host "[landlords-build] flutter $($flutterArgs -join ' ')"
+  & flutter @flutterArgs
 
   if ($LASTEXITCODE -ne 0) {
-    throw "flutter build apk --debug failed with exit code $LASTEXITCODE"
+    throw "flutter build apk --$Mode failed with exit code $LASTEXITCODE"
   }
 
-  $output = Join-Path $root "build\app\outputs\flutter-apk\app-debug.apk"
-  if (-not (Test-Path $output)) {
-    throw "Android debug output not found: $output"
+  $outputDir = Join-Path $root "build\app\outputs\flutter-apk"
+
+  if ($SplitPerAbi) {
+    if (-not (Test-Path $outputDir)) {
+      throw "Android output directory not found: $outputDir"
+    }
+
+    $artifacts = Get-ChildItem $outputDir -Filter "*.apk" |
+      Where-Object { $_.Name -like "app-*-$Mode.apk" }
+
+    if (-not $artifacts) {
+      throw "No split APK artifacts found in: $outputDir"
+    }
+
+    foreach ($artifact in $artifacts) {
+      Write-Host "[landlords-build] output=$($artifact.FullName)"
+    }
+  } else {
+    $apkName = if ($Mode -eq "release") { "app-release.apk" } else { "app-debug.apk" }
+    $output = Join-Path $outputDir $apkName
+    if (-not (Test-Path $output)) {
+      throw "Android output not found: $output"
+    }
+    Write-Host "[landlords-build] output=$output"
   }
 
-  Write-Host "[landlords-build] output=$output"
+  if ($Mode -eq "release") {
+    Write-Warning "Current Android release build uses the debug signing config. Configure a real keystore before publishing."
+  }
 } finally {
   Pop-Location
 }

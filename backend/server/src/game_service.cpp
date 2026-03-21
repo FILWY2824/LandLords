@@ -19,6 +19,7 @@ namespace {
 
 constexpr std::string_view kCancelMatchCommand = "match:cancel";
 constexpr std::int64_t kInvitationTimeoutMs = 30'000;
+constexpr std::size_t kMaxNicknameCodePoints = 10U;
 
 std::string DisplayNameFor(const core::UserRecord& user) {
   return user.nickname.empty() ? user.account : user.nickname;
@@ -46,6 +47,8 @@ const char* PayloadName(const landlords::protocol::ClientMessage& message) {
       return "login";
     case landlords::protocol::ClientMessage::kResetPasswordRequest:
       return "reset_password";
+    case landlords::protocol::ClientMessage::kUpdateNicknameRequest:
+      return "update_nickname";
     case landlords::protocol::ClientMessage::kMatchRequest:
       return "match";
     case landlords::protocol::ClientMessage::kCreateRoomRequest:
@@ -153,6 +156,9 @@ void GameService::HandleMessage(const std::shared_ptr<network::IConnection>& con
     case landlords::protocol::ClientMessage::kResetPasswordRequest:
       HandleResetPassword(connection, message);
       break;
+    case landlords::protocol::ClientMessage::kUpdateNicknameRequest:
+      HandleUpdateNickname(connection, message);
+      break;
     case landlords::protocol::ClientMessage::kMatchRequest:
       HandleMatch(connection, message);
       break;
@@ -227,6 +233,18 @@ std::optional<GameService::SessionState*> GameService::FindSessionByUserId(
     return &session;
   }
   return std::nullopt;
+}
+
+std::vector<GameService::SessionState*> GameService::FindSessionsByUserId(
+    const std::string& user_id) {
+  std::vector<SessionState*> sessions;
+  for (auto& [token, session] : sessions_by_token_) {
+    if (session.user.user_id != user_id || session.connection.expired()) {
+      continue;
+    }
+    sessions.push_back(&session);
+  }
+  return sessions;
 }
 
 std::optional<GameService::PendingRoom*> GameService::FindPendingRoom(const std::string& room_id) {
@@ -343,7 +361,7 @@ landlords::protocol::OnlineUser GameService::BuildOnlineUser(
   payload.set_user_id(user.user_id);
   payload.set_account(user.account);
   payload.set_nickname(user.nickname);
-  payload.set_online(FindSessionByUserId(user.user_id).has_value());
+  payload.set_online(!FindSessionsByUserId(user.user_id).empty());
   return payload;
 }
 
@@ -464,9 +482,9 @@ void GameService::HandleRegister(const std::shared_ptr<network::IConnection>& co
     return;
   }
 
-  if (Utf8CodePointCount(request.nickname()) > 5U) {
+  if (Utf8CodePointCount(request.nickname()) > kMaxNicknameCodePoints) {
     payload->set_success(false);
-    payload->set_message("nickname must be within 5 characters");
+    payload->set_message("nickname must be within 10 characters");
     connection->Send(response);
     return;
   }
@@ -532,6 +550,7 @@ void GameService::HandleResetPassword(
     return;
   }
 
+  std::lock_guard lock(mutex_);
   auto user = user_repository_->FindByAccount(request.account());
   if (!user.has_value()) {
     payload->set_success(false);
@@ -550,6 +569,59 @@ void GameService::HandleResetPassword(
 
   payload->set_success(true);
   payload->set_message("password updated");
+  connection->Send(response);
+}
+
+void GameService::HandleUpdateNickname(
+    const std::shared_ptr<network::IConnection>& connection,
+    const landlords::protocol::ClientMessage& message) {
+  const auto& request = message.update_nickname_request();
+  landlords::protocol::ServerMessage response;
+  response.set_request_id(message.request_id());
+  auto* payload = response.mutable_update_nickname_response();
+
+  if (request.nickname().empty()) {
+    payload->set_success(false);
+    payload->set_message("nickname is required");
+    connection->Send(response);
+    return;
+  }
+
+  if (Utf8CodePointCount(request.nickname()) > kMaxNicknameCodePoints) {
+    payload->set_success(false);
+    payload->set_message("nickname must be within 10 characters");
+    connection->Send(response);
+    return;
+  }
+
+  std::lock_guard lock(mutex_);
+  const auto session = RequireSession(message.session_token());
+  if (!session.has_value()) {
+    payload->set_success(false);
+    payload->set_message("login required");
+    connection->Send(response);
+    return;
+  }
+
+  auto user = user_repository_->FindByUserId((*session)->user.user_id);
+  if (!user.has_value()) {
+    payload->set_success(false);
+    payload->set_message("user not found");
+    connection->Send(response);
+    return;
+  }
+
+  user->nickname = request.nickname();
+  user_repository_->UpdateUser(*user);
+  for (auto& [token, current_session] : sessions_by_token_) {
+    if (current_session.user.user_id == user->user_id) {
+      current_session.user = *user;
+    }
+  }
+
+  payload->set_success(true);
+  payload->set_message("nickname updated");
+  FillProfile(*user, payload->mutable_profile());
   connection->Send(response);
 }
 
@@ -965,14 +1037,21 @@ void GameService::HandleInvitePlayer(
     return;
   }
 
-  const auto invitee_session = FindSessionByUserId(target_user->user_id);
-  if (!invitee_session.has_value()) {
+  const auto invitee_sessions = FindSessionsByUserId(target_user->user_id);
+  if (invitee_sessions.empty()) {
     payload->set_accepted(false);
     payload->set_message("player is offline");
     connection->Send(response);
     return;
   }
-  if (!SessionCanJoinPendingRoom(**invitee_session, (*pending_room)->room_id)) {
+  SessionState* invitee_session = nullptr;
+  for (auto* candidate : invitee_sessions) {
+    if (SessionCanJoinPendingRoom(*candidate, (*pending_room)->room_id)) {
+      invitee_session = candidate;
+      break;
+    }
+  }
+  if (invitee_session == nullptr) {
     payload->set_accepted(false);
     payload->set_message("player is not available");
     connection->Send(response);
@@ -986,9 +1065,9 @@ void GameService::HandleInvitePlayer(
       .inviter_player_id = (*session)->user.user_id,
       .inviter_account = (*session)->user.account,
       .inviter_nickname = (*session)->user.nickname,
-      .invitee_player_id = (**invitee_session).user.user_id,
-      .invitee_account = (**invitee_session).user.account,
-      .invitee_nickname = (**invitee_session).user.nickname,
+      .invitee_player_id = invitee_session->user.user_id,
+      .invitee_account = invitee_session->user.account,
+      .invitee_nickname = invitee_session->user.nickname,
       .seat_index = seat_index,
       .created_at_ms = core::NowMs(),
   };
@@ -1608,41 +1687,51 @@ void GameService::SendSnapshotToRoom(const game::Room& room) {
 }
 
 void GameService::SendInvitationReceived(const PendingInvitation& invitation) {
-  const auto invitee_session = FindSessionByUserId(invitation.invitee_player_id);
-  if (!invitee_session.has_value()) {
+  const auto invitee_sessions = FindSessionsByUserId(invitation.invitee_player_id);
+  if (invitee_sessions.empty()) {
     return;
   }
-  if (const auto connection = (**invitee_session).connection.lock()) {
-    landlords::protocol::ServerMessage push;
-    auto* payload = push.mutable_room_invitation_push();
-    payload->set_invitation_id(invitation.invitation_id);
-    payload->set_room_id(invitation.room_id);
-    payload->set_room_code(invitation.room_code);
-    payload->set_inviter_user_id(invitation.inviter_player_id);
-    payload->set_inviter_account(invitation.inviter_account);
-    payload->set_inviter_nickname(invitation.inviter_nickname);
-    payload->set_seat_index(invitation.seat_index);
-    connection->Send(push);
+  for (const auto* invitee_session : invitee_sessions) {
+    if (invitee_session == nullptr) {
+      continue;
+    }
+    if (const auto connection = invitee_session->connection.lock()) {
+      landlords::protocol::ServerMessage push;
+      auto* payload = push.mutable_room_invitation_push();
+      payload->set_invitation_id(invitation.invitation_id);
+      payload->set_room_id(invitation.room_id);
+      payload->set_room_code(invitation.room_code);
+      payload->set_inviter_user_id(invitation.inviter_player_id);
+      payload->set_inviter_account(invitation.inviter_account);
+      payload->set_inviter_nickname(invitation.inviter_nickname);
+      payload->set_seat_index(invitation.seat_index);
+      connection->Send(push);
+    }
   }
 }
 
 void GameService::SendInvitationResult(const PendingInvitation& invitation,
                                        landlords::protocol::InvitationResult result,
                                        const std::string& detail) {
-  const auto inviter_session = FindSessionByUserId(invitation.inviter_player_id);
-  if (!inviter_session.has_value()) {
+  const auto inviter_sessions = FindSessionsByUserId(invitation.inviter_player_id);
+  if (inviter_sessions.empty()) {
     return;
   }
-  if (const auto connection = (**inviter_session).connection.lock()) {
-    landlords::protocol::ServerMessage push;
-    auto* payload = push.mutable_room_invitation_result_push();
-    payload->set_invitation_id(invitation.invitation_id);
-    payload->set_result(result);
-    payload->set_invitee_user_id(invitation.invitee_player_id);
-    payload->set_invitee_account(invitation.invitee_account);
-    payload->set_invitee_nickname(invitation.invitee_nickname);
-    payload->set_message(detail);
-    connection->Send(push);
+  for (const auto* inviter_session : inviter_sessions) {
+    if (inviter_session == nullptr) {
+      continue;
+    }
+    if (const auto connection = inviter_session->connection.lock()) {
+      landlords::protocol::ServerMessage push;
+      auto* payload = push.mutable_room_invitation_result_push();
+      payload->set_invitation_id(invitation.invitation_id);
+      payload->set_result(result);
+      payload->set_invitee_user_id(invitation.invitee_player_id);
+      payload->set_invitee_account(invitation.invitee_account);
+      payload->set_invitee_nickname(invitation.invitee_nickname);
+      payload->set_message(detail);
+      connection->Send(push);
+    }
   }
 }
 

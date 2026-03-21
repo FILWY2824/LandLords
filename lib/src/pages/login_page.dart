@@ -1,11 +1,26 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/voice_cue_service.dart';
 import '../state/app_controller.dart';
 import '../utils/app_log.dart';
 import '../widgets/fixed_stage.dart';
+import '../widgets/responsive_modal.dart';
+
+const String _githubRepoUrl =
+    String.fromEnvironment('LANDLORDS_GITHUB_REPO', defaultValue: 'https://github.com/FILWY2824/LandLords');
+const String _downloadUrl =
+    String.fromEnvironment('LANDLORDS_DOWNLOAD_URL', defaultValue: '');
+
+const String _githubMarkSvg = '''
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.757-1.333-1.757-1.087-.744.084-.729.084-.729 1.205.084 1.84 1.236 1.84 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12z"/>
+</svg>
+''';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key, required this.controller});
@@ -50,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
         );
         return;
       }
-      if (nickname.runes.length > 5) {
+      if (nickname.runes.length > 10) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('昵称请控制在 5 个字以内')),
         );
@@ -65,6 +80,40 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
     await widget.controller.login(account, password);
+  }
+
+  Future<void> _openExternalLink(
+    String url, {
+    required String fallbackMessage,
+  }) async {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(fallbackMessage)),
+        );
+      }
+      return;
+    }
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('链接格式不正确')),
+        );
+      }
+      return;
+    }
+    final ok = await launchUrl(
+      uri,
+      mode: LaunchMode.platformDefault,
+      webOnlyWindowName: '_blank',
+    );
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('无法打开链接')),
+      );
+    }
   }
 
   Future<void> _showResetPasswordDialog() async {
@@ -97,9 +146,21 @@ class _LoginPageState extends State<LoginPage> {
             radius: 34,
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   flex: 7,
-                  child: _LoginHero(),
+                  child: _LoginHero(
+                    onOpenGithub: () => _openExternalLink(
+                      _githubRepoUrl,
+                      fallbackMessage: 'GitHub 仓库地址待配置',
+                    ),
+                    onOpenDownload: () => _openExternalLink(
+                      _downloadUrl,
+                      fallbackMessage: '下载地址待配置',
+                    ),
+                    downloadEnabled: _downloadUrl.trim().isNotEmpty,
+                    githubEnabled: _githubRepoUrl.trim().isNotEmpty,
+                    busy: widget.controller.isBusy,
+                  ),
                 ),
                 const SizedBox(width: 18),
                 SizedBox(
@@ -127,7 +188,19 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class _LoginHero extends StatelessWidget {
-  const _LoginHero();
+  const _LoginHero({
+    required this.onOpenGithub,
+    required this.onOpenDownload,
+    required this.downloadEnabled,
+    required this.githubEnabled,
+    required this.busy,
+  });
+
+  final VoidCallback onOpenGithub;
+  final VoidCallback onOpenDownload;
+  final bool downloadEnabled;
+  final bool githubEnabled;
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
@@ -136,20 +209,58 @@ class _LoginHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              color: const Color(0xFFE6F3FF),
-            ),
-            child: const Text(
-              '三端同步牌局',
-              style: TextStyle(
-                color: Color(0xFF2B7FFF),
-                fontWeight: FontWeight.w900,
-                fontSize: 18,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: const Color(0xFFE6F3FF),
+                ),
+                child: const Text(
+                  '开局即玩 · 三端同步',
+                  style: TextStyle(
+                    color: Color(0xFF2B7FFF),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
+                ),
               ),
-            ),
+              const Spacer(),
+              Wrap(
+                spacing: 10,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: busy ? null : onOpenGithub,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    icon: SvgPicture.string(
+                      _githubMarkSvg,
+                      width: 18,
+                      height: 18,
+                      colorFilter: ColorFilter.mode(
+                        githubEnabled ? const Color(0xFF0F172A) : const Color(0xFF587790),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    label: Text(githubEnabled ? 'GitHub' : 'GitHub（待配置）'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: busy || !downloadEnabled ? null : onOpenDownload,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    icon: const Icon(Icons.download_rounded, size: 18),
+                    label: Text(downloadEnabled ? '下载' : '下载（待配置）'),
+                  ),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           const Text(
@@ -165,7 +276,7 @@ class _LoginHero extends StatelessWidget {
           const SizedBox(
             width: 560,
             child: Text(
-              '登录后直接进入大厅，选择模式即可开始对局。',
+              '即刻开局，支持 AI 对局与真人匹配。断线不掉局，随时恢复继续打。',
               style: TextStyle(
                 color: Color(0xFF587790),
                 fontWeight: FontWeight.w700,
@@ -180,7 +291,7 @@ class _LoginHero extends StatelessWidget {
             runSpacing: 10,
             children: const [
               _HeroChip(label: 'AI策略'),
-              _HeroChip(label: '实时分析'),
+              _HeroChip(label: '出牌提示'),
               _HeroChip(label: '真人对局'),
               _HeroChip(label: '断线可续'),
             ],
@@ -299,8 +410,8 @@ class _AuthCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             registerMode
-                ? '注册时请填写昵称、账号与密码。账号不可重复，昵称请控制在 5 个字以内。'
-                : '输入账号密码后即可进入大厅。',
+                ? '填写昵称、账号与密码即可创建账号。昵称建议不超过 5 个字。'
+                : '输入账号密码后进入大厅，选择模式立即开局。',
             style: const TextStyle(
               color: Color(0xFF587790),
               fontWeight: FontWeight.w700,
@@ -397,18 +508,17 @@ class _AuthCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Center(
-            child: Text(
-              registerMode
-                  ? '注册成功后会自动使用新账号登录'
-                  : '默认测试账号：player1 / player1',
-              style: TextStyle(
-                color: const Color(0xFF6E88A1).withValues(alpha: 0.92),
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
+          if (registerMode)
+            Center(
+              child: Text(
+                '注册成功后会自动使用新账号登录',
+                style: TextStyle(
+                  color: const Color(0xFF6E88A1).withValues(alpha: 0.92),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
             ),
-          ),
           if (controller.isBusy)
             const Padding(
               padding: EdgeInsets.only(top: 14),
@@ -712,42 +822,70 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: StagePanel(
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
-          radius: 28,
-          child: Column(
+    final media = MediaQuery.sizeOf(context);
+    const designWidth = 1320.0;
+    const designHeight = 760.0;
+    final stageScale = math.min(
+      media.width / designWidth,
+      media.height / designHeight,
+    );
+    return ResponsiveDialogPanel(
+      maxWidth: 480,
+      maxHeight: 560,
+      widthFactor: 0.88,
+      heightFactor: 0.78,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      radius: 28,
+      stageScale: stageScale,
+      scrollable: false,
+      child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF2B7FFF), Color(0xFF55C1FF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.lock_reset_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
-                      '忘记密码 / 修改密码',
+                      '重置密码',
                       style: TextStyle(
                         color: Color(0xFF173A59),
                         fontWeight: FontWeight.w900,
-                        fontSize: 24,
+                        fontSize: 22,
                       ),
                     ),
                   ),
-                  IconButton(
+                  IconButton.filledTonal(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close_rounded),
+                    visualDensity: VisualDensity.compact,
                   ),
                 ],
               ),
               const SizedBox(height: 4),
               const Text(
-                '输入账号与新密码后即可更新密码。',
+                '输入账号与新密码即可更新密码。',
                 style: TextStyle(
                   color: Color(0xFF587790),
                   fontWeight: FontWeight.w700,
-                  fontSize: 15,
+                  fontSize: 14,
                 ),
               ),
               const SizedBox(height: 18),
@@ -807,8 +945,6 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

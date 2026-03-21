@@ -13,6 +13,7 @@ import '../state/app_controller.dart';
 import '../utils/app_log.dart';
 import '../utils/browser_background.dart';
 import '../utils/current_trick_view.dart';
+import '../widgets/friend_center_dialog.dart';
 import '../widgets/fixed_stage.dart';
 import '../widgets/seat_assignment_dialog.dart';
 
@@ -30,6 +31,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   final _suggestedIds = <String>{};
   final _voice = VoiceCueService();
   final _browserBackground = createBrowserBackgroundBridge();
+  final LayerLink _turnChooserAnchorLink = LayerLink();
   Timer? _countdownTimer;
   Timer? _bannerTimer;
   Timer? _errorTimer;
@@ -56,6 +58,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   String? _activePresentationActionId;
   String? _bgmRoomId;
   bool _sortDescending = false;
+  bool _lastManagedSelfState = false;
 
   void _showBanner(String text, {int milliseconds = 1800}) {
     _bannerTimer?.cancel();
@@ -175,11 +178,32 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       _presentationAckedIds.clear();
       _activePresentationActionId = null;
       _voice.clearPending(clearRecentActionIds: true);
+      _lastManagedSelfState = false;
       appLog(
         AppLogLevel.info,
         'game_page',
         'switch room room=${snapshot.roomId}',
       );
+    }
+
+    final selfUserId = widget.controller.profile?.userId;
+    if (selfUserId != null && selfUserId.isNotEmpty) {
+      final managedNow = _isManaged(snapshot, selfUserId);
+      if (managedNow &&
+          !_lastManagedSelfState &&
+          (_selectedIds.isNotEmpty || _suggestedIds.isNotEmpty)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _selectedIds.clear();
+              _suggestedIds.clear();
+            });
+          }
+        });
+      }
+      _lastManagedSelfState = managedNow;
+    } else {
+      _lastManagedSelfState = false;
     }
 
     if (_turnSerial != snapshot.turnSerial) {
@@ -389,13 +413,10 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       if (!mounted) {
         return;
       }
-      _errorTimer?.cancel();
-      setState(() => _errorNotice = notice);
-      _errorTimer = Timer(const Duration(milliseconds: 1900), () {
-        if (mounted) {
-          setState(() => _errorNotice = null);
-        }
-      });
+      widget.controller.showDialogNotice(
+        title: '操作提示',
+        message: notice,
+      );
       unawaited(_voice.playErrorCue(_friendlyGameErrorVoice(rawError)));
       widget.controller.clearError();
     });
@@ -519,6 +540,11 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     final myTurn = snapshot.currentTurnPlayerId == me.playerId;
     final managed = _isManaged(snapshot, me.playerId);
     final waitingMyBid = snapshot.phase == RoomPhase.waiting && myTurn;
+    final showTurnChooser = snapshot.phase != RoomPhase.finished &&
+        myTurn &&
+        !waitingMyBid &&
+        !managed;
+    final showActionChooser = showTurnChooser || waitingMyBid;
     final selfCards = [...snapshot.selfCards]
       ..sort((left, right) {
         final value = _compareSelfCards(left, right);
@@ -560,10 +586,11 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                       width: designWidth,
                       height: designHeight,
                       child: Stack(
+                        clipBehavior: Clip.none,
                         children: [
                           Column(
                             children: [
-                              _buildTopHudView(snapshot),
+                              _buildTopHudResponsive(snapshot),
                               Expanded(
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -778,20 +805,41 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                   ),
                                 ),
                               ),
-                              _buildBottomDockView(
+                              _buildResponsiveBottomDockFloating(
                                 snapshot,
                                 me,
                                 selfCards: selfCards,
                                 waitingMyBid: waitingMyBid,
                                 myTurn: myTurn,
                                 managed: managed,
-                                showTurnChooser: snapshot.phase != RoomPhase.finished &&
-                                    myTurn &&
-                                    !waitingMyBid &&
-                                    !managed,
+                                showTurnChooser: showTurnChooser,
                               ),
                             ],
                           ),
+                          if (showActionChooser)
+                            Positioned(
+                              left: 0,
+                              top: 0,
+                              child: CompositedTransformFollower(
+                                link: _turnChooserAnchorLink,
+                                showWhenUnlinked: false,
+                                targetAnchor: Alignment.topCenter,
+                                followerAnchor: Alignment.bottomCenter,
+                                offset: const Offset(-120, -14),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: waitingMyBid
+                                      ? _buildBidChooser(
+                                          maxWidth: 430,
+                                          showTimer: true,
+                                        )
+                                      : _buildTurnActionChooser(
+                                          maxWidth: 360,
+                                          showTimer: true,
+                                        ),
+                                ),
+                              ),
+                            ),
                           if (_errorNotice != null)
                             Positioned(
                               left: 0,
@@ -817,6 +865,17 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   }
 
   Future<void> _showInvitePlayerDialog(RoomSnapshot snapshot) async {
+    final emptySeat = snapshot.players.cast<RoomPlayer?>().firstWhere(
+      (player) => player != null && !player.occupied,
+      orElse: () => null,
+    );
+    if (emptySeat == null) {
+      _showBanner('\u5f53\u524d\u6ca1\u6709\u53ef\u4ee5\u9080\u8bf7\u7684\u7a7a\u4f4d', milliseconds: 1400);
+      return;
+    }
+    await _showSeatAssignmentForSeat(snapshot, emptySeat.seatIndex);
+    return;
+    // ignore: dead_code
     final users = await widget.controller.fetchFriends();
     if (!mounted) {
       return;
@@ -940,6 +999,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     }
     await widget.controller.invitePlayerToRoom(
       account: selected.account,
+      displayName: selected.username,
       seatIndex: snapshot.players.indexWhere((player) => !player.occupied),
     );
     if (!mounted || widget.controller.errorText != null) {
@@ -952,16 +1012,46 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     RoomSnapshot snapshot,
     int seatIndex,
   ) async {
+    const designWidth = 1440.0;
+    const designHeight = 860.0;
+    final media = MediaQuery.sizeOf(context);
+    final stageScale = math.min(
+      media.width / designWidth,
+      media.height / designHeight,
+    );
     final result = await showSeatAssignmentDialog(
       context,
       controller: widget.controller,
       snapshot: snapshot,
       seatIndex: seatIndex,
+      stageScale: stageScale,
+      stageWidth: designWidth,
+      stageHeight: designHeight,
     );
     if (!mounted || result == null) {
       return;
     }
-    _showBanner(result.message, milliseconds: 1400);
+    widget.controller.showDialogNotice(
+      title: result.message.contains('邀请') ? '邀请已发送' : '操作已完成',
+      message: result.message,
+    );
+  }
+
+  Future<void> _showFriendCenter() async {
+    const designWidth = 1440.0;
+    const designHeight = 860.0;
+    final media = MediaQuery.sizeOf(context);
+    final stageScale = math.min(
+      media.width / designWidth,
+      media.height / designHeight,
+    );
+    await showFriendCenterDialog(
+      context,
+      controller: widget.controller,
+      stageScale: stageScale,
+      stageWidth: designWidth,
+      stageHeight: designHeight,
+    );
   }
 
   // ignore: unused_element
@@ -1239,11 +1329,19 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                 if (isOwner && hasEmptySeat) const SizedBox(height: 10),
                                 SizedBox(
                                   width: double.infinity,
-                                  child: OutlinedButton(
+                                  child: FilledButton.tonal(
                                     onPressed: widget.controller.isBusy
                                         ? null
                                         : widget.controller.backToLobby,
-                                    child: const Text('返回大厅'),
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.arrow_back_rounded, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('返回大厅'),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1722,6 +1820,20 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                             const SizedBox(height: 10),
                             SizedBox(
                               width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: widget.controller.isBusy
+                                    ? null
+                                    : _showFriendCenter,
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(56),
+                                ),
+                                icon: const Icon(Icons.groups_rounded, size: 18),
+                                label: const Text('\u597d\u53cb\u4e2d\u5fc3'),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
                               child: OutlinedButton(
                                 onPressed: widget.controller.isBusy
                                     ? null
@@ -1775,6 +1887,16 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             ? const Color(0xFFE7F7EE)
             : const Color(0xFFFFF4E8);
 
+    /*
+    final statusText = waitingMyBid
+        ? '请叫分'
+        : managed
+            ? '托管中'
+            : myTurn
+                ? '到你出牌'
+                : '等待中';
+
+    */
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       decoration: BoxDecoration(
@@ -1943,6 +2065,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     );
   }
 
+  /*
   String _preparingStatusTextView(String status) {
     return switch (status) {
       'waiting_for_players' => '等待玩家加入房间，未坐满时可以继续补入席位。',
@@ -1957,6 +2080,32 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         1 => '二号位',
         _ => '三号位',
       };
+
+  */
+
+  String _preparingStatusTextView(String status) {
+    switch (status) {
+      case 'waiting_for_players':
+        return '\u7b49\u5f85\u73a9\u5bb6\u52a0\u5165\u623f\u95f4\uff0c\u672a\u5750\u6ee1\u65f6\u53ef\u4ee5\u7ee7\u7eed\u8865\u5165\u5e2d\u4f4d\u3002';
+      case 'waiting_for_ready':
+        return '\u73a9\u5bb6\u5df2\u5230\u9f50\uff0c\u7b49\u5f85\u6240\u6709\u73a9\u5bb6\u70b9\u51fb\u51c6\u5907\u3002';
+      case 'ready_to_start':
+        return '\u6240\u6709\u73a9\u5bb6\u5747\u5df2\u51c6\u5907\uff0c\u6b63\u5728\u8fdb\u5165\u724c\u684c\u3002';
+      default:
+        return '\u623f\u95f4\u72b6\u6001\u5df2\u66f4\u65b0\uff0c\u8bf7\u7ee7\u7eed\u5b8c\u6210\u672c\u5c40\u51c6\u5907\u3002';
+    }
+  }
+
+  String _seatLabelForIndex(int seatIndex) {
+    switch (seatIndex) {
+      case 0:
+        return '\u4e00\u53f7\u4f4d';
+      case 1:
+        return '\u4e8c\u53f7\u4f4d';
+      default:
+        return '\u4e09\u53f7\u4f4d';
+    }
+  }
 
   Widget _buildPreparingSummaryChip({
     required String label,
@@ -2002,6 +2151,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     };
   }
 
+  // ignore: unused_element
   Widget _buildTopHudView(RoomSnapshot snapshot) {
     const tileHeight = 82.0;
     return Padding(
@@ -2147,6 +2297,288 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     );
   }
 
+  Widget _buildTopHudResponsive(RoomSnapshot snapshot) {
+    const tileHeight = 86.0;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final landlordWidth = math.min(
+            210.0,
+            math.max(176.0, constraints.maxWidth * 0.135),
+          );
+          final actionWidth = math.min(
+            104.0,
+            math.max(88.0, constraints.maxWidth * 0.072),
+          );
+          return Row(
+            children: [
+              SizedBox(
+                width: actionWidth,
+                child: _buildTopControlTileResponsive(
+                  icon: Icons.arrow_back_rounded,
+                  label: '返回大厅',
+                  active: false,
+                  onTap: () => unawaited(_handleBackToLobby()),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: landlordWidth,
+                child: _buildLandlordCardsTileResponsive(
+                  snapshot,
+                  height: tileHeight,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _showCounter
+                    ? _buildCounterStripResponsive(
+                        snapshot.cardCounter,
+                        height: tileHeight,
+                      )
+                    : _buildHudInfoTileResponsive(
+                        '剩余牌统计已隐藏',
+                        height: tileHeight,
+                      ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: actionWidth,
+                child: _buildTopControlTileResponsive(
+                  icon: _showCounter
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  label: _showCounter ? '隐藏牌况' : '显示牌况',
+                  active: _showCounter,
+                  onTap: () => setState(() => _showCounter = !_showCounter),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: actionWidth,
+                child: _buildTopControlTileResponsive(
+                  icon: _musicEnabled
+                      ? Icons.music_off_rounded
+                      : Icons.music_note_rounded,
+                  label: _musicEnabled ? '关闭音乐' : '开启音乐',
+                  active: _musicEnabled,
+                  onTap: () {
+                    setState(() => _musicEnabled = !_musicEnabled);
+                    if (_musicEnabled) {
+                      unawaited(_voice.startBackgroundMusic());
+                    } else {
+                      unawaited(_voice.stopBackgroundMusic());
+                    }
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLandlordCardsTileResponsive(
+    RoomSnapshot snapshot, {
+    required double height,
+  }) {
+    return Container(
+      height: height,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: Colors.white.withValues(alpha: 0.92),
+        border: Border.all(color: const Color(0xFFD7EBFF)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: const Color(0xFFF2F8FF),
+              border: Border.all(color: const Color(0xFFD7EBFF)),
+            ),
+            child: const Text(
+              '底牌',
+              style: TextStyle(
+                color: Color(0xFF245E90),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  children: [
+                    for (var index = 0;
+                        index < snapshot.landlordCards.length;
+                        index++) ...[
+                      _miniCard(
+                        snapshot.landlordCards[index].rankLabel,
+                        snapshot.landlordCards[index].isRed,
+                      ),
+                      if (index != snapshot.landlordCards.length - 1)
+                        const SizedBox(width: 4),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCounterStripResponsive(
+    List<CardCounterEntry> entries, {
+    required double height,
+  }) {
+    final sorted = [...entries]
+      ..sort((a, b) => _weight(b.rank).compareTo(_weight(a.rank)));
+    return Container(
+      height: height,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: Colors.white.withValues(alpha: 0.92),
+        border: Border.all(color: const Color(0xFFD7EBFF)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: const Color(0xFFF2F8FF),
+              border: Border.all(color: const Color(0xFFD7EBFF)),
+            ),
+            child: const Text(
+              '剩余牌统计',
+              style: TextStyle(
+                color: Color(0xFF245E90),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: [
+                  for (var index = 0; index < sorted.length; index++) ...[
+                    _counterPill(
+                      sorted[index],
+                      compact: false,
+                      singleLine: true,
+                    ),
+                    if (index != sorted.length - 1) const SizedBox(width: 4),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHudInfoTileResponsive(
+    String label, {
+    required double height,
+  }) =>
+      Container(
+        height: height,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          color: Colors.white.withValues(alpha: 0.92),
+          border: Border.all(color: const Color(0xFFD7EBFF)),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xFF5A7894),
+            fontWeight: FontWeight.w800,
+            fontSize: 15,
+            height: 1.3,
+          ),
+        ),
+      );
+
+  Widget _buildTopControlTileResponsive({
+    required IconData icon,
+    required String label,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: onTap,
+      child: Ink(
+        height: 78,
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: LinearGradient(
+            colors: active
+                ? const [Color(0xFFF7FBFF), Color(0xFFEEF7FF)]
+                : const [Colors.white, Color(0xFFF7FBFF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(
+            color: active ? const Color(0xFF8CC8FF) : const Color(0xFFD7EBFF),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: active
+                    ? const Color(0x1E2B7FFF)
+                    : const Color(0xFFF2F8FF),
+              ),
+              child: Icon(
+                icon,
+                size: 16,
+                color: const Color(0xFF245E90),
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF245E90),
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ignore: unused_element
   Widget _buildTopHud(RoomSnapshot snapshot) {
     return Padding(
@@ -2248,24 +2680,61 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(40),
         gradient: const LinearGradient(
-          colors: [Color(0xFFF7FCFF), Color(0xFFE6F4FF), Color(0xFFD0E9FF)],
+          colors: [Color(0xFFF1F8FF), Color(0xFFD8EBFF), Color(0xFFBCD9F6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.95),
+          color: Colors.white.withValues(alpha: 0.82),
           width: 1.5,
         ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14397BA8),
+            blurRadius: 26,
+            offset: Offset(0, 14),
+          ),
+        ],
       ),
       child: Stack(
         children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(40),
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.42),
+                    Colors.white.withValues(alpha: 0.08),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.56, 1.0],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 90,
+            top: 72,
+            child: Transform.rotate(
+              angle: -0.22,
+              child: Container(
+                width: 220,
+                height: 220,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+              ),
+            ),
+          ),
           Align(
             child: Container(
               width: 340,
               height: 340,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0x332B7FFF), width: 2),
+                border: Border.all(color: const Color(0x1F2B7FFF), width: 2),
               ),
             ),
           ),
@@ -2273,7 +2742,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             child: Text(
               '\u6b22\u4e50\u6597\u5730\u4e3b',
               style: TextStyle(
-                color: Color(0x181D5687),
+                color: Color(0x1F1D5687),
                 fontSize: 52,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 8,
@@ -2460,12 +2929,15 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     };
   }
 
-  Widget _buildBidChooser() => ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 430),
+  Widget _buildBidChooser({
+    required double maxWidth,
+    bool showTimer = false,
+  }) => ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(24),
             color: Colors.white.withValues(alpha: 0.96),
             border: Border.all(color: const Color(0xFFD7EBFF)),
             boxShadow: const [
@@ -2479,47 +2951,68 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '\u8bf7\u53eb\u5206',
-                style: TextStyle(
-                  color: Color(0xFF173A59),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 20,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                alignment: WrapAlignment.center,
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _actionButton(
-                    '\u4e0d\u53eb',
-                    widget.controller.isBusy
-                        ? null
-                        : () => widget.controller.callScore(0),
-                    primary: false,
+                  const Text(
+                    '\u8bf7\u53eb\u5206',
+                    style: TextStyle(
+                      color: Color(0xFF173A59),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
                   ),
-                  _actionButton(
-                    '1 \u5206',
-                    widget.controller.isBusy
-                        ? null
-                        : () => widget.controller.callScore(1),
-                    primary: false,
+                  if (showTimer) ...[
+                    const SizedBox(width: 8),
+                    _turnStateChip(compact: true),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _actionButton(
+                      '\u4e0d\u53eb',
+                      widget.controller.isBusy
+                          ? null
+                          : () => widget.controller.callScore(0),
+                      primary: false,
+                      compact: true,
+                    ),
                   ),
-                  _actionButton(
-                    '2 \u5206',
-                    widget.controller.isBusy
-                        ? null
-                        : () => widget.controller.callScore(2),
-                    primary: false,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _actionButton(
+                      '1 \u5206',
+                      widget.controller.isBusy
+                          ? null
+                          : () => widget.controller.callScore(1),
+                      primary: false,
+                      compact: true,
+                    ),
                   ),
-                  _actionButton(
-                    '3 \u5206',
-                    widget.controller.isBusy
-                        ? null
-                        : () => widget.controller.callScore(3),
-                    primary: true,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _actionButton(
+                      '2 \u5206',
+                      widget.controller.isBusy
+                          ? null
+                          : () => widget.controller.callScore(2),
+                      primary: false,
+                      compact: true,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _actionButton(
+                      '3 \u5206',
+                      widget.controller.isBusy
+                          ? null
+                          : () => widget.controller.callScore(3),
+                      primary: true,
+                      compact: true,
+                    ),
                   ),
                 ],
               ),
@@ -2528,12 +3021,15 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         ),
       );
 
-  Widget _buildTurnActionChooser() => ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 360),
+  Widget _buildTurnActionChooser({
+    required double maxWidth,
+    bool showTimer = false,
+  }) => ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(24),
             color: Colors.white.withValues(alpha: 0.96),
             border: Border.all(color: const Color(0xFFD7EBFF)),
             boxShadow: const [
@@ -2547,36 +3043,51 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '\u8f6e\u5230\u4f60',
-                style: TextStyle(
-                  color: Color(0xFF173A59),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 20,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                alignment: WrapAlignment.center,
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _actionButton(
-                    '\u4e0d\u51fa',
-                    widget.controller.isBusy ? null : widget.controller.pass,
-                    primary: false,
+                  const Text(
+                    '\u8f6e\u5230\u4f60',
+                    style: TextStyle(
+                      color: Color(0xFF173A59),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
                   ),
-                  _actionButton(
-                    '\u51fa\u724c',
-                    _selectedIds.isNotEmpty && !widget.controller.isBusy
-                        ? () async {
-                            await widget.controller.playCards(_selectedIds.toList());
-                            if (mounted) {
-                              setState(_selectedIds.clear);
+                  if (showTimer) ...[
+                    const SizedBox(width: 8),
+                    _turnStateChip(compact: true),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _actionButton(
+                      '\u4e0d\u51fa',
+                      widget.controller.isBusy ? null : widget.controller.pass,
+                      primary: false,
+                      compact: true,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _actionButton(
+                      '\u51fa\u724c',
+                      _selectedIds.isNotEmpty && !widget.controller.isBusy
+                          ? () async {
+                              await widget.controller.playCards(
+                                _selectedIds.toList(),
+                              );
+                              if (mounted) {
+                                setState(_selectedIds.clear);
+                              }
                             }
-                          }
-                        : null,
-                    primary: true,
+                          : null,
+                      primary: true,
+                      compact: true,
+                    ),
                   ),
                 ],
               ),
@@ -2871,6 +3382,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     );
   }
 
+  // ignore: unused_element
   Widget _buildBottomDockView(
     RoomSnapshot snapshot,
     RoomPlayer me, {
@@ -2880,7 +3392,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     required bool managed,
     required bool showTurnChooser,
   }) {
-    final statusText = waitingMyBid
+    /*
         ? '请叫分'
         : managed
             ? '托管中'
@@ -2895,12 +3407,12 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         if (showChooser)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: Center(
-              child: waitingMyBid
-                  ? _buildBidChooser()
-                  : _buildTurnActionChooser(),
+              child: Center(
+                child: waitingMyBid
+                    ? _buildBidChooser(maxWidth: 430)
+                    : _buildTurnActionChooser(maxWidth: 360),
+              ),
             ),
-          ),
         Container(
           margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
@@ -3040,6 +3552,744 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  // ignore: unused_element
+  Widget _buildResponsiveBottomDockView(
+    RoomSnapshot snapshot,
+    RoomPlayer me, {
+    required List<PlayingCard> selfCards,
+    required bool waitingMyBid,
+    required bool myTurn,
+    required bool managed,
+    required bool showTurnChooser,
+  }) {
+    final statusText = waitingMyBid
+        ? '\u8bf7\u53eb\u5206'
+        : managed
+            ? '\u6258\u7ba1\u4e2d'
+            : myTurn
+                ? '\u5230\u4f60\u51fa\u724c'
+                : '\u7b49\u5f85\u4e2d';
+
+    return Container(
+    */
+    final statusText = waitingMyBid
+        ? '\u8bf7\u53eb\u5206'
+        : managed
+            ? '\u6258\u7ba1\u4e2d'
+            : myTurn
+                ? '\u5230\u4f60\u51fa\u724c'
+                : '\u7b49\u5f85\u4e2d';
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        gradient: LinearGradient(
+          colors: myTurn && !managed
+              ? const [Colors.white, Color(0xFFEFF7FF)]
+              : const [Colors.white, Color(0xFFF4FAFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: myTurn && !managed
+              ? const Color(0xFF8CC8FF)
+              : const Color(0xFFD7EBFF),
+          width: myTurn && !managed ? 1.4 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: myTurn && !managed
+                ? const Color(0x222B7FFF)
+                : const Color(0x143678A3),
+            blurRadius: myTurn && !managed ? 28 : 22,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 168,
+            child: Column(
+              children: [
+                _buildSelfIdentityCardView(me, active: myTurn),
+                const SizedBox(height: 8),
+                _buildMatchMetaCardView(snapshot),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      '\u4f60\u7684\u624b\u724c',
+                      style: TextStyle(
+                        color: Color(0xFF173A59),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (snapshot.phase != RoomPhase.finished)
+                      _chip(statusText, filled: myTurn || managed),
+                    if (myTurn && snapshot.phase != RoomPhase.finished) ...[
+                      const SizedBox(width: 8),
+                      _turnStateChip(compact: false),
+                    ],
+                    const Spacer(),
+                    OutlinedButton(
+                      onPressed: widget.controller.isBusy
+                          ? null
+                          : _toggleSortOrder,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(92, 48),
+                        textStyle: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      child: Text(
+                        _sortDescending ? '\u9006\u5e8f' : '\u987a\u5e8f',
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    OutlinedButton(
+                      onPressed: widget.controller.isBusy ||
+                              (_selectedIds.isEmpty && _suggestedIds.isEmpty)
+                          ? null
+                          : _clearSelectedCards,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(120, 48),
+                        textStyle: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      child: const Text('\u53d6\u6d88\u9009\u4e2d'),
+                    ),
+                    const SizedBox(width: 6),
+                    OutlinedButton(
+                      onPressed: snapshot.phase == RoomPhase.playing &&
+                              myTurn &&
+                              !managed &&
+                              !widget.controller.isBusy
+                          ? _toggleSuggestedSelection
+                          : null,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(96, 48),
+                        textStyle: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      child: Text(
+                        _isSuggestedSelectionActive()
+                            ? '\u53d6\u6d88\u63d0\u793a'
+                            : '\u63d0\u793a',
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    FilledButton.tonal(
+                      onPressed: widget.controller.isBusy
+                          ? null
+                          : () {
+                              if (!managed) {
+                                _clearSelectedCards();
+                              }
+                              widget.controller.setManaged(!managed);
+                            },
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(108, 48),
+                        textStyle: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      child: Text(
+                        managed ? '\u53d6\u6d88\u6258\u7ba1' : '\u6258\u7ba1',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _selfFan(selfCards, disabled: waitingMyBid || managed),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ignore: unused_element
+  Widget _buildResponsiveBottomDockOverlay(
+    RoomSnapshot snapshot,
+    RoomPlayer me, {
+    required List<PlayingCard> selfCards,
+    required bool waitingMyBid,
+    required bool myTurn,
+    required bool managed,
+    required bool showTurnChooser,
+  }) {
+    final statusText = waitingMyBid
+        ? '请叫分'
+        : managed
+            ? '托管中'
+            : myTurn
+                ? '到你出牌'
+                : '等待中';
+    final showChooser = showTurnChooser || waitingMyBid;
+
+    final chooserTopPadding = showChooser ? 104.0 : 0.0;
+
+    return Stack(
+      children: [
+        Padding(
+          padding: EdgeInsets.only(top: chooserTopPadding),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(32),
+              gradient: LinearGradient(
+                colors: myTurn && !managed
+                    ? const [Colors.white, Color(0xFFEFF7FF)]
+                    : const [Colors.white, Color(0xFFF4FAFF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(
+                color: myTurn && !managed
+                    ? const Color(0xFF8CC8FF)
+                    : const Color(0xFFD7EBFF),
+                width: myTurn && !managed ? 1.4 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: myTurn && !managed
+                      ? const Color(0x222B7FFF)
+                      : const Color(0x143678A3),
+                  blurRadius: myTurn && !managed ? 28 : 22,
+                  offset: const Offset(0, 14),
+                ),
+              ],
+            ),
+            child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 168,
+                child: Column(
+                  children: [
+                    _buildSelfIdentityCardView(me, active: myTurn),
+                    const SizedBox(height: 8),
+                    _buildMatchMetaCardView(snapshot),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          '你的手牌',
+                          style: TextStyle(
+                            color: Color(0xFF173A59),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (snapshot.phase != RoomPhase.finished)
+                          _chip(statusText, filled: myTurn || managed),
+                        if (myTurn && snapshot.phase != RoomPhase.finished) ...[
+                          const SizedBox(width: 8),
+                          _turnStateChip(compact: false),
+                        ],
+                        const Spacer(),
+                        OutlinedButton(
+                          onPressed: widget.controller.isBusy
+                              ? null
+                              : _toggleSortOrder,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(92, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(_sortDescending ? '逆序' : '顺序'),
+                        ),
+                        const SizedBox(width: 6),
+                        OutlinedButton(
+                          onPressed: widget.controller.isBusy ||
+                                  _selectedIds.isEmpty
+                              ? null
+                              : _clearSelectedCards,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(120, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: const Text('取消选中'),
+                        ),
+                        const SizedBox(width: 6),
+                        OutlinedButton(
+                          onPressed: snapshot.phase == RoomPhase.playing &&
+                                  myTurn &&
+                                  !managed &&
+                                  !widget.controller.isBusy
+                              ? _toggleSuggestedSelection
+                              : null,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(96, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(
+                            _isSuggestedSelectionActive() ? '取消提示' : '提示',
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        FilledButton.tonal(
+                          onPressed: widget.controller.isBusy
+                              ? null
+                              : () {
+                                  if (!managed) {
+                                    _clearSelectedCards();
+                                  }
+                                  widget.controller.setManaged(!managed);
+                                },
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(108, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(managed ? '取消托管' : '托管'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    _selfFan(selfCards, disabled: waitingMyBid || managed),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          ),
+        ),
+        if (showChooser)
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: Align(
+              alignment: const Alignment(0.2, 0),
+              child: waitingMyBid
+                  ? _buildBidChooser(maxWidth: 410)
+                  : _buildTurnActionChooser(maxWidth: 300),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /*
+  Widget _buildResponsiveBottomDockFloating(
+    RoomSnapshot snapshot,
+    RoomPlayer me, {
+    required List<PlayingCard> selfCards,
+    required bool waitingMyBid,
+    required bool myTurn,
+    required bool managed,
+    required bool showTurnChooser,
+  }) {
+    final statusText = waitingMyBid
+        ? '请叫分'
+        : managed
+            ? '托管中'
+            : myTurn
+                ? '到你出牌'
+                : '等待中';
+    /*
+    final statusText = waitingMyBid
+        ? '璇峰彨鍒?
+        : managed
+            ? '鎵樼涓?
+            : myTurn
+                ? '鍒颁綘鍑虹墝'
+                : '绛夊緟涓?;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        gradient: LinearGradient(
+          colors: myTurn && !managed
+              ? const [Colors.white, Color(0xFFEFF7FF)]
+              : const [Colors.white, Color(0xFFF4FAFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: myTurn && !managed
+              ? const Color(0xFF8CC8FF)
+              : const Color(0xFFD7EBFF),
+          width: myTurn && !managed ? 1.4 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: myTurn && !managed
+                ? const Color(0x222B7FFF)
+                : const Color(0x143678A3),
+            blurRadius: myTurn && !managed ? 28 : 22,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 168,
+            child: Column(
+              children: [
+                _buildSelfIdentityCardView(me, active: myTurn),
+                const SizedBox(height: 8),
+                _buildMatchMetaCardView(snapshot),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  child: IgnorePointer(
+                    child: Align(
+                      alignment: const Alignment(0.12, 0),
+                      child: CompositedTransformTarget(
+                        link: _turnChooserAnchorLink,
+                        child: const SizedBox(width: 1, height: 1),
+                      ),
+                    ),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          '浣犵殑鎵嬬墝',
+                          style: TextStyle(
+                            color: Color(0xFF173A59),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (snapshot.phase != RoomPhase.finished)
+                          _chip(statusText, filled: myTurn || managed),
+                        if (myTurn && snapshot.phase != RoomPhase.finished) ...[
+                          const SizedBox(width: 8),
+                          _turnStateChip(compact: false),
+                        ],
+                        const Spacer(),
+                        OutlinedButton(
+                          onPressed: widget.controller.isBusy
+                              ? null
+                              : _toggleSortOrder,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(92, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(_sortDescending ? '閫嗗簭' : '椤哄簭'),
+                        ),
+                        const SizedBox(width: 6),
+                        OutlinedButton(
+                          onPressed: widget.controller.isBusy ||
+                                  _selectedIds.isEmpty
+                              ? null
+                              : _clearSelectedCards,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(120, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: const Text('鍙栨秷閫変腑'),
+                        ),
+                        const SizedBox(width: 6),
+                        OutlinedButton(
+                          onPressed: snapshot.phase == RoomPhase.playing &&
+                                  myTurn &&
+                                  !managed &&
+                                  !widget.controller.isBusy
+                              ? _toggleSuggestedSelection
+                              : null,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(96, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(
+                            _isSuggestedSelectionActive() ? '鍙栨秷鎻愮ず' : '鎻愮ず',
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        FilledButton.tonal(
+                          onPressed: widget.controller.isBusy
+                              ? null
+                              : () {
+                                  if (!managed) {
+                                    _clearSelectedCards();
+                                  }
+                                  widget.controller.setManaged(!managed);
+                                },
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(108, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(managed ? '鍙栨秷鎵樼' : '鎵樼'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    _selfFan(selfCards, disabled: waitingMyBid || managed),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  */
+  */
+
+  Widget _buildResponsiveBottomDockFloating(
+    RoomSnapshot snapshot,
+    RoomPlayer me, {
+    required List<PlayingCard> selfCards,
+    required bool waitingMyBid,
+    required bool myTurn,
+    required bool managed,
+    required bool showTurnChooser,
+  }) {
+    final statusText = waitingMyBid
+        ? '\u8bf7\u53eb\u5206'
+        : managed
+            ? '\u6258\u7ba1\u4e2d'
+            : myTurn
+                ? '\u5230\u4f60\u51fa\u724c'
+                : '\u7b49\u5f85\u4e2d';
+    final showChooser = showTurnChooser || waitingMyBid;
+    const handSectionInset = 180.0;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(32),
+            gradient: LinearGradient(
+              colors: myTurn && !managed
+                  ? const [Colors.white, Color(0xFFEFF7FF)]
+                  : const [Colors.white, Color(0xFFF4FAFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: myTurn && !managed
+                  ? const Color(0xFF8CC8FF)
+                  : const Color(0xFFD7EBFF),
+              width: myTurn && !managed ? 1.4 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: myTurn && !managed
+                    ? const Color(0x222B7FFF)
+                    : const Color(0x143678A3),
+                blurRadius: myTurn && !managed ? 28 : 22,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 168,
+                child: Column(
+                  children: [
+                    _buildSelfIdentityCardView(me, active: myTurn),
+                    const SizedBox(height: 8),
+                    _buildMatchMetaCardView(snapshot),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          '\u4f60\u7684\u624b\u724c',
+                          style: TextStyle(
+                            color: Color(0xFF173A59),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (snapshot.phase != RoomPhase.finished && !showChooser)
+                          _chip(statusText, filled: myTurn || managed),
+                        if (myTurn &&
+                            snapshot.phase != RoomPhase.finished &&
+                            !showChooser) ...[
+                          const SizedBox(width: 8),
+                          _turnStateChip(compact: false),
+                        ],
+                        const Spacer(),
+                        OutlinedButton(
+                          onPressed: widget.controller.isBusy
+                              ? null
+                              : _toggleSortOrder,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(92, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(
+                            _sortDescending
+                                ? '\u9006\u5e8f'
+                                : '\u987a\u5e8f',
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        OutlinedButton(
+                          onPressed: widget.controller.isBusy ||
+                                  _selectedIds.isEmpty
+                              ? null
+                              : _clearSelectedCards,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(120, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: const Text('\u53d6\u6d88\u9009\u4e2d'),
+                        ),
+                        const SizedBox(width: 6),
+                        OutlinedButton(
+                          onPressed: snapshot.phase == RoomPhase.playing &&
+                                  myTurn &&
+                                  !managed &&
+                                  !widget.controller.isBusy
+                              ? _toggleSuggestedSelection
+                              : null,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(96, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(
+                            _isSuggestedSelectionActive()
+                                ? '\u53d6\u6d88\u63d0\u793a'
+                                : '\u63d0\u793a',
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        FilledButton.tonal(
+                          onPressed: widget.controller.isBusy
+                              ? null
+                              : () {
+                                  if (!managed) {
+                                    _clearSelectedCards();
+                                  }
+                                  widget.controller.setManaged(!managed);
+                                },
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(108, 48),
+                            textStyle: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Text(
+                            managed
+                                ? '\u53d6\u6d88\u6258\u7ba1'
+                                : '\u6258\u7ba1',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    _selfFan(selfCards, disabled: waitingMyBid || managed),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (showChooser)
+          Positioned(
+            left: handSectionInset,
+            right: 12,
+            top: 0,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: CompositedTransformTarget(
+                link: _turnChooserAnchorLink,
+                child: const SizedBox(width: 1, height: 1),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -3316,12 +4566,12 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             top: -6,
             left: 0,
             right: 0,
-            child: Center(
-              child: waitingMyBid
-                  ? _buildBidChooser()
-                  : _buildTurnActionChooser(),
+              child: Center(
+                child: waitingMyBid
+                    ? _buildBidChooser(maxWidth: 430)
+                    : _buildTurnActionChooser(maxWidth: 360),
+              ),
             ),
-          ),
       ],
     );
   }
@@ -3732,22 +4982,47 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         ),
       );
 
-  Widget _miniCard(String label, bool isRed) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFD7EBFF)),
+  Widget _miniCard(String label, bool isRed) {
+    final isJoker = label == '大王' || label == '小王';
+    final text = isJoker ? '${label[0]}\n${label[1]}' : label;
+    final textColor = isRed ? const Color(0xFFC53C35) : const Color(0xFF173A59);
+    final fontSize = isJoker
+        ? 12.5
+        : label.length >= 2
+            ? 12.5
+            : 14.5;
+    return Container(
+      width: 30,
+      height: 42,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFFFFF), Color(0xFFF6FAFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isRed ? const Color(0xFFC53C35) : const Color(0xFF173A59),
-            fontWeight: FontWeight.w900,
-            fontSize: 15,
+        border: Border.all(color: const Color(0xFFD7EBFF)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x143678A3),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
+        ],
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: textColor,
+          fontWeight: FontWeight.w900,
+          fontSize: fontSize,
+          height: 1.05,
         ),
-      );
+      ),
+    );
+  }
 
   Widget _chip(String text, {bool filled = false}) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -3951,15 +5226,24 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         ),
       );
 
-  Widget _actionButton(String text, VoidCallback? onTap,
-      {required bool primary}) {
+  Widget _actionButton(
+    String text,
+    VoidCallback? onTap, {
+    required bool primary,
+    bool compact = false,
+  }) {
     if (primary) {
       return FilledButton(
         onPressed: onTap,
         style: FilledButton.styleFrom(
-          minimumSize: const Size(120, 52),
-          textStyle: const TextStyle(
-            fontSize: 18,
+          minimumSize: Size(0, compact ? 44 : 52),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 8 : 18,
+            vertical: compact ? 8 : 12,
+          ),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          textStyle: TextStyle(
+            fontSize: compact ? 16 : 18,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -3969,9 +5253,14 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size(120, 52),
-        textStyle: const TextStyle(
-          fontSize: 18,
+        minimumSize: Size(0, compact ? 44 : 52),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 8 : 18,
+          vertical: compact ? 8 : 12,
+        ),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: TextStyle(
+          fontSize: compact ? 16 : 18,
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -4048,9 +5337,10 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                           ),
                         ),
                       const SizedBox(height: 16),
-                      FilledButton(
+                      FilledButton.icon(
                         onPressed: widget.controller.backToLobby,
-                        child: const Text('\u56de\u5230\u5927\u5385'),
+                        icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                        label: const Text('\u56de\u5230\u5927\u5385'),
                       ),
                     ],
                   ),
@@ -4185,8 +5475,6 @@ String _banner(TableAction action) {
 String _voiceText(List<TableAction> actions, int index) {
   final action = actions[index];
   final previousPlay = _previousPlayableAction(actions, index);
-  final samePatternBeat = previousPlay != null &&
-      previousPlay.patternLabel == action.patternLabel;
   if (action.patternLabel == 'managed_on') return '\u6258\u7ba1';
   if (action.patternLabel == 'managed_off') return '\u53d6\u6d88\u6258\u7ba1';
   if (action.patternLabel == 'bid_pass') return '\u4e0d\u53eb';
@@ -4196,44 +5484,10 @@ String _voiceText(List<TableAction> actions, int index) {
   if (action.type == ActionType.pass) {
     return previousPlay == null ? '\u4e0d\u51fa' : '\u8981\u4e0d\u8d77';
   }
-  switch (action.patternLabel) {
-    case 'single':
-      return action.cards.isEmpty
-          ? '\u5355\u724c'
-          : '\u4e00\u5f20${action.cards.first.voiceLabel}';
-    case 'pair':
-      return action.cards.isEmpty
-          ? '\u5bf9\u5b50'
-          : '\u5bf9${action.cards.first.voiceLabel}';
-    case 'triple':
-      return action.cards.isEmpty
-          ? '\u4e09\u5f20'
-          : '\u4e09\u4e2a${action.cards.first.voiceLabel}';
-    case 'triple_with_single':
-      return samePatternBeat ? '\u538b\u4f60\uff0c\u4e09\u5e26\u4e00' : '\u4e09\u5e26\u4e00';
-    case 'triple_with_pair':
-      return samePatternBeat ? '\u538b\u4f60\uff0c\u4e09\u5e26\u4e8c' : '\u4e09\u5e26\u4e8c';
-    case 'straight':
-      return samePatternBeat ? '\u538b\u4f60\uff0c\u987a\u5b50' : '\u987a\u5b50';
-    case 'straight_pair':
-      return samePatternBeat ? '\u538b\u4f60\uff0c\u8fde\u5bf9' : '\u8fde\u5bf9';
-    case 'airplane':
-      return samePatternBeat ? '\u538b\u4f60\uff0c\u98de\u673a' : '\u98de\u673a';
-    case 'airplane_with_single':
-      return samePatternBeat ? '\u538b\u4f60\uff0c\u98de\u673a\u5e26\u5355' : '\u98de\u673a\u5e26\u5355';
-    case 'airplane_with_pair':
-      return samePatternBeat ? '\u538b\u4f60\uff0c\u98de\u673a\u5e26\u5bf9' : '\u98de\u673a\u5e26\u5bf9';
-    case 'bomb':
-      return '\u70b8\u5f39';
-    case 'four_with_two_singles':
-      return samePatternBeat ? '\u538b\u4f60\uff0c\u56db\u5e26\u4e8c' : '\u56db\u5e26\u4e8c';
-    case 'four_with_two_pairs':
-      return samePatternBeat ? '\u538b\u4f60\uff0c\u56db\u5e26\u4e24\u5bf9' : '\u56db\u5e26\u4e24\u5bf9';
-    case 'rocket':
-      return '\u738b\u70b8';
-    default:
-      return _display(action).replaceAll(' ', '');
+  if (action.cards.isNotEmpty) {
+    return action.cards.map((card) => card.voiceLabel).join(' ');
   }
+  return _display(action).replaceAll(' ', '');
 }
 
 TableAction? _previousPlayableAction(List<TableAction> actions, int index) {
