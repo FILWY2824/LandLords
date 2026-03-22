@@ -109,6 +109,20 @@ ClientMessage MakeResetPassword(
   return message;
 }
 
+ClientMessage MakeChangePassword(
+    std::string request_id,
+    std::string session_token,
+    std::string current_password,
+    std::string new_password) {
+  ClientMessage message;
+  message.set_request_id(std::move(request_id));
+  message.set_session_token(std::move(session_token));
+  auto* payload = message.mutable_change_password_request();
+  payload->set_current_password(std::move(current_password));
+  payload->set_new_password(std::move(new_password));
+  return message;
+}
+
 ClientMessage MakeListFriends(std::string request_id, std::string session_token) {
   ClientMessage message;
   message.set_request_id(std::move(request_id));
@@ -617,6 +631,77 @@ void RunExistingRuntimeFriendCenterRegressionTest() {
   }
 }
 
+void RunChangePasswordServiceTest() {
+  const auto runtime_dir =
+      std::filesystem::path("runtime") / "change-password-service-test";
+  std::filesystem::remove_all(runtime_dir);
+
+  auto user_repository =
+      std::make_shared<FileUserRepository>(runtime_dir / "users.db");
+  auto friend_request_repository =
+      std::make_shared<FileFriendRequestRepository>(runtime_dir / "friend_requests.db");
+
+  GameService service(user_repository, friend_request_repository);
+  auto connection = std::make_shared<FakeConnection>("change-password");
+
+  service.HandleMessage(
+      connection,
+      MakeRegister("register-change-password", "owner_acc", "owner", "pass123"));
+  const auto& register_response =
+      RequireResponse(*connection, "register-change-password");
+  Require(register_response.register_response().success(), "register failed");
+
+  service.HandleMessage(
+      connection,
+      MakeLogin("login-before-change", "owner_acc", "pass123"));
+  const auto& login_before_change =
+      RequireResponse(*connection, "login-before-change");
+  Require(login_before_change.login_response().success(), "login before change failed");
+  const auto session_token = login_before_change.login_response().session_token();
+
+  service.HandleMessage(
+      connection,
+      MakeChangePassword(
+          "change-password-invalid-current",
+          session_token,
+          "wrong-pass",
+          "pass456"));
+  const auto& invalid_change_response =
+      RequireResponse(*connection, "change-password-invalid-current");
+  Require(!invalid_change_response.change_password_response().success(),
+          "change password should fail when current password is incorrect");
+
+  service.HandleMessage(
+      connection,
+      MakeChangePassword(
+          "change-password-success",
+          session_token,
+          "pass123",
+          "pass456"));
+  const auto& successful_change_response =
+      RequireResponse(*connection, "change-password-success");
+  Require(successful_change_response.change_password_response().success(),
+          "change password should succeed with correct current password");
+
+  service.HandleMessage(
+      connection,
+      MakeLogin("login-old-password", "owner_acc", "pass123"));
+  const auto& old_password_login =
+      RequireResponse(*connection, "login-old-password");
+  Require(!old_password_login.login_response().success(),
+          "old password should no longer be valid after change");
+
+  service.HandleMessage(
+      connection,
+      MakeLogin("login-new-password", "owner_acc", "pass456"));
+  const auto& new_password_login =
+      RequireResponse(*connection, "login-new-password");
+  Require(new_password_login.login_response().success(),
+          "new password should be accepted after change");
+
+  std::filesystem::remove_all(runtime_dir);
+}
+
 }  // namespace
 
 int main() {
@@ -626,6 +711,7 @@ int main() {
     RunFriendRequestBatchHandlingServiceTest();
     RunFriendRequestBatchRejectServiceTest();
     RunExistingRuntimeFriendCenterRegressionTest();
+    RunChangePasswordServiceTest();
     std::cout << "friend center service tests passed" << std::endl;
     return 0;
   } catch (const std::exception& exception) {

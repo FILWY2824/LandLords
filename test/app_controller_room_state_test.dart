@@ -192,6 +192,20 @@ void main() {
     );
     expect(gateway.cacheCleared, isTrue);
   });
+
+  test('change password uses the authenticated change-password gateway path', () async {
+    final gateway = _RoomStateGateway();
+    final controller = AppController(gateway: gateway);
+    addTearDown(controller.dispose);
+
+    await controller.login('player1', 'pass123');
+    await controller.changePassword('pass123', 'pass456');
+
+    expect(gateway.changePasswordCalls, 1);
+    expect(gateway.lastChangePasswordSessionToken, 'session-1');
+    expect(gateway.lastCurrentPassword, 'pass123');
+    expect(gateway.lastNewPassword, 'pass456');
+  });
 }
 
 Future<void> _drainAsyncWork() async {
@@ -281,7 +295,11 @@ class _RoomStateGateway implements GameGateway {
 
   int leaveRoomCalls = 0;
   int refreshCurrentRoomCalls = 0;
+  int changePasswordCalls = 0;
   String? lastLeftRoomId;
+  String? lastChangePasswordSessionToken;
+  String? lastCurrentPassword;
+  String? lastNewPassword;
   bool cacheCleared = false;
 
   @override
@@ -404,6 +422,18 @@ class _RoomStateGateway implements GameGateway {
     required String account,
     required String newPassword,
   }) async {}
+
+  @override
+  Future<void> changePassword({
+    required String sessionToken,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    changePasswordCalls += 1;
+    lastChangePasswordSessionToken = sessionToken;
+    lastCurrentPassword = currentPassword;
+    lastNewPassword = newPassword;
+  }
 
   @override
   Future<UserProfile> updateNickname({

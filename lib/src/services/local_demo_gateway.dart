@@ -101,6 +101,30 @@ class LocalDemoGateway implements GameGateway {
   }
 
   @override
+  Future<void> changePassword({
+    required String sessionToken,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    final userId = _requireUserId(sessionToken);
+    final entry = _usersByName.entries.firstWhere(
+      (candidate) => candidate.value.profile.userId == userId,
+      orElse: () => throw Exception('账号不存在'),
+    );
+    if (entry.value.password != currentPassword) {
+      throw Exception('当前密码错误');
+    }
+    if (newPassword.isEmpty) {
+      throw Exception('新密码不能为空');
+    }
+    _usersByName[entry.key] = _LocalUser(
+      profile: entry.value.profile,
+      password: newPassword,
+    );
+  }
+
+  @override
   Future<UserProfile> updateNickname({
     required String sessionToken,
     required String nickname,

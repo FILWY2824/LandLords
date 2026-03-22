@@ -511,7 +511,7 @@ class _LobbyPageState extends State<LobbyPage> {
 
           Future<void> handlePasswordEdit() async {
             final messenger = ScaffoldMessenger.of(context);
-            final password = await showDialog<String>(
+            final passwordChange = await showDialog<_PasswordChangeResult>(
               context: context,
               barrierColor: const Color(0x33173A59),
               builder: (context) => _ChangePasswordDialog(
@@ -522,10 +522,10 @@ class _LobbyPageState extends State<LobbyPage> {
             if (!mounted) {
               return;
             }
-            if (password != null) {
-              await widget.controller.resetPassword(
-                currentProfile.account,
-                password,
+            if (passwordChange != null) {
+              await widget.controller.changePassword(
+                passwordChange.currentPassword,
+                passwordChange.newPassword,
               );
               if (!mounted) {
                 return;
@@ -2016,6 +2016,16 @@ class _EditNicknameDialogState extends State<_EditNicknameDialog> {
   }
 }
 
+class _PasswordChangeResult {
+  const _PasswordChangeResult({
+    required this.currentPassword,
+    required this.newPassword,
+  });
+
+  final String currentPassword;
+  final String newPassword;
+}
+
 class _ChangePasswordDialog extends StatefulWidget {
   const _ChangePasswordDialog({
     required this.account,
@@ -2030,20 +2040,39 @@ class _ChangePasswordDialog extends StatefulWidget {
 }
 
 class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
-  final _passwordController = TextEditingController();
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
   final _confirmController = TextEditingController();
   String? _errorText;
 
   @override
   void dispose() {
-    _passwordController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
     _confirmController.dispose();
     super.dispose();
   }
 
   void _submit() {
-    final password = _passwordController.text;
+    final currentPassword = _currentPasswordController.text;
+    final password = _newPasswordController.text;
     final confirm = _confirmController.text;
+    if (currentPassword.isEmpty) {
+      setState(() => _errorText = '请输入当前密码');
+      return;
+    }
+    if (password.isEmpty) {
+      setState(() => _errorText = '请输入新密码');
+      return;
+    }
+    if (password == currentPassword) {
+      setState(() => _errorText = '新密码需要和当前密码不同');
+      return;
+    }
+    if (password != confirm) {
+      setState(() => _errorText = '两次输入的新密码不一致');
+      return;
+    }
     if (password.isEmpty) {
       setState(() => _errorText = '请输入新密码');
       return;
@@ -2052,7 +2081,12 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
       setState(() => _errorText = '两次输入的密码不一致');
       return;
     }
-    Navigator.of(context).pop(password);
+    Navigator.of(context).pop(
+      _PasswordChangeResult(
+        currentPassword: currentPassword,
+        newPassword: password,
+      ),
+    );
   }
 
   @override
@@ -2100,7 +2134,22 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
           ),
           const SizedBox(height: 14),
           TextField(
-            controller: _passwordController,
+            controller: _currentPasswordController,
+            obscureText: true,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.lock_clock_outlined),
+              hintText: '请输入当前密码',
+              filled: true,
+              fillColor: const Color(0xFFF3F9FF),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _newPasswordController,
             obscureText: true,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.lock_outline_rounded),

@@ -133,6 +133,30 @@ class WebSocketGameGateway implements GameGateway {
   }
 
   @override
+  Future<void> changePassword({
+    required String sessionToken,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _ensureConnected();
+    final response = await _send(
+      (message) => message.changePasswordRequest = pb.ChangePasswordRequest(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      ),
+      sessionToken: sessionToken,
+    );
+    if (!response.hasChangePasswordResponse() ||
+        !response.changePasswordResponse.success) {
+      throw Exception(
+        response.hasChangePasswordResponse()
+            ? response.changePasswordResponse.message
+            : response.errorResponse.message,
+      );
+    }
+  }
+
+  @override
   Future<app.UserProfile> updateNickname({
     required String sessionToken,
     required String nickname,

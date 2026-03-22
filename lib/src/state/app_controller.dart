@@ -96,6 +96,22 @@ class AppController extends ChangeNotifier {
     });
   }
 
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    if (_sessionToken == null) {
+      return;
+    }
+    await _guard('正在修改密码...', () {
+      return _gateway.changePassword(
+        sessionToken: _sessionToken!,
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+    });
+  }
+
   Future<void> updateNickname(String nickname) async {
     if (_profile == null || _sessionToken == null) {
       return;

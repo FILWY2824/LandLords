@@ -43,6 +43,12 @@ abstract class GameGateway {
     required String newPassword,
   });
 
+  Future<void> changePassword({
+    required String sessionToken,
+    required String currentPassword,
+    required String newPassword,
+  });
+
   Future<UserProfile> updateNickname({
     required String sessionToken,
     required String nickname,

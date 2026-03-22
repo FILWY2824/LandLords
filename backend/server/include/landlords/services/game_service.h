@@ -78,6 +78,8 @@ class GameService {
                    const landlords::protocol::ClientMessage& message);
   void HandleResetPassword(const std::shared_ptr<network::IConnection>& connection,
                            const landlords::protocol::ClientMessage& message);
+  void HandleChangePassword(const std::shared_ptr<network::IConnection>& connection,
+                            const landlords::protocol::ClientMessage& message);
   void HandleUpdateNickname(const std::shared_ptr<network::IConnection>& connection,
                             const landlords::protocol::ClientMessage& message);
   void HandleMatch(const std::shared_ptr<network::IConnection>& connection,

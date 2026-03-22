@@ -948,6 +948,142 @@ class ResetPasswordResponse extends $pb.GeneratedMessage {
   void clearMessage() => $_clearField(2);
 }
 
+class ChangePasswordRequest extends $pb.GeneratedMessage {
+  factory ChangePasswordRequest({
+    $core.String? currentPassword,
+    $core.String? newPassword,
+  }) {
+    final result = create();
+    if (currentPassword != null) result.currentPassword = currentPassword;
+    if (newPassword != null) result.newPassword = newPassword;
+    return result;
+  }
+
+  ChangePasswordRequest._();
+
+  factory ChangePasswordRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ChangePasswordRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ChangePasswordRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'currentPassword')
+    ..aOS(2, _omitFieldNames ? '' : 'newPassword')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ChangePasswordRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ChangePasswordRequest copyWith(
+          void Function(ChangePasswordRequest) updates) =>
+      super.copyWith((message) => updates(message as ChangePasswordRequest))
+          as ChangePasswordRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ChangePasswordRequest create() => ChangePasswordRequest._();
+  @$core.override
+  ChangePasswordRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ChangePasswordRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ChangePasswordRequest>(create);
+  static ChangePasswordRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get currentPassword => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set currentPassword($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasCurrentPassword() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCurrentPassword() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get newPassword => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set newPassword($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasNewPassword() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearNewPassword() => $_clearField(2);
+}
+
+class ChangePasswordResponse extends $pb.GeneratedMessage {
+  factory ChangePasswordResponse({
+    $core.bool? success,
+    $core.String? message,
+  }) {
+    final result = create();
+    if (success != null) result.success = success;
+    if (message != null) result.message = message;
+    return result;
+  }
+
+  ChangePasswordResponse._();
+
+  factory ChangePasswordResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ChangePasswordResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ChangePasswordResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ChangePasswordResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ChangePasswordResponse copyWith(
+          void Function(ChangePasswordResponse) updates) =>
+      super.copyWith((message) => updates(message as ChangePasswordResponse))
+          as ChangePasswordResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ChangePasswordResponse create() => ChangePasswordResponse._();
+  @$core.override
+  ChangePasswordResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ChangePasswordResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ChangePasswordResponse>(create);
+  static ChangePasswordResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+}
+
 class UpdateNicknameRequest extends $pb.GeneratedMessage {
   factory UpdateNicknameRequest({
     $core.String? nickname,
@@ -3935,6 +4071,7 @@ enum ClientMessage_Payload {
   updateNicknameRequest,
   respondFriendRequestRequest,
   deleteFriendRequest,
+  changePasswordRequest,
   notSet
 }
 
@@ -3963,6 +4100,7 @@ class ClientMessage extends $pb.GeneratedMessage {
     UpdateNicknameRequest? updateNicknameRequest,
     RespondFriendRequestRequest? respondFriendRequestRequest,
     DeleteFriendRequest? deleteFriendRequest,
+    ChangePasswordRequest? changePasswordRequest,
   }) {
     final result = create();
     if (requestId != null) result.requestId = requestId;
@@ -3996,6 +4134,8 @@ class ClientMessage extends $pb.GeneratedMessage {
       result.respondFriendRequestRequest = respondFriendRequestRequest;
     if (deleteFriendRequest != null)
       result.deleteFriendRequest = deleteFriendRequest;
+    if (changePasswordRequest != null)
+      result.changePasswordRequest = changePasswordRequest;
     return result;
   }
 
@@ -4031,6 +4171,7 @@ class ClientMessage extends $pb.GeneratedMessage {
     28: ClientMessage_Payload.updateNicknameRequest,
     29: ClientMessage_Payload.respondFriendRequestRequest,
     30: ClientMessage_Payload.deleteFriendRequest,
+    31: ClientMessage_Payload.changePasswordRequest,
     0: ClientMessage_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -4059,7 +4200,8 @@ class ClientMessage extends $pb.GeneratedMessage {
       27,
       28,
       29,
-      30
+      30,
+      31
     ])
     ..aOS(1, _omitFieldNames ? '' : 'requestId')
     ..aOS(2, _omitFieldNames ? '' : 'sessionToken')
@@ -4109,6 +4251,9 @@ class ClientMessage extends $pb.GeneratedMessage {
         subBuilder: RespondFriendRequestRequest.create)
     ..aOM<DeleteFriendRequest>(30, _omitFieldNames ? '' : 'deleteFriendRequest',
         subBuilder: DeleteFriendRequest.create)
+    ..aOM<ChangePasswordRequest>(
+        31, _omitFieldNames ? '' : 'changePasswordRequest',
+        subBuilder: ChangePasswordRequest.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -4151,6 +4296,7 @@ class ClientMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(28)
   @$pb.TagNumber(29)
   @$pb.TagNumber(30)
+  @$pb.TagNumber(31)
   ClientMessage_Payload whichPayload() =>
       _ClientMessage_PayloadByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(10)
@@ -4174,6 +4320,7 @@ class ClientMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(28)
   @$pb.TagNumber(29)
   @$pb.TagNumber(30)
+  @$pb.TagNumber(31)
   void clearPayload() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -4429,6 +4576,18 @@ class ClientMessage extends $pb.GeneratedMessage {
   void clearDeleteFriendRequest() => $_clearField(30);
   @$pb.TagNumber(30)
   DeleteFriendRequest ensureDeleteFriendRequest() => $_ensure(22);
+
+  @$pb.TagNumber(31)
+  ChangePasswordRequest get changePasswordRequest => $_getN(23);
+  @$pb.TagNumber(31)
+  set changePasswordRequest(ChangePasswordRequest value) =>
+      $_setField(31, value);
+  @$pb.TagNumber(31)
+  $core.bool hasChangePasswordRequest() => $_has(23);
+  @$pb.TagNumber(31)
+  void clearChangePasswordRequest() => $_clearField(31);
+  @$pb.TagNumber(31)
+  ChangePasswordRequest ensureChangePasswordRequest() => $_ensure(23);
 }
 
 enum ServerMessage_Payload {
@@ -4451,6 +4610,7 @@ enum ServerMessage_Payload {
   respondFriendRequestResponse,
   deleteFriendResponse,
   friendCenterPush,
+  changePasswordResponse,
   notSet
 }
 
@@ -4476,6 +4636,7 @@ class ServerMessage extends $pb.GeneratedMessage {
     RespondFriendRequestResponse? respondFriendRequestResponse,
     DeleteFriendResponse? deleteFriendResponse,
     FriendCenterPush? friendCenterPush,
+    ChangePasswordResponse? changePasswordResponse,
   }) {
     final result = create();
     if (requestId != null) result.requestId = requestId;
@@ -4507,6 +4668,8 @@ class ServerMessage extends $pb.GeneratedMessage {
     if (deleteFriendResponse != null)
       result.deleteFriendResponse = deleteFriendResponse;
     if (friendCenterPush != null) result.friendCenterPush = friendCenterPush;
+    if (changePasswordResponse != null)
+      result.changePasswordResponse = changePasswordResponse;
     return result;
   }
 
@@ -4540,6 +4703,7 @@ class ServerMessage extends $pb.GeneratedMessage {
     26: ServerMessage_Payload.respondFriendRequestResponse,
     27: ServerMessage_Payload.deleteFriendResponse,
     28: ServerMessage_Payload.friendCenterPush,
+    29: ServerMessage_Payload.changePasswordResponse,
     0: ServerMessage_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -4566,7 +4730,8 @@ class ServerMessage extends $pb.GeneratedMessage {
       25,
       26,
       27,
-      28
+      28,
+      29
     ])
     ..aOS(1, _omitFieldNames ? '' : 'requestId')
     ..aOM<RegisterResponse>(10, _omitFieldNames ? '' : 'registerResponse',
@@ -4614,6 +4779,9 @@ class ServerMessage extends $pb.GeneratedMessage {
         subBuilder: DeleteFriendResponse.create)
     ..aOM<FriendCenterPush>(28, _omitFieldNames ? '' : 'friendCenterPush',
         subBuilder: FriendCenterPush.create)
+    ..aOM<ChangePasswordResponse>(
+        29, _omitFieldNames ? '' : 'changePasswordResponse',
+        subBuilder: ChangePasswordResponse.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -4654,6 +4822,7 @@ class ServerMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(26)
   @$pb.TagNumber(27)
   @$pb.TagNumber(28)
+  @$pb.TagNumber(29)
   ServerMessage_Payload whichPayload() =>
       _ServerMessage_PayloadByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(10)
@@ -4675,6 +4844,7 @@ class ServerMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(26)
   @$pb.TagNumber(27)
   @$pb.TagNumber(28)
+  @$pb.TagNumber(29)
   void clearPayload() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -4901,6 +5071,18 @@ class ServerMessage extends $pb.GeneratedMessage {
   void clearFriendCenterPush() => $_clearField(28);
   @$pb.TagNumber(28)
   FriendCenterPush ensureFriendCenterPush() => $_ensure(19);
+
+  @$pb.TagNumber(29)
+  ChangePasswordResponse get changePasswordResponse => $_getN(20);
+  @$pb.TagNumber(29)
+  set changePasswordResponse(ChangePasswordResponse value) =>
+      $_setField(29, value);
+  @$pb.TagNumber(29)
+  $core.bool hasChangePasswordResponse() => $_has(20);
+  @$pb.TagNumber(29)
+  void clearChangePasswordResponse() => $_clearField(29);
+  @$pb.TagNumber(29)
+  ChangePasswordResponse ensureChangePasswordResponse() => $_ensure(20);
 }
 
 const $core.bool _omitFieldNames =

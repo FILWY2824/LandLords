@@ -151,6 +151,16 @@ message ResetPasswordResponse {
   string message = 2;
 }
 
+message ChangePasswordRequest {
+  string current_password = 1;
+  string new_password = 2;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
 message UpdateNicknameRequest {
   string nickname = 1;
 }
@@ -399,6 +409,7 @@ message ClientMessage {
     UpdateNicknameRequest update_nickname_request = 28;
     RespondFriendRequestRequest respond_friend_request_request = 29;
     DeleteFriendRequest delete_friend_request = 30;
+    ChangePasswordRequest change_password_request = 31;
   }
 }
 
@@ -424,5 +435,6 @@ message ServerMessage {
     RespondFriendRequestResponse respond_friend_request_response = 26;
     DeleteFriendResponse delete_friend_response = 27;
     FriendCenterPush friend_center_push = 28;
+    ChangePasswordResponse change_password_response = 29;
   }
 }

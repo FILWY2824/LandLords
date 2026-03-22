@@ -48,6 +48,8 @@ const char* PayloadName(const landlords::protocol::ClientMessage& message) {
       return "login";
     case landlords::protocol::ClientMessage::kResetPasswordRequest:
       return "reset_password";
+    case landlords::protocol::ClientMessage::kChangePasswordRequest:
+      return "change_password";
     case landlords::protocol::ClientMessage::kUpdateNicknameRequest:
       return "update_nickname";
     case landlords::protocol::ClientMessage::kMatchRequest:
@@ -189,6 +191,9 @@ void GameService::HandleMessage(const std::shared_ptr<network::IConnection>& con
       break;
     case landlords::protocol::ClientMessage::kResetPasswordRequest:
       HandleResetPassword(connection, message);
+      break;
+    case landlords::protocol::ClientMessage::kChangePasswordRequest:
+      HandleChangePassword(connection, message);
       break;
     case landlords::protocol::ClientMessage::kUpdateNicknameRequest:
       HandleUpdateNickname(connection, message);
@@ -636,6 +641,61 @@ void GameService::HandleResetPassword(
       session.user = *user;
     }
   }
+
+  payload->set_success(true);
+  payload->set_message("password updated");
+  connection->Send(response);
+}
+
+void GameService::HandleChangePassword(
+    const std::shared_ptr<network::IConnection>& connection,
+    const landlords::protocol::ClientMessage& message) {
+  const auto& request = message.change_password_request();
+  landlords::protocol::ServerMessage response;
+  response.set_request_id(message.request_id());
+  auto* payload = response.mutable_change_password_response();
+
+  if (request.current_password().empty() || request.new_password().empty()) {
+    payload->set_success(false);
+    payload->set_message("current password and new password are required");
+    connection->Send(response);
+    return;
+  }
+
+  std::lock_guard lock(mutex_);
+  const auto session = RequireSessionForConnection(connection, message.session_token());
+  if (!session.has_value()) {
+    payload->set_success(false);
+    payload->set_message("login required");
+    connection->Send(response);
+    return;
+  }
+
+  auto user = user_repository_->FindByUserId((*session)->user.user_id);
+  if (!user.has_value()) {
+    payload->set_success(false);
+    payload->set_message("user not found");
+    connection->Send(response);
+    return;
+  }
+
+  if (user->password_hash != HashPassword(request.current_password())) {
+    payload->set_success(false);
+    payload->set_message("current password is incorrect");
+    connection->Send(response);
+    return;
+  }
+
+  if (request.current_password() == request.new_password()) {
+    payload->set_success(false);
+    payload->set_message("new password must be different");
+    connection->Send(response);
+    return;
+  }
+
+  user->password_hash = HashPassword(request.new_password());
+  user_repository_->UpdateUser(*user);
+  RefreshSessionsForUser(*user);
 
   payload->set_success(true);
   payload->set_message("password updated");

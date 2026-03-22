@@ -63,6 +63,12 @@ extern CardDefaultTypeInternal _Card_default_instance_;
 class CardCounterEntry;
 struct CardCounterEntryDefaultTypeInternal;
 extern CardCounterEntryDefaultTypeInternal _CardCounterEntry_default_instance_;
+class ChangePasswordRequest;
+struct ChangePasswordRequestDefaultTypeInternal;
+extern ChangePasswordRequestDefaultTypeInternal _ChangePasswordRequest_default_instance_;
+class ChangePasswordResponse;
+struct ChangePasswordResponseDefaultTypeInternal;
+extern ChangePasswordResponseDefaultTypeInternal _ChangePasswordResponse_default_instance_;
 class ClientMessage;
 struct ClientMessageDefaultTypeInternal;
 extern ClientMessageDefaultTypeInternal _ClientMessage_default_instance_;
@@ -206,6 +212,8 @@ template<> ::landlords::protocol::AddFriendRequest* Arena::CreateMaybeMessage<::
 template<> ::landlords::protocol::AddFriendResponse* Arena::CreateMaybeMessage<::landlords::protocol::AddFriendResponse>(Arena*);
 template<> ::landlords::protocol::Card* Arena::CreateMaybeMessage<::landlords::protocol::Card>(Arena*);
 template<> ::landlords::protocol::CardCounterEntry* Arena::CreateMaybeMessage<::landlords::protocol::CardCounterEntry>(Arena*);
+template<> ::landlords::protocol::ChangePasswordRequest* Arena::CreateMaybeMessage<::landlords::protocol::ChangePasswordRequest>(Arena*);
+template<> ::landlords::protocol::ChangePasswordResponse* Arena::CreateMaybeMessage<::landlords::protocol::ChangePasswordResponse>(Arena*);
 template<> ::landlords::protocol::ClientMessage* Arena::CreateMaybeMessage<::landlords::protocol::ClientMessage>(Arena*);
 template<> ::landlords::protocol::CreateRoomRequest* Arena::CreateMaybeMessage<::landlords::protocol::CreateRoomRequest>(Arena*);
 template<> ::landlords::protocol::DeleteFriendRequest* Arena::CreateMaybeMessage<::landlords::protocol::DeleteFriendRequest>(Arena*);
@@ -2461,6 +2469,329 @@ class ResetPasswordResponse final :
 };
 // -------------------------------------------------------------------
 
+class ChangePasswordRequest final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:landlords.protocol.ChangePasswordRequest) */ {
+ public:
+  inline ChangePasswordRequest() : ChangePasswordRequest(nullptr) {}
+  ~ChangePasswordRequest() override;
+  explicit PROTOBUF_CONSTEXPR ChangePasswordRequest(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ChangePasswordRequest(const ChangePasswordRequest& from);
+  ChangePasswordRequest(ChangePasswordRequest&& from) noexcept
+    : ChangePasswordRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline ChangePasswordRequest& operator=(const ChangePasswordRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ChangePasswordRequest& operator=(ChangePasswordRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ChangePasswordRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ChangePasswordRequest* internal_default_instance() {
+    return reinterpret_cast<const ChangePasswordRequest*>(
+               &_ChangePasswordRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    10;
+
+  friend void swap(ChangePasswordRequest& a, ChangePasswordRequest& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ChangePasswordRequest* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ChangePasswordRequest* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ChangePasswordRequest* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ChangePasswordRequest>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ChangePasswordRequest& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ChangePasswordRequest& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ChangePasswordRequest* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "landlords.protocol.ChangePasswordRequest";
+  }
+  protected:
+  explicit ChangePasswordRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kCurrentPasswordFieldNumber = 1,
+    kNewPasswordFieldNumber = 2,
+  };
+  // string current_password = 1;
+  void clear_current_password();
+  const std::string& current_password() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_current_password(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_current_password();
+  PROTOBUF_NODISCARD std::string* release_current_password();
+  void set_allocated_current_password(std::string* current_password);
+  private:
+  const std::string& _internal_current_password() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_current_password(const std::string& value);
+  std::string* _internal_mutable_current_password();
+  public:
+
+  // string new_password = 2;
+  void clear_new_password();
+  const std::string& new_password() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_new_password(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_new_password();
+  PROTOBUF_NODISCARD std::string* release_new_password();
+  void set_allocated_new_password(std::string* new_password);
+  private:
+  const std::string& _internal_new_password() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_new_password(const std::string& value);
+  std::string* _internal_mutable_new_password();
+  public:
+
+  // @@protoc_insertion_point(class_scope:landlords.protocol.ChangePasswordRequest)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr current_password_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr new_password_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_landlords_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ChangePasswordResponse final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:landlords.protocol.ChangePasswordResponse) */ {
+ public:
+  inline ChangePasswordResponse() : ChangePasswordResponse(nullptr) {}
+  ~ChangePasswordResponse() override;
+  explicit PROTOBUF_CONSTEXPR ChangePasswordResponse(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ChangePasswordResponse(const ChangePasswordResponse& from);
+  ChangePasswordResponse(ChangePasswordResponse&& from) noexcept
+    : ChangePasswordResponse() {
+    *this = ::std::move(from);
+  }
+
+  inline ChangePasswordResponse& operator=(const ChangePasswordResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ChangePasswordResponse& operator=(ChangePasswordResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ChangePasswordResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ChangePasswordResponse* internal_default_instance() {
+    return reinterpret_cast<const ChangePasswordResponse*>(
+               &_ChangePasswordResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    11;
+
+  friend void swap(ChangePasswordResponse& a, ChangePasswordResponse& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ChangePasswordResponse* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ChangePasswordResponse* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ChangePasswordResponse* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ChangePasswordResponse>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ChangePasswordResponse& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ChangePasswordResponse& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ChangePasswordResponse* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "landlords.protocol.ChangePasswordResponse";
+  }
+  protected:
+  explicit ChangePasswordResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kMessageFieldNumber = 2,
+    kSuccessFieldNumber = 1,
+  };
+  // string message = 2;
+  void clear_message();
+  const std::string& message() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_message(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_message();
+  PROTOBUF_NODISCARD std::string* release_message();
+  void set_allocated_message(std::string* message);
+  private:
+  const std::string& _internal_message() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_message(const std::string& value);
+  std::string* _internal_mutable_message();
+  public:
+
+  // bool success = 1;
+  void clear_success();
+  bool success() const;
+  void set_success(bool value);
+  private:
+  bool _internal_success() const;
+  void _internal_set_success(bool value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:landlords.protocol.ChangePasswordResponse)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr message_;
+  bool success_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_landlords_2eproto;
+};
+// -------------------------------------------------------------------
+
 class UpdateNicknameRequest final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:landlords.protocol.UpdateNicknameRequest) */ {
  public:
@@ -2509,7 +2840,7 @@ class UpdateNicknameRequest final :
                &_UpdateNicknameRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    10;
+    12;
 
   friend void swap(UpdateNicknameRequest& a, UpdateNicknameRequest& b) {
     a.Swap(&b);
@@ -2657,7 +2988,7 @@ class UpdateNicknameResponse final :
                &_UpdateNicknameResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    11;
+    13;
 
   friend void swap(UpdateNicknameResponse& a, UpdateNicknameResponse& b) {
     a.Swap(&b);
@@ -2836,7 +3167,7 @@ class MatchRequest final :
                &_MatchRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    12;
+    14;
 
   friend void swap(MatchRequest& a, MatchRequest& b) {
     a.Swap(&b);
@@ -2989,7 +3320,7 @@ class CreateRoomRequest final :
                &_CreateRoomRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    15;
 
   friend void swap(CreateRoomRequest& a, CreateRoomRequest& b) {
     a.Swap(&b);
@@ -3106,7 +3437,7 @@ class JoinRoomRequest final :
                &_JoinRoomRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    16;
 
   friend void swap(JoinRoomRequest& a, JoinRoomRequest& b) {
     a.Swap(&b);
@@ -3254,7 +3585,7 @@ class LeaveRoomRequest final :
                &_LeaveRoomRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    17;
 
   friend void swap(LeaveRoomRequest& a, LeaveRoomRequest& b) {
     a.Swap(&b);
@@ -3402,7 +3733,7 @@ class RoomReadyRequest final :
                &_RoomReadyRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    16;
+    18;
 
   friend void swap(RoomReadyRequest& a, RoomReadyRequest& b) {
     a.Swap(&b);
@@ -3561,7 +3892,7 @@ class AddBotRequest final :
                &_AddBotRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    17;
+    19;
 
   friend void swap(AddBotRequest& a, AddBotRequest& b) {
     a.Swap(&b);
@@ -3731,7 +4062,7 @@ class RemovePlayerRequest final :
                &_RemovePlayerRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    18;
+    20;
 
   friend void swap(RemovePlayerRequest& a, RemovePlayerRequest& b) {
     a.Swap(&b);
@@ -3894,7 +4225,7 @@ class ListFriendsRequest final :
                &_ListFriendsRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    19;
+    21;
 
   friend void swap(ListFriendsRequest& a, ListFriendsRequest& b) {
     a.Swap(&b);
@@ -4011,7 +4342,7 @@ class ListFriendsResponse final :
                &_ListFriendsResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    20;
+    22;
 
   friend void swap(ListFriendsResponse& a, ListFriendsResponse& b) {
     a.Swap(&b);
@@ -4183,7 +4514,7 @@ class AddFriendRequest final :
                &_AddFriendRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    21;
+    23;
 
   friend void swap(AddFriendRequest& a, AddFriendRequest& b) {
     a.Swap(&b);
@@ -4331,7 +4662,7 @@ class AddFriendResponse final :
                &_AddFriendResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    22;
+    24;
 
   friend void swap(AddFriendResponse& a, AddFriendResponse& b) {
     a.Swap(&b);
@@ -4530,7 +4861,7 @@ class RespondFriendRequestRequest final :
                &_RespondFriendRequestRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    23;
+    25;
 
   friend void swap(RespondFriendRequestRequest& a, RespondFriendRequestRequest& b) {
     a.Swap(&b);
@@ -4689,7 +5020,7 @@ class RespondFriendRequestResponse final :
                &_RespondFriendRequestResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    24;
+    26;
 
   friend void swap(RespondFriendRequestResponse& a, RespondFriendRequestResponse& b) {
     a.Swap(&b);
@@ -4888,7 +5219,7 @@ class DeleteFriendRequest final :
                &_DeleteFriendRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    25;
+    27;
 
   friend void swap(DeleteFriendRequest& a, DeleteFriendRequest& b) {
     a.Swap(&b);
@@ -5036,7 +5367,7 @@ class DeleteFriendResponse final :
                &_DeleteFriendResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    26;
+    28;
 
   friend void swap(DeleteFriendResponse& a, DeleteFriendResponse& b) {
     a.Swap(&b);
@@ -5215,7 +5546,7 @@ class InvitePlayerRequest final :
                &_InvitePlayerRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    27;
+    29;
 
   friend void swap(InvitePlayerRequest& a, InvitePlayerRequest& b) {
     a.Swap(&b);
@@ -5390,7 +5721,7 @@ class InvitePlayerResponse final :
                &_InvitePlayerResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    28;
+    30;
 
   friend void swap(InvitePlayerResponse& a, InvitePlayerResponse& b) {
     a.Swap(&b);
@@ -5549,7 +5880,7 @@ class RoomInvitationPush final :
                &_RoomInvitationPush_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    29;
+    31;
 
   friend void swap(RoomInvitationPush& a, RoomInvitationPush& b) {
     a.Swap(&b);
@@ -5788,7 +6119,7 @@ class RespondRoomInvitationRequest final :
                &_RespondRoomInvitationRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    30;
+    32;
 
   friend void swap(RespondRoomInvitationRequest& a, RespondRoomInvitationRequest& b) {
     a.Swap(&b);
@@ -5947,7 +6278,7 @@ class RespondRoomInvitationResponse final :
                &_RespondRoomInvitationResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    31;
+    33;
 
   friend void swap(RespondRoomInvitationResponse& a, RespondRoomInvitationResponse& b) {
     a.Swap(&b);
@@ -6126,7 +6457,7 @@ class RoomInvitationResultPush final :
                &_RoomInvitationResultPush_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    32;
+    34;
 
   friend void swap(RoomInvitationResultPush& a, RoomInvitationResultPush& b) {
     a.Swap(&b);
@@ -6349,7 +6680,7 @@ class FriendCenterPush final :
                &_FriendCenterPush_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    33;
+    35;
 
   friend void swap(FriendCenterPush& a, FriendCenterPush& b) {
     a.Swap(&b);
@@ -6501,7 +6832,7 @@ class MatchResponse final :
                &_MatchResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    34;
+    36;
 
   friend void swap(MatchResponse& a, MatchResponse& b) {
     a.Swap(&b);
@@ -6660,7 +6991,7 @@ class MatchFoundPush final :
                &_MatchFoundPush_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    35;
+    37;
 
   friend void swap(MatchFoundPush& a, MatchFoundPush& b) {
     a.Swap(&b);
@@ -6839,7 +7170,7 @@ class RoomPlayer final :
                &_RoomPlayer_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    36;
+    38;
 
   friend void swap(RoomPlayer& a, RoomPlayer& b) {
     a.Swap(&b);
@@ -7080,7 +7411,7 @@ class Card final :
                &_Card_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    37;
+    39;
 
   friend void swap(Card& a, Card& b) {
     a.Swap(&b);
@@ -7271,7 +7602,7 @@ class CardCounterEntry final :
                &_CardCounterEntry_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    38;
+    40;
 
   friend void swap(CardCounterEntry& a, CardCounterEntry& b) {
     a.Swap(&b);
@@ -7430,7 +7761,7 @@ class TableAction final :
                &_TableAction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    39;
+    41;
 
   friend void swap(TableAction& a, TableAction& b) {
     a.Swap(&b);
@@ -7663,7 +7994,7 @@ class RoomSnapshot final :
                &_RoomSnapshot_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    40;
+    42;
 
   friend void swap(RoomSnapshot& a, RoomSnapshot& b) {
     a.Swap(&b);
@@ -8052,7 +8383,7 @@ class PlayCardsRequest final :
                &_PlayCardsRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    41;
+    43;
 
   friend void swap(PlayCardsRequest& a, PlayCardsRequest& b) {
     a.Swap(&b);
@@ -8226,7 +8557,7 @@ class PassRequest final :
                &_PassRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    42;
+    44;
 
   friend void swap(PassRequest& a, PassRequest& b) {
     a.Swap(&b);
@@ -8374,7 +8705,7 @@ class ReconnectRequest final :
                &_ReconnectRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    43;
+    45;
 
   friend void swap(ReconnectRequest& a, ReconnectRequest& b) {
     a.Swap(&b);
@@ -8522,7 +8853,7 @@ class HeartbeatRequest final :
                &_HeartbeatRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    44;
+    46;
 
   friend void swap(HeartbeatRequest& a, HeartbeatRequest& b) {
     a.Swap(&b);
@@ -8665,7 +8996,7 @@ class HeartbeatResponse final :
                &_HeartbeatResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    45;
+    47;
 
   friend void swap(HeartbeatResponse& a, HeartbeatResponse& b) {
     a.Swap(&b);
@@ -8808,7 +9139,7 @@ class OperationResponse final :
                &_OperationResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    46;
+    48;
 
   friend void swap(OperationResponse& a, OperationResponse& b) {
     a.Swap(&b);
@@ -8987,7 +9318,7 @@ class ErrorResponse final :
                &_ErrorResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    47;
+    49;
 
   friend void swap(ErrorResponse& a, ErrorResponse& b) {
     a.Swap(&b);
@@ -9163,6 +9494,7 @@ class ClientMessage final :
     kUpdateNicknameRequest = 28,
     kRespondFriendRequestRequest = 29,
     kDeleteFriendRequest = 30,
+    kChangePasswordRequest = 31,
     PAYLOAD_NOT_SET = 0,
   };
 
@@ -9171,7 +9503,7 @@ class ClientMessage final :
                &_ClientMessage_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    48;
+    50;
 
   friend void swap(ClientMessage& a, ClientMessage& b) {
     a.Swap(&b);
@@ -9265,6 +9597,7 @@ class ClientMessage final :
     kUpdateNicknameRequestFieldNumber = 28,
     kRespondFriendRequestRequestFieldNumber = 29,
     kDeleteFriendRequestFieldNumber = 30,
+    kChangePasswordRequestFieldNumber = 31,
   };
   // string request_id = 1;
   void clear_request_id();
@@ -9672,6 +10005,24 @@ class ClientMessage final :
       ::landlords::protocol::DeleteFriendRequest* delete_friend_request);
   ::landlords::protocol::DeleteFriendRequest* unsafe_arena_release_delete_friend_request();
 
+  // .landlords.protocol.ChangePasswordRequest change_password_request = 31;
+  bool has_change_password_request() const;
+  private:
+  bool _internal_has_change_password_request() const;
+  public:
+  void clear_change_password_request();
+  const ::landlords::protocol::ChangePasswordRequest& change_password_request() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::ChangePasswordRequest* release_change_password_request();
+  ::landlords::protocol::ChangePasswordRequest* mutable_change_password_request();
+  void set_allocated_change_password_request(::landlords::protocol::ChangePasswordRequest* change_password_request);
+  private:
+  const ::landlords::protocol::ChangePasswordRequest& _internal_change_password_request() const;
+  ::landlords::protocol::ChangePasswordRequest* _internal_mutable_change_password_request();
+  public:
+  void unsafe_arena_set_allocated_change_password_request(
+      ::landlords::protocol::ChangePasswordRequest* change_password_request);
+  ::landlords::protocol::ChangePasswordRequest* unsafe_arena_release_change_password_request();
+
   void clear_payload();
   PayloadCase payload_case() const;
   // @@protoc_insertion_point(class_scope:landlords.protocol.ClientMessage)
@@ -9698,6 +10049,7 @@ class ClientMessage final :
   void set_has_update_nickname_request();
   void set_has_respond_friend_request_request();
   void set_has_delete_friend_request();
+  void set_has_change_password_request();
 
   inline bool has_payload() const;
   inline void clear_has_payload();
@@ -9731,6 +10083,7 @@ class ClientMessage final :
     ::landlords::protocol::UpdateNicknameRequest* update_nickname_request_;
     ::landlords::protocol::RespondFriendRequestRequest* respond_friend_request_request_;
     ::landlords::protocol::DeleteFriendRequest* delete_friend_request_;
+    ::landlords::protocol::ChangePasswordRequest* change_password_request_;
   } payload_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   uint32_t _oneof_case_[1];
@@ -9802,6 +10155,7 @@ class ServerMessage final :
     kRespondFriendRequestResponse = 26,
     kDeleteFriendResponse = 27,
     kFriendCenterPush = 28,
+    kChangePasswordResponse = 29,
     PAYLOAD_NOT_SET = 0,
   };
 
@@ -9810,7 +10164,7 @@ class ServerMessage final :
                &_ServerMessage_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    49;
+    51;
 
   friend void swap(ServerMessage& a, ServerMessage& b) {
     a.Swap(&b);
@@ -9901,6 +10255,7 @@ class ServerMessage final :
     kRespondFriendRequestResponseFieldNumber = 26,
     kDeleteFriendResponseFieldNumber = 27,
     kFriendCenterPushFieldNumber = 28,
+    kChangePasswordResponseFieldNumber = 29,
   };
   // string request_id = 1;
   void clear_request_id();
@@ -10258,6 +10613,24 @@ class ServerMessage final :
       ::landlords::protocol::FriendCenterPush* friend_center_push);
   ::landlords::protocol::FriendCenterPush* unsafe_arena_release_friend_center_push();
 
+  // .landlords.protocol.ChangePasswordResponse change_password_response = 29;
+  bool has_change_password_response() const;
+  private:
+  bool _internal_has_change_password_response() const;
+  public:
+  void clear_change_password_response();
+  const ::landlords::protocol::ChangePasswordResponse& change_password_response() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::ChangePasswordResponse* release_change_password_response();
+  ::landlords::protocol::ChangePasswordResponse* mutable_change_password_response();
+  void set_allocated_change_password_response(::landlords::protocol::ChangePasswordResponse* change_password_response);
+  private:
+  const ::landlords::protocol::ChangePasswordResponse& _internal_change_password_response() const;
+  ::landlords::protocol::ChangePasswordResponse* _internal_mutable_change_password_response();
+  public:
+  void unsafe_arena_set_allocated_change_password_response(
+      ::landlords::protocol::ChangePasswordResponse* change_password_response);
+  ::landlords::protocol::ChangePasswordResponse* unsafe_arena_release_change_password_response();
+
   void clear_payload();
   PayloadCase payload_case() const;
   // @@protoc_insertion_point(class_scope:landlords.protocol.ServerMessage)
@@ -10282,6 +10655,7 @@ class ServerMessage final :
   void set_has_respond_friend_request_response();
   void set_has_delete_friend_response();
   void set_has_friend_center_push();
+  void set_has_change_password_response();
 
   inline bool has_payload() const;
   inline void clear_has_payload();
@@ -10312,6 +10686,7 @@ class ServerMessage final :
     ::landlords::protocol::RespondFriendRequestResponse* respond_friend_request_response_;
     ::landlords::protocol::DeleteFriendResponse* delete_friend_response_;
     ::landlords::protocol::FriendCenterPush* friend_center_push_;
+    ::landlords::protocol::ChangePasswordResponse* change_password_response_;
   } payload_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   uint32_t _oneof_case_[1];
@@ -12123,6 +12498,184 @@ inline void ResetPasswordResponse::set_allocated_message(std::string* message) {
   }
 #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   // @@protoc_insertion_point(field_set_allocated:landlords.protocol.ResetPasswordResponse.message)
+}
+
+// -------------------------------------------------------------------
+
+// ChangePasswordRequest
+
+// string current_password = 1;
+inline void ChangePasswordRequest::clear_current_password() {
+  current_password_.ClearToEmpty();
+}
+inline const std::string& ChangePasswordRequest::current_password() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ChangePasswordRequest.current_password)
+  return _internal_current_password();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ChangePasswordRequest::set_current_password(ArgT0&& arg0, ArgT... args) {
+ 
+ current_password_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:landlords.protocol.ChangePasswordRequest.current_password)
+}
+inline std::string* ChangePasswordRequest::mutable_current_password() {
+  std::string* _s = _internal_mutable_current_password();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ChangePasswordRequest.current_password)
+  return _s;
+}
+inline const std::string& ChangePasswordRequest::_internal_current_password() const {
+  return current_password_.Get();
+}
+inline void ChangePasswordRequest::_internal_set_current_password(const std::string& value) {
+  
+  current_password_.Set(value, GetArenaForAllocation());
+}
+inline std::string* ChangePasswordRequest::_internal_mutable_current_password() {
+  
+  return current_password_.Mutable(GetArenaForAllocation());
+}
+inline std::string* ChangePasswordRequest::release_current_password() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ChangePasswordRequest.current_password)
+  return current_password_.Release();
+}
+inline void ChangePasswordRequest::set_allocated_current_password(std::string* current_password) {
+  if (current_password != nullptr) {
+    
+  } else {
+    
+  }
+  current_password_.SetAllocated(current_password, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (current_password_.IsDefault()) {
+    current_password_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.ChangePasswordRequest.current_password)
+}
+
+// string new_password = 2;
+inline void ChangePasswordRequest::clear_new_password() {
+  new_password_.ClearToEmpty();
+}
+inline const std::string& ChangePasswordRequest::new_password() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ChangePasswordRequest.new_password)
+  return _internal_new_password();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ChangePasswordRequest::set_new_password(ArgT0&& arg0, ArgT... args) {
+ 
+ new_password_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:landlords.protocol.ChangePasswordRequest.new_password)
+}
+inline std::string* ChangePasswordRequest::mutable_new_password() {
+  std::string* _s = _internal_mutable_new_password();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ChangePasswordRequest.new_password)
+  return _s;
+}
+inline const std::string& ChangePasswordRequest::_internal_new_password() const {
+  return new_password_.Get();
+}
+inline void ChangePasswordRequest::_internal_set_new_password(const std::string& value) {
+  
+  new_password_.Set(value, GetArenaForAllocation());
+}
+inline std::string* ChangePasswordRequest::_internal_mutable_new_password() {
+  
+  return new_password_.Mutable(GetArenaForAllocation());
+}
+inline std::string* ChangePasswordRequest::release_new_password() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ChangePasswordRequest.new_password)
+  return new_password_.Release();
+}
+inline void ChangePasswordRequest::set_allocated_new_password(std::string* new_password) {
+  if (new_password != nullptr) {
+    
+  } else {
+    
+  }
+  new_password_.SetAllocated(new_password, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (new_password_.IsDefault()) {
+    new_password_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.ChangePasswordRequest.new_password)
+}
+
+// -------------------------------------------------------------------
+
+// ChangePasswordResponse
+
+// bool success = 1;
+inline void ChangePasswordResponse::clear_success() {
+  success_ = false;
+}
+inline bool ChangePasswordResponse::_internal_success() const {
+  return success_;
+}
+inline bool ChangePasswordResponse::success() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ChangePasswordResponse.success)
+  return _internal_success();
+}
+inline void ChangePasswordResponse::_internal_set_success(bool value) {
+  
+  success_ = value;
+}
+inline void ChangePasswordResponse::set_success(bool value) {
+  _internal_set_success(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.ChangePasswordResponse.success)
+}
+
+// string message = 2;
+inline void ChangePasswordResponse::clear_message() {
+  message_.ClearToEmpty();
+}
+inline const std::string& ChangePasswordResponse::message() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ChangePasswordResponse.message)
+  return _internal_message();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ChangePasswordResponse::set_message(ArgT0&& arg0, ArgT... args) {
+ 
+ message_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:landlords.protocol.ChangePasswordResponse.message)
+}
+inline std::string* ChangePasswordResponse::mutable_message() {
+  std::string* _s = _internal_mutable_message();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ChangePasswordResponse.message)
+  return _s;
+}
+inline const std::string& ChangePasswordResponse::_internal_message() const {
+  return message_.Get();
+}
+inline void ChangePasswordResponse::_internal_set_message(const std::string& value) {
+  
+  message_.Set(value, GetArenaForAllocation());
+}
+inline std::string* ChangePasswordResponse::_internal_mutable_message() {
+  
+  return message_.Mutable(GetArenaForAllocation());
+}
+inline std::string* ChangePasswordResponse::release_message() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ChangePasswordResponse.message)
+  return message_.Release();
+}
+inline void ChangePasswordResponse::set_allocated_message(std::string* message) {
+  if (message != nullptr) {
+    
+  } else {
+    
+  }
+  message_.SetAllocated(message, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (message_.IsDefault()) {
+    message_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.ChangePasswordResponse.message)
 }
 
 // -------------------------------------------------------------------
@@ -18600,6 +19153,80 @@ inline ::landlords::protocol::DeleteFriendRequest* ClientMessage::mutable_delete
   return _msg;
 }
 
+// .landlords.protocol.ChangePasswordRequest change_password_request = 31;
+inline bool ClientMessage::_internal_has_change_password_request() const {
+  return payload_case() == kChangePasswordRequest;
+}
+inline bool ClientMessage::has_change_password_request() const {
+  return _internal_has_change_password_request();
+}
+inline void ClientMessage::set_has_change_password_request() {
+  _oneof_case_[0] = kChangePasswordRequest;
+}
+inline void ClientMessage::clear_change_password_request() {
+  if (_internal_has_change_password_request()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete payload_.change_password_request_;
+    }
+    clear_has_payload();
+  }
+}
+inline ::landlords::protocol::ChangePasswordRequest* ClientMessage::release_change_password_request() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ClientMessage.change_password_request)
+  if (_internal_has_change_password_request()) {
+    clear_has_payload();
+    ::landlords::protocol::ChangePasswordRequest* temp = payload_.change_password_request_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    payload_.change_password_request_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::landlords::protocol::ChangePasswordRequest& ClientMessage::_internal_change_password_request() const {
+  return _internal_has_change_password_request()
+      ? *payload_.change_password_request_
+      : reinterpret_cast< ::landlords::protocol::ChangePasswordRequest&>(::landlords::protocol::_ChangePasswordRequest_default_instance_);
+}
+inline const ::landlords::protocol::ChangePasswordRequest& ClientMessage::change_password_request() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ClientMessage.change_password_request)
+  return _internal_change_password_request();
+}
+inline ::landlords::protocol::ChangePasswordRequest* ClientMessage::unsafe_arena_release_change_password_request() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:landlords.protocol.ClientMessage.change_password_request)
+  if (_internal_has_change_password_request()) {
+    clear_has_payload();
+    ::landlords::protocol::ChangePasswordRequest* temp = payload_.change_password_request_;
+    payload_.change_password_request_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ClientMessage::unsafe_arena_set_allocated_change_password_request(::landlords::protocol::ChangePasswordRequest* change_password_request) {
+  clear_payload();
+  if (change_password_request) {
+    set_has_change_password_request();
+    payload_.change_password_request_ = change_password_request;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.ClientMessage.change_password_request)
+}
+inline ::landlords::protocol::ChangePasswordRequest* ClientMessage::_internal_mutable_change_password_request() {
+  if (!_internal_has_change_password_request()) {
+    clear_payload();
+    set_has_change_password_request();
+    payload_.change_password_request_ = CreateMaybeMessage< ::landlords::protocol::ChangePasswordRequest >(GetArenaForAllocation());
+  }
+  return payload_.change_password_request_;
+}
+inline ::landlords::protocol::ChangePasswordRequest* ClientMessage::mutable_change_password_request() {
+  ::landlords::protocol::ChangePasswordRequest* _msg = _internal_mutable_change_password_request();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ClientMessage.change_password_request)
+  return _msg;
+}
+
 inline bool ClientMessage::has_payload() const {
   return payload_case() != PAYLOAD_NOT_SET;
 }
@@ -20069,6 +20696,80 @@ inline ::landlords::protocol::FriendCenterPush* ServerMessage::mutable_friend_ce
   return _msg;
 }
 
+// .landlords.protocol.ChangePasswordResponse change_password_response = 29;
+inline bool ServerMessage::_internal_has_change_password_response() const {
+  return payload_case() == kChangePasswordResponse;
+}
+inline bool ServerMessage::has_change_password_response() const {
+  return _internal_has_change_password_response();
+}
+inline void ServerMessage::set_has_change_password_response() {
+  _oneof_case_[0] = kChangePasswordResponse;
+}
+inline void ServerMessage::clear_change_password_response() {
+  if (_internal_has_change_password_response()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete payload_.change_password_response_;
+    }
+    clear_has_payload();
+  }
+}
+inline ::landlords::protocol::ChangePasswordResponse* ServerMessage::release_change_password_response() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ServerMessage.change_password_response)
+  if (_internal_has_change_password_response()) {
+    clear_has_payload();
+    ::landlords::protocol::ChangePasswordResponse* temp = payload_.change_password_response_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    payload_.change_password_response_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::landlords::protocol::ChangePasswordResponse& ServerMessage::_internal_change_password_response() const {
+  return _internal_has_change_password_response()
+      ? *payload_.change_password_response_
+      : reinterpret_cast< ::landlords::protocol::ChangePasswordResponse&>(::landlords::protocol::_ChangePasswordResponse_default_instance_);
+}
+inline const ::landlords::protocol::ChangePasswordResponse& ServerMessage::change_password_response() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ServerMessage.change_password_response)
+  return _internal_change_password_response();
+}
+inline ::landlords::protocol::ChangePasswordResponse* ServerMessage::unsafe_arena_release_change_password_response() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:landlords.protocol.ServerMessage.change_password_response)
+  if (_internal_has_change_password_response()) {
+    clear_has_payload();
+    ::landlords::protocol::ChangePasswordResponse* temp = payload_.change_password_response_;
+    payload_.change_password_response_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ServerMessage::unsafe_arena_set_allocated_change_password_response(::landlords::protocol::ChangePasswordResponse* change_password_response) {
+  clear_payload();
+  if (change_password_response) {
+    set_has_change_password_response();
+    payload_.change_password_response_ = change_password_response;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.ServerMessage.change_password_response)
+}
+inline ::landlords::protocol::ChangePasswordResponse* ServerMessage::_internal_mutable_change_password_response() {
+  if (!_internal_has_change_password_response()) {
+    clear_payload();
+    set_has_change_password_response();
+    payload_.change_password_response_ = CreateMaybeMessage< ::landlords::protocol::ChangePasswordResponse >(GetArenaForAllocation());
+  }
+  return payload_.change_password_response_;
+}
+inline ::landlords::protocol::ChangePasswordResponse* ServerMessage::mutable_change_password_response() {
+  ::landlords::protocol::ChangePasswordResponse* _msg = _internal_mutable_change_password_response();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ServerMessage.change_password_response)
+  return _msg;
+}
+
 inline bool ServerMessage::has_payload() const {
   return payload_case() != PAYLOAD_NOT_SET;
 }
@@ -20081,6 +20782,10 @@ inline ServerMessage::PayloadCase ServerMessage::payload_case() const {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

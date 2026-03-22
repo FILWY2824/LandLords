@@ -249,6 +249,13 @@ class _ScriptedGateway implements GameGateway {
   }) async {}
 
   @override
+  Future<void> changePassword({
+    required String sessionToken,
+    required String currentPassword,
+    required String newPassword,
+  }) async {}
+
+  @override
   Future<UserProfile> updateNickname({
     required String sessionToken,
     required String nickname,

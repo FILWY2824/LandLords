@@ -175,6 +175,32 @@ struct ResetPasswordResponseDefaultTypeInternal {
   };
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ResetPasswordResponseDefaultTypeInternal _ResetPasswordResponse_default_instance_;
+PROTOBUF_CONSTEXPR ChangePasswordRequest::ChangePasswordRequest(
+    ::_pbi::ConstantInitialized)
+  : current_password_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
+  , new_password_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}){}
+struct ChangePasswordRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ChangePasswordRequestDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ChangePasswordRequestDefaultTypeInternal() {}
+  union {
+    ChangePasswordRequest _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ChangePasswordRequestDefaultTypeInternal _ChangePasswordRequest_default_instance_;
+PROTOBUF_CONSTEXPR ChangePasswordResponse::ChangePasswordResponse(
+    ::_pbi::ConstantInitialized)
+  : message_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
+  , success_(false){}
+struct ChangePasswordResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ChangePasswordResponseDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ChangePasswordResponseDefaultTypeInternal() {}
+  union {
+    ChangePasswordResponse _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ChangePasswordResponseDefaultTypeInternal _ChangePasswordResponse_default_instance_;
 PROTOBUF_CONSTEXPR UpdateNicknameRequest::UpdateNicknameRequest(
     ::_pbi::ConstantInitialized)
   : nickname_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}){}
@@ -744,7 +770,7 @@ struct ServerMessageDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ServerMessageDefaultTypeInternal _ServerMessage_default_instance_;
 }  // namespace protocol
 }  // namespace landlords
-static ::_pb::Metadata file_level_metadata_landlords_2eproto[50];
+static ::_pb::Metadata file_level_metadata_landlords_2eproto[52];
 static const ::_pb::EnumDescriptor* file_level_enum_descriptors_landlords_2eproto[9];
 static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors_landlords_2eproto = nullptr;
 
@@ -851,6 +877,22 @@ const uint32_t TableStruct_landlords_2eproto::offsets[] PROTOBUF_SECTION_VARIABL
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::landlords::protocol::ResetPasswordResponse, success_),
   PROTOBUF_FIELD_OFFSET(::landlords::protocol::ResetPasswordResponse, message_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::landlords::protocol::ChangePasswordRequest, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::landlords::protocol::ChangePasswordRequest, current_password_),
+  PROTOBUF_FIELD_OFFSET(::landlords::protocol::ChangePasswordRequest, new_password_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::landlords::protocol::ChangePasswordResponse, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::landlords::protocol::ChangePasswordResponse, success_),
+  PROTOBUF_FIELD_OFFSET(::landlords::protocol::ChangePasswordResponse, message_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::landlords::protocol::UpdateNicknameRequest, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -1219,6 +1261,7 @@ const uint32_t TableStruct_landlords_2eproto::offsets[] PROTOBUF_SECTION_VARIABL
   ::_pbi::kInvalidFieldOffsetTag,
   ::_pbi::kInvalidFieldOffsetTag,
   ::_pbi::kInvalidFieldOffsetTag,
+  ::_pbi::kInvalidFieldOffsetTag,
   PROTOBUF_FIELD_OFFSET(::landlords::protocol::ClientMessage, payload_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::landlords::protocol::ServerMessage, _internal_metadata_),
@@ -1227,6 +1270,7 @@ const uint32_t TableStruct_landlords_2eproto::offsets[] PROTOBUF_SECTION_VARIABL
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::landlords::protocol::ServerMessage, request_id_),
+  ::_pbi::kInvalidFieldOffsetTag,
   ::_pbi::kInvalidFieldOffsetTag,
   ::_pbi::kInvalidFieldOffsetTag,
   ::_pbi::kInvalidFieldOffsetTag,
@@ -1259,46 +1303,48 @@ static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protode
   { 76, -1, -1, sizeof(::landlords::protocol::LoginResponse)},
   { 86, -1, -1, sizeof(::landlords::protocol::ResetPasswordRequest)},
   { 94, -1, -1, sizeof(::landlords::protocol::ResetPasswordResponse)},
-  { 102, -1, -1, sizeof(::landlords::protocol::UpdateNicknameRequest)},
-  { 109, -1, -1, sizeof(::landlords::protocol::UpdateNicknameResponse)},
-  { 118, -1, -1, sizeof(::landlords::protocol::MatchRequest)},
-  { 126, -1, -1, sizeof(::landlords::protocol::CreateRoomRequest)},
-  { 132, -1, -1, sizeof(::landlords::protocol::JoinRoomRequest)},
-  { 139, -1, -1, sizeof(::landlords::protocol::LeaveRoomRequest)},
-  { 146, -1, -1, sizeof(::landlords::protocol::RoomReadyRequest)},
-  { 154, -1, -1, sizeof(::landlords::protocol::AddBotRequest)},
-  { 163, -1, -1, sizeof(::landlords::protocol::RemovePlayerRequest)},
-  { 171, -1, -1, sizeof(::landlords::protocol::ListFriendsRequest)},
-  { 177, -1, -1, sizeof(::landlords::protocol::ListFriendsResponse)},
-  { 185, -1, -1, sizeof(::landlords::protocol::AddFriendRequest)},
-  { 192, -1, -1, sizeof(::landlords::protocol::AddFriendResponse)},
-  { 202, -1, -1, sizeof(::landlords::protocol::RespondFriendRequestRequest)},
-  { 210, -1, -1, sizeof(::landlords::protocol::RespondFriendRequestResponse)},
-  { 220, -1, -1, sizeof(::landlords::protocol::DeleteFriendRequest)},
-  { 227, -1, -1, sizeof(::landlords::protocol::DeleteFriendResponse)},
-  { 236, -1, -1, sizeof(::landlords::protocol::InvitePlayerRequest)},
-  { 245, -1, -1, sizeof(::landlords::protocol::InvitePlayerResponse)},
-  { 253, -1, -1, sizeof(::landlords::protocol::RoomInvitationPush)},
-  { 266, -1, -1, sizeof(::landlords::protocol::RespondRoomInvitationRequest)},
-  { 274, -1, -1, sizeof(::landlords::protocol::RespondRoomInvitationResponse)},
-  { 283, -1, -1, sizeof(::landlords::protocol::RoomInvitationResultPush)},
-  { 295, -1, -1, sizeof(::landlords::protocol::FriendCenterPush)},
-  { 302, -1, -1, sizeof(::landlords::protocol::MatchResponse)},
-  { 310, -1, -1, sizeof(::landlords::protocol::MatchFoundPush)},
-  { 319, -1, -1, sizeof(::landlords::protocol::RoomPlayer)},
-  { 334, -1, -1, sizeof(::landlords::protocol::Card)},
-  { 344, -1, -1, sizeof(::landlords::protocol::CardCounterEntry)},
-  { 352, -1, -1, sizeof(::landlords::protocol::TableAction)},
-  { 365, -1, -1, sizeof(::landlords::protocol::RoomSnapshot)},
-  { 388, -1, -1, sizeof(::landlords::protocol::PlayCardsRequest)},
-  { 396, -1, -1, sizeof(::landlords::protocol::PassRequest)},
-  { 403, -1, -1, sizeof(::landlords::protocol::ReconnectRequest)},
-  { 410, -1, -1, sizeof(::landlords::protocol::HeartbeatRequest)},
-  { 417, -1, -1, sizeof(::landlords::protocol::HeartbeatResponse)},
-  { 424, -1, -1, sizeof(::landlords::protocol::OperationResponse)},
-  { 433, -1, -1, sizeof(::landlords::protocol::ErrorResponse)},
-  { 441, -1, -1, sizeof(::landlords::protocol::ClientMessage)},
-  { 471, -1, -1, sizeof(::landlords::protocol::ServerMessage)},
+  { 102, -1, -1, sizeof(::landlords::protocol::ChangePasswordRequest)},
+  { 110, -1, -1, sizeof(::landlords::protocol::ChangePasswordResponse)},
+  { 118, -1, -1, sizeof(::landlords::protocol::UpdateNicknameRequest)},
+  { 125, -1, -1, sizeof(::landlords::protocol::UpdateNicknameResponse)},
+  { 134, -1, -1, sizeof(::landlords::protocol::MatchRequest)},
+  { 142, -1, -1, sizeof(::landlords::protocol::CreateRoomRequest)},
+  { 148, -1, -1, sizeof(::landlords::protocol::JoinRoomRequest)},
+  { 155, -1, -1, sizeof(::landlords::protocol::LeaveRoomRequest)},
+  { 162, -1, -1, sizeof(::landlords::protocol::RoomReadyRequest)},
+  { 170, -1, -1, sizeof(::landlords::protocol::AddBotRequest)},
+  { 179, -1, -1, sizeof(::landlords::protocol::RemovePlayerRequest)},
+  { 187, -1, -1, sizeof(::landlords::protocol::ListFriendsRequest)},
+  { 193, -1, -1, sizeof(::landlords::protocol::ListFriendsResponse)},
+  { 201, -1, -1, sizeof(::landlords::protocol::AddFriendRequest)},
+  { 208, -1, -1, sizeof(::landlords::protocol::AddFriendResponse)},
+  { 218, -1, -1, sizeof(::landlords::protocol::RespondFriendRequestRequest)},
+  { 226, -1, -1, sizeof(::landlords::protocol::RespondFriendRequestResponse)},
+  { 236, -1, -1, sizeof(::landlords::protocol::DeleteFriendRequest)},
+  { 243, -1, -1, sizeof(::landlords::protocol::DeleteFriendResponse)},
+  { 252, -1, -1, sizeof(::landlords::protocol::InvitePlayerRequest)},
+  { 261, -1, -1, sizeof(::landlords::protocol::InvitePlayerResponse)},
+  { 269, -1, -1, sizeof(::landlords::protocol::RoomInvitationPush)},
+  { 282, -1, -1, sizeof(::landlords::protocol::RespondRoomInvitationRequest)},
+  { 290, -1, -1, sizeof(::landlords::protocol::RespondRoomInvitationResponse)},
+  { 299, -1, -1, sizeof(::landlords::protocol::RoomInvitationResultPush)},
+  { 311, -1, -1, sizeof(::landlords::protocol::FriendCenterPush)},
+  { 318, -1, -1, sizeof(::landlords::protocol::MatchResponse)},
+  { 326, -1, -1, sizeof(::landlords::protocol::MatchFoundPush)},
+  { 335, -1, -1, sizeof(::landlords::protocol::RoomPlayer)},
+  { 350, -1, -1, sizeof(::landlords::protocol::Card)},
+  { 360, -1, -1, sizeof(::landlords::protocol::CardCounterEntry)},
+  { 368, -1, -1, sizeof(::landlords::protocol::TableAction)},
+  { 381, -1, -1, sizeof(::landlords::protocol::RoomSnapshot)},
+  { 404, -1, -1, sizeof(::landlords::protocol::PlayCardsRequest)},
+  { 412, -1, -1, sizeof(::landlords::protocol::PassRequest)},
+  { 419, -1, -1, sizeof(::landlords::protocol::ReconnectRequest)},
+  { 426, -1, -1, sizeof(::landlords::protocol::HeartbeatRequest)},
+  { 433, -1, -1, sizeof(::landlords::protocol::HeartbeatResponse)},
+  { 440, -1, -1, sizeof(::landlords::protocol::OperationResponse)},
+  { 449, -1, -1, sizeof(::landlords::protocol::ErrorResponse)},
+  { 457, -1, -1, sizeof(::landlords::protocol::ClientMessage)},
+  { 488, -1, -1, sizeof(::landlords::protocol::ServerMessage)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -1312,6 +1358,8 @@ static const ::_pb::Message* const file_default_instances[] = {
   &::landlords::protocol::_LoginResponse_default_instance_._instance,
   &::landlords::protocol::_ResetPasswordRequest_default_instance_._instance,
   &::landlords::protocol::_ResetPasswordResponse_default_instance_._instance,
+  &::landlords::protocol::_ChangePasswordRequest_default_instance_._instance,
+  &::landlords::protocol::_ChangePasswordResponse_default_instance_._instance,
   &::landlords::protocol::_UpdateNicknameRequest_default_instance_._instance,
   &::landlords::protocol::_UpdateNicknameResponse_default_instance_._instance,
   &::landlords::protocol::_MatchRequest_default_instance_._instance,
@@ -1387,226 +1435,233 @@ const char descriptor_table_protodef_landlords_2eproto[] PROTOBUF_SECTION_VARIAB
   "serProfile\022\025\n\rsession_token\030\004 \001(\t\"=\n\024Res"
   "etPasswordRequest\022\017\n\007account\030\001 \001(\t\022\024\n\014ne"
   "w_password\030\002 \001(\t\"9\n\025ResetPasswordRespons"
-  "e\022\017\n\007success\030\001 \001(\010\022\017\n\007message\030\002 \001(\t\")\n\025U"
-  "pdateNicknameRequest\022\020\n\010nickname\030\001 \001(\t\"l"
-  "\n\026UpdateNicknameResponse\022\017\n\007success\030\001 \001("
-  "\010\022\017\n\007message\030\002 \001(\t\0220\n\007profile\030\003 \001(\0132\037.la"
-  "ndlords.protocol.UserProfile\"v\n\014MatchReq"
-  "uest\022+\n\004mode\030\001 \001(\0162\035.landlords.protocol."
-  "MatchMode\0229\n\016bot_difficulty\030\002 \001(\0162!.land"
-  "lords.protocol.BotDifficulty\"\023\n\021CreateRo"
-  "omRequest\"$\n\017JoinRoomRequest\022\021\n\troom_cod"
-  "e\030\001 \001(\t\"#\n\020LeaveRoomRequest\022\017\n\007room_id\030\001"
-  " \001(\t\"2\n\020RoomReadyRequest\022\017\n\007room_id\030\001 \001("
-  "\t\022\r\n\005ready\030\002 \001(\010\"o\n\rAddBotRequest\022\017\n\007roo"
-  "m_id\030\001 \001(\t\0229\n\016bot_difficulty\030\002 \001(\0162!.lan"
-  "dlords.protocol.BotDifficulty\022\022\n\nseat_in"
-  "dex\030\003 \001(\005\"9\n\023RemovePlayerRequest\022\017\n\007room"
-  "_id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001(\t\"\024\n\022ListFrie"
-  "ndsRequest\"\200\001\n\023ListFriendsResponse\022-\n\005us"
-  "ers\030\001 \003(\0132\036.landlords.protocol.OnlineUse"
-  "r\022:\n\010snapshot\030\002 \001(\0132(.landlords.protocol"
-  ".FriendCenterSnapshot\"#\n\020AddFriendReques"
-  "t\022\017\n\007account\030\001 \001(\t\"\252\001\n\021AddFriendResponse"
-  "\022\017\n\007success\030\001 \001(\010\022\017\n\007message\030\002 \001(\t\0227\n\007re"
-  "quest\030\003 \001(\0132&.landlords.protocol.FriendR"
-  "equestEntry\022:\n\010snapshot\030\004 \001(\0132(.landlord"
-  "s.protocol.FriendCenterSnapshot\"A\n\033Respo"
-  "ndFriendRequestRequest\022\022\n\nrequest_id\030\001 \001"
-  "(\t\022\016\n\006accept\030\002 \001(\010\"\265\001\n\034RespondFriendRequ"
-  "estResponse\022\017\n\007success\030\001 \001(\010\022\017\n\007message\030"
-  "\002 \001(\t\0227\n\007request\030\003 \001(\0132&.landlords.proto"
-  "col.FriendRequestEntry\022:\n\010snapshot\030\004 \001(\013"
-  "2(.landlords.protocol.FriendCenterSnapsh"
-  "ot\"-\n\023DeleteFriendRequest\022\026\n\016friend_user"
-  "_id\030\001 \001(\t\"t\n\024DeleteFriendResponse\022\017\n\007suc"
-  "cess\030\001 \001(\010\022\017\n\007message\030\002 \001(\t\022:\n\010snapshot\030"
-  "\003 \001(\0132(.landlords.protocol.FriendCenterS"
-  "napshot\"S\n\023InvitePlayerRequest\022\017\n\007room_i"
-  "d\030\001 \001(\t\022\027\n\017invitee_account\030\002 \001(\t\022\022\n\nseat"
-  "_index\030\003 \001(\005\"9\n\024InvitePlayerResponse\022\020\n\010"
-  "accepted\030\001 \001(\010\022\017\n\007message\030\002 \001(\t\"\257\001\n\022Room"
-  "InvitationPush\022\025\n\rinvitation_id\030\001 \001(\t\022\017\n"
-  "\007room_id\030\002 \001(\t\022\021\n\troom_code\030\003 \001(\t\022\027\n\017inv"
-  "iter_user_id\030\004 \001(\t\022\027\n\017inviter_account\030\005 "
-  "\001(\t\022\030\n\020inviter_nickname\030\006 \001(\t\022\022\n\nseat_in"
-  "dex\030\007 \001(\005\"E\n\034RespondRoomInvitationReques"
-  "t\022\025\n\rinvitation_id\030\001 \001(\t\022\016\n\006accept\030\002 \001(\010"
-  "\"u\n\035RespondRoomInvitationResponse\022\017\n\007suc"
-  "cess\030\001 \001(\010\022\017\n\007message\030\002 \001(\t\0222\n\010snapshot\030"
-  "\003 \001(\0132 .landlords.protocol.RoomSnapshot\""
-  "\304\001\n\030RoomInvitationResultPush\022\025\n\rinvitati"
-  "on_id\030\001 \001(\t\0224\n\006result\030\002 \001(\0162$.landlords."
-  "protocol.InvitationResult\022\027\n\017invitee_use"
-  "r_id\030\003 \001(\t\022\027\n\017invitee_account\030\004 \001(\t\022\030\n\020i"
-  "nvitee_nickname\030\005 \001(\t\022\017\n\007message\030\006 \001(\t\"N"
-  "\n\020FriendCenterPush\022:\n\010snapshot\030\001 \001(\0132(.l"
-  "andlords.protocol.FriendCenterSnapshot\"2"
-  "\n\rMatchResponse\022\020\n\010accepted\030\001 \001(\010\022\017\n\007mes"
-  "sage\030\002 \001(\t\"\177\n\016MatchFoundPush\022\017\n\007room_id\030"
-  "\001 \001(\t\022+\n\004mode\030\002 \001(\0162\035.landlords.protocol"
-  ".MatchMode\022/\n\007players\030\003 \003(\0132\036.landlords."
-  "protocol.RoomPlayer\"\321\001\n\nRoomPlayer\022\021\n\tpl"
-  "ayer_id\030\001 \001(\t\022\024\n\014display_name\030\002 \001(\t\022\016\n\006i"
-  "s_bot\030\003 \001(\010\022,\n\004role\030\004 \001(\0162\036.landlords.pr"
-  "otocol.PlayerRole\022\022\n\ncards_left\030\005 \001(\005\022\023\n"
-  "\013round_score\030\006 \001(\005\022\022\n\nseat_index\030\007 \001(\005\022\r"
-  "\n\005ready\030\010 \001(\010\022\020\n\010occupied\030\t \001(\010\"=\n\004Card\022"
-  "\n\n\002id\030\001 \001(\t\022\014\n\004rank\030\002 \001(\t\022\014\n\004suit\030\003 \001(\t\022"
-  "\r\n\005value\030\004 \001(\005\"3\n\020CardCounterEntry\022\014\n\004ra"
-  "nk\030\001 \001(\t\022\021\n\tremaining\030\002 \001(\005\"\357\001\n\013TableAct"
-  "ion\022\021\n\taction_id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001("
-  "\t\0223\n\013action_type\030\003 \001(\0162\036.landlords.proto"
-  "col.ActionType\022\'\n\005cards\030\004 \003(\0132\030.landlord"
-  "s.protocol.Card\022\017\n\007pattern\030\005 \001(\t\022\024\n\014time"
-  "stamp_ms\030\006 \001(\003\0225\n\014pattern_type\030\007 \001(\0162\037.l"
-  "andlords.protocol.PatternType\"\325\004\n\014RoomSn"
-  "apshot\022\017\n\007room_id\030\001 \001(\t\022,\n\005phase\030\002 \001(\0162\035"
-  ".landlords.protocol.RoomPhase\022+\n\004mode\030\003 "
-  "\001(\0162\035.landlords.protocol.MatchMode\022/\n\007pl"
-  "ayers\030\004 \003(\0132\036.landlords.protocol.RoomPla"
-  "yer\022,\n\nself_cards\030\005 \003(\0132\030.landlords.prot"
-  "ocol.Card\0220\n\016landlord_cards\030\006 \003(\0132\030.land"
-  "lords.protocol.Card\0227\n\016recent_actions\030\007 "
-  "\003(\0132\037.landlords.protocol.TableAction\022\036\n\026"
-  "current_turn_player_id\030\010 \001(\t\022\023\n\013status_t"
-  "ext\030\t \001(\t\022:\n\014card_counter\030\n \003(\0132$.landlo"
-  "rds.protocol.CardCounterEntry\022\022\n\nbase_sc"
-  "ore\030\013 \001(\005\022\022\n\nmultiplier\030\014 \001(\005\022\033\n\023current"
-  "_round_score\030\r \001(\005\022\030\n\020spring_triggered\030\016"
-  " \001(\010\022\023\n\013turn_serial\030\017 \001(\005\022\021\n\troom_code\030\020"
-  " \001(\t\022\027\n\017owner_player_id\030\021 \001(\t\"5\n\020PlayCar"
-  "dsRequest\022\017\n\007room_id\030\001 \001(\t\022\020\n\010card_ids\030\002"
-  " \003(\t\"\036\n\013PassRequest\022\017\n\007room_id\030\001 \001(\t\"#\n\020"
-  "ReconnectRequest\022\017\n\007room_id\030\001 \001(\t\"*\n\020Hea"
-  "rtbeatRequest\022\026\n\016client_time_ms\030\001 \001(\003\"+\n"
-  "\021HeartbeatResponse\022\026\n\016server_time_ms\030\001 \001"
-  "(\003\"i\n\021OperationResponse\022\017\n\007success\030\001 \001(\010"
-  "\022\017\n\007message\030\002 \001(\t\0222\n\010snapshot\030\003 \001(\0132 .la"
-  "ndlords.protocol.RoomSnapshot\"M\n\rErrorRe"
-  "sponse\022+\n\004code\030\001 \001(\0162\035.landlords.protoco"
-  "l.ErrorCode\022\017\n\007message\030\002 \001(\t\"\211\014\n\rClientM"
-  "essage\022\022\n\nrequest_id\030\001 \001(\t\022\025\n\rsession_to"
-  "ken\030\002 \001(\t\022\?\n\020register_request\030\n \001(\0132#.la"
-  "ndlords.protocol.RegisterRequestH\000\0229\n\rlo"
-  "gin_request\030\013 \001(\0132 .landlords.protocol.L"
-  "oginRequestH\000\0229\n\rmatch_request\030\014 \001(\0132 .l"
-  "andlords.protocol.MatchRequestH\000\022B\n\022play"
-  "_cards_request\030\r \001(\0132$.landlords.protoco"
-  "l.PlayCardsRequestH\000\0227\n\014pass_request\030\016 \001"
-  "(\0132\037.landlords.protocol.PassRequestH\000\022A\n"
-  "\021reconnect_request\030\017 \001(\0132$.landlords.pro"
-  "tocol.ReconnectRequestH\000\022A\n\021heartbeat_re"
-  "quest\030\020 \001(\0132$.landlords.protocol.Heartbe"
-  "atRequestH\000\022J\n\026reset_password_request\030\021 "
-  "\001(\0132(.landlords.protocol.ResetPasswordRe"
-  "questH\000\022D\n\023create_room_request\030\022 \001(\0132%.l"
-  "andlords.protocol.CreateRoomRequestH\000\022@\n"
-  "\021join_room_request\030\023 \001(\0132#.landlords.pro"
-  "tocol.JoinRoomRequestH\000\022B\n\022room_ready_re"
-  "quest\030\024 \001(\0132$.landlords.protocol.RoomRea"
-  "dyRequestH\000\022<\n\017add_bot_request\030\025 \001(\0132!.l"
-  "andlords.protocol.AddBotRequestH\000\022H\n\025rem"
-  "ove_player_request\030\026 \001(\0132\'.landlords.pro"
-  "tocol.RemovePlayerRequestH\000\022F\n\024list_frie"
-  "nds_request\030\027 \001(\0132&.landlords.protocol.L"
-  "istFriendsRequestH\000\022B\n\022add_friend_reques"
-  "t\030\030 \001(\0132$.landlords.protocol.AddFriendRe"
-  "questH\000\022H\n\025invite_player_request\030\031 \001(\0132\'"
-  ".landlords.protocol.InvitePlayerRequestH"
-  "\000\022[\n\037respond_room_invitation_request\030\032 \001"
-  "(\01320.landlords.protocol.RespondRoomInvit"
-  "ationRequestH\000\022B\n\022leave_room_request\030\033 \001"
-  "(\0132$.landlords.protocol.LeaveRoomRequest"
-  "H\000\022L\n\027update_nickname_request\030\034 \001(\0132).la"
-  "ndlords.protocol.UpdateNicknameRequestH\000"
-  "\022Y\n\036respond_friend_request_request\030\035 \001(\013"
-  "2/.landlords.protocol.RespondFriendReque"
-  "stRequestH\000\022H\n\025delete_friend_request\030\036 \001"
-  "(\0132\'.landlords.protocol.DeleteFriendRequ"
-  "estH\000B\t\n\007payload\"\220\013\n\rServerMessage\022\022\n\nre"
-  "quest_id\030\001 \001(\t\022A\n\021register_response\030\n \001("
-  "\0132$.landlords.protocol.RegisterResponseH"
-  "\000\022;\n\016login_response\030\013 \001(\0132!.landlords.pr"
-  "otocol.LoginResponseH\000\022;\n\016match_response"
-  "\030\014 \001(\0132!.landlords.protocol.MatchRespons"
-  "eH\000\022>\n\020match_found_push\030\r \001(\0132\".landlord"
-  "s.protocol.MatchFoundPushH\000\0229\n\rroom_snap"
-  "shot\030\016 \001(\0132 .landlords.protocol.RoomSnap"
-  "shotH\000\022C\n\022operation_response\030\017 \001(\0132%.lan"
-  "dlords.protocol.OperationResponseH\000\022;\n\016e"
-  "rror_response\030\020 \001(\0132!.landlords.protocol"
-  ".ErrorResponseH\000\022C\n\022heartbeat_response\030\021"
-  " \001(\0132%.landlords.protocol.HeartbeatRespo"
-  "nseH\000\022L\n\027reset_password_response\030\022 \001(\0132)"
-  ".landlords.protocol.ResetPasswordRespons"
-  "eH\000\022H\n\025list_friends_response\030\023 \001(\0132\'.lan"
-  "dlords.protocol.ListFriendsResponseH\000\022D\n"
-  "\023add_friend_response\030\024 \001(\0132%.landlords.p"
-  "rotocol.AddFriendResponseH\000\022J\n\026invite_pl"
-  "ayer_response\030\025 \001(\0132(.landlords.protocol"
-  ".InvitePlayerResponseH\000\022F\n\024room_invitati"
-  "on_push\030\026 \001(\0132&.landlords.protocol.RoomI"
-  "nvitationPushH\000\022]\n respond_room_invitati"
-  "on_response\030\027 \001(\01321.landlords.protocol.R"
-  "espondRoomInvitationResponseH\000\022S\n\033room_i"
-  "nvitation_result_push\030\030 \001(\0132,.landlords."
-  "protocol.RoomInvitationResultPushH\000\022N\n\030u"
-  "pdate_nickname_response\030\031 \001(\0132*.landlord"
-  "s.protocol.UpdateNicknameResponseH\000\022[\n\037r"
-  "espond_friend_request_response\030\032 \001(\01320.l"
-  "andlords.protocol.RespondFriendRequestRe"
-  "sponseH\000\022J\n\026delete_friend_response\030\033 \001(\013"
-  "2(.landlords.protocol.DeleteFriendRespon"
-  "seH\000\022B\n\022friend_center_push\030\034 \001(\0132$.landl"
-  "ords.protocol.FriendCenterPushH\000B\t\n\007payl"
-  "oad*\374\001\n\tErrorCode\022\032\n\026ERROR_CODE_UNSPECIF"
-  "IED\020\000\022\036\n\032ERROR_CODE_INVALID_REQUEST\020\001\022\032\n"
-  "\026ERROR_CODE_AUTH_FAILED\020\002\022\035\n\031ERROR_CODE_"
-  "ALREADY_EXISTS\020\003\022\030\n\024ERROR_CODE_NOT_FOUND"
-  "\020\004\022\"\n\036ERROR_CODE_MATCH_STATE_INVALID\020\005\022!"
-  "\n\035ERROR_CODE_GAME_STATE_INVALID\020\006\022\027\n\023ERR"
-  "OR_CODE_INTERNAL\020\007*R\n\tMatchMode\022\032\n\026MATCH"
-  "_MODE_UNSPECIFIED\020\000\022\025\n\021MATCH_MODE_VS_BOT"
-  "\020\001\022\022\n\016MATCH_MODE_PVP\020\002*|\n\rBotDifficulty\022"
-  "\036\n\032BOT_DIFFICULTY_UNSPECIFIED\020\000\022\027\n\023BOT_D"
-  "IFFICULTY_EASY\020\001\022\031\n\025BOT_DIFFICULTY_NORMA"
-  "L\020\002\022\027\n\023BOT_DIFFICULTY_HARD\020\003*[\n\nPlayerRo"
-  "le\022\033\n\027PLAYER_ROLE_UNSPECIFIED\020\000\022\026\n\022PLAYE"
-  "R_ROLE_FARMER\020\001\022\030\n\024PLAYER_ROLE_LANDLORD\020"
-  "\002*\212\001\n\tRoomPhase\022\032\n\026ROOM_PHASE_UNSPECIFIE"
-  "D\020\000\022\030\n\024ROOM_PHASE_PREPARING\020\001\022\026\n\022ROOM_PH"
-  "ASE_WAITING\020\002\022\026\n\022ROOM_PHASE_PLAYING\020\003\022\027\n"
-  "\023ROOM_PHASE_FINISHED\020\004*U\n\nActionType\022\033\n\027"
-  "ACTION_TYPE_UNSPECIFIED\020\000\022\024\n\020ACTION_TYPE"
-  "_PLAY\020\001\022\024\n\020ACTION_TYPE_PASS\020\002*\334\003\n\013Patter"
-  "nType\022\034\n\030PATTERN_TYPE_UNSPECIFIED\020\000\022\027\n\023P"
-  "ATTERN_TYPE_SINGLE\020\001\022\025\n\021PATTERN_TYPE_PAI"
-  "R\020\002\022\027\n\023PATTERN_TYPE_TRIPLE\020\003\022#\n\037PATTERN_"
-  "TYPE_TRIPLE_WITH_SINGLE\020\004\022!\n\035PATTERN_TYP"
-  "E_TRIPLE_WITH_PAIR\020\005\022\031\n\025PATTERN_TYPE_STR"
-  "AIGHT\020\006\022\036\n\032PATTERN_TYPE_STRAIGHT_PAIR\020\007\022"
-  "\031\n\025PATTERN_TYPE_AIRPLANE\020\010\022%\n!PATTERN_TY"
-  "PE_AIRPLANE_WITH_SINGLE\020\t\022#\n\037PATTERN_TYP"
-  "E_AIRPLANE_WITH_PAIR\020\n\022\025\n\021PATTERN_TYPE_B"
-  "OMB\020\013\022&\n\"PATTERN_TYPE_FOUR_WITH_TWO_SING"
-  "LES\020\014\022$\n PATTERN_TYPE_FOUR_WITH_TWO_PAIR"
-  "S\020\r\022\027\n\023PATTERN_TYPE_ROCKET\020\016*\262\001\n\020Invitat"
-  "ionResult\022!\n\035INVITATION_RESULT_UNSPECIFI"
-  "ED\020\000\022\036\n\032INVITATION_RESULT_ACCEPTED\020\001\022\036\n\032"
-  "INVITATION_RESULT_REJECTED\020\002\022\034\n\030INVITATI"
-  "ON_RESULT_FAILED\020\003\022\035\n\031INVITATION_RESULT_"
-  "EXPIRED\020\004*\247\001\n\023FriendRequestStatus\022%\n!FRI"
-  "END_REQUEST_STATUS_UNSPECIFIED\020\000\022!\n\035FRIE"
-  "ND_REQUEST_STATUS_PENDING\020\001\022\"\n\036FRIEND_RE"
-  "QUEST_STATUS_ACCEPTED\020\002\022\"\n\036FRIEND_REQUES"
-  "T_STATUS_REJECTED\020\003b\006proto3"
+  "e\022\017\n\007success\030\001 \001(\010\022\017\n\007message\030\002 \001(\t\"G\n\025C"
+  "hangePasswordRequest\022\030\n\020current_password"
+  "\030\001 \001(\t\022\024\n\014new_password\030\002 \001(\t\":\n\026ChangePa"
+  "sswordResponse\022\017\n\007success\030\001 \001(\010\022\017\n\007messa"
+  "ge\030\002 \001(\t\")\n\025UpdateNicknameRequest\022\020\n\010nic"
+  "kname\030\001 \001(\t\"l\n\026UpdateNicknameResponse\022\017\n"
+  "\007success\030\001 \001(\010\022\017\n\007message\030\002 \001(\t\0220\n\007profi"
+  "le\030\003 \001(\0132\037.landlords.protocol.UserProfil"
+  "e\"v\n\014MatchRequest\022+\n\004mode\030\001 \001(\0162\035.landlo"
+  "rds.protocol.MatchMode\0229\n\016bot_difficulty"
+  "\030\002 \001(\0162!.landlords.protocol.BotDifficult"
+  "y\"\023\n\021CreateRoomRequest\"$\n\017JoinRoomReques"
+  "t\022\021\n\troom_code\030\001 \001(\t\"#\n\020LeaveRoomRequest"
+  "\022\017\n\007room_id\030\001 \001(\t\"2\n\020RoomReadyRequest\022\017\n"
+  "\007room_id\030\001 \001(\t\022\r\n\005ready\030\002 \001(\010\"o\n\rAddBotR"
+  "equest\022\017\n\007room_id\030\001 \001(\t\0229\n\016bot_difficult"
+  "y\030\002 \001(\0162!.landlords.protocol.BotDifficul"
+  "ty\022\022\n\nseat_index\030\003 \001(\005\"9\n\023RemovePlayerRe"
+  "quest\022\017\n\007room_id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001("
+  "\t\"\024\n\022ListFriendsRequest\"\200\001\n\023ListFriendsR"
+  "esponse\022-\n\005users\030\001 \003(\0132\036.landlords.proto"
+  "col.OnlineUser\022:\n\010snapshot\030\002 \001(\0132(.landl"
+  "ords.protocol.FriendCenterSnapshot\"#\n\020Ad"
+  "dFriendRequest\022\017\n\007account\030\001 \001(\t\"\252\001\n\021AddF"
+  "riendResponse\022\017\n\007success\030\001 \001(\010\022\017\n\007messag"
+  "e\030\002 \001(\t\0227\n\007request\030\003 \001(\0132&.landlords.pro"
+  "tocol.FriendRequestEntry\022:\n\010snapshot\030\004 \001"
+  "(\0132(.landlords.protocol.FriendCenterSnap"
+  "shot\"A\n\033RespondFriendRequestRequest\022\022\n\nr"
+  "equest_id\030\001 \001(\t\022\016\n\006accept\030\002 \001(\010\"\265\001\n\034Resp"
+  "ondFriendRequestResponse\022\017\n\007success\030\001 \001("
+  "\010\022\017\n\007message\030\002 \001(\t\0227\n\007request\030\003 \001(\0132&.la"
+  "ndlords.protocol.FriendRequestEntry\022:\n\010s"
+  "napshot\030\004 \001(\0132(.landlords.protocol.Frien"
+  "dCenterSnapshot\"-\n\023DeleteFriendRequest\022\026"
+  "\n\016friend_user_id\030\001 \001(\t\"t\n\024DeleteFriendRe"
+  "sponse\022\017\n\007success\030\001 \001(\010\022\017\n\007message\030\002 \001(\t"
+  "\022:\n\010snapshot\030\003 \001(\0132(.landlords.protocol."
+  "FriendCenterSnapshot\"S\n\023InvitePlayerRequ"
+  "est\022\017\n\007room_id\030\001 \001(\t\022\027\n\017invitee_account\030"
+  "\002 \001(\t\022\022\n\nseat_index\030\003 \001(\005\"9\n\024InvitePlaye"
+  "rResponse\022\020\n\010accepted\030\001 \001(\010\022\017\n\007message\030\002"
+  " \001(\t\"\257\001\n\022RoomInvitationPush\022\025\n\rinvitatio"
+  "n_id\030\001 \001(\t\022\017\n\007room_id\030\002 \001(\t\022\021\n\troom_code"
+  "\030\003 \001(\t\022\027\n\017inviter_user_id\030\004 \001(\t\022\027\n\017invit"
+  "er_account\030\005 \001(\t\022\030\n\020inviter_nickname\030\006 \001"
+  "(\t\022\022\n\nseat_index\030\007 \001(\005\"E\n\034RespondRoomInv"
+  "itationRequest\022\025\n\rinvitation_id\030\001 \001(\t\022\016\n"
+  "\006accept\030\002 \001(\010\"u\n\035RespondRoomInvitationRe"
+  "sponse\022\017\n\007success\030\001 \001(\010\022\017\n\007message\030\002 \001(\t"
+  "\0222\n\010snapshot\030\003 \001(\0132 .landlords.protocol."
+  "RoomSnapshot\"\304\001\n\030RoomInvitationResultPus"
+  "h\022\025\n\rinvitation_id\030\001 \001(\t\0224\n\006result\030\002 \001(\016"
+  "2$.landlords.protocol.InvitationResult\022\027"
+  "\n\017invitee_user_id\030\003 \001(\t\022\027\n\017invitee_accou"
+  "nt\030\004 \001(\t\022\030\n\020invitee_nickname\030\005 \001(\t\022\017\n\007me"
+  "ssage\030\006 \001(\t\"N\n\020FriendCenterPush\022:\n\010snaps"
+  "hot\030\001 \001(\0132(.landlords.protocol.FriendCen"
+  "terSnapshot\"2\n\rMatchResponse\022\020\n\010accepted"
+  "\030\001 \001(\010\022\017\n\007message\030\002 \001(\t\"\177\n\016MatchFoundPus"
+  "h\022\017\n\007room_id\030\001 \001(\t\022+\n\004mode\030\002 \001(\0162\035.landl"
+  "ords.protocol.MatchMode\022/\n\007players\030\003 \003(\013"
+  "2\036.landlords.protocol.RoomPlayer\"\321\001\n\nRoo"
+  "mPlayer\022\021\n\tplayer_id\030\001 \001(\t\022\024\n\014display_na"
+  "me\030\002 \001(\t\022\016\n\006is_bot\030\003 \001(\010\022,\n\004role\030\004 \001(\0162\036"
+  ".landlords.protocol.PlayerRole\022\022\n\ncards_"
+  "left\030\005 \001(\005\022\023\n\013round_score\030\006 \001(\005\022\022\n\nseat_"
+  "index\030\007 \001(\005\022\r\n\005ready\030\010 \001(\010\022\020\n\010occupied\030\t"
+  " \001(\010\"=\n\004Card\022\n\n\002id\030\001 \001(\t\022\014\n\004rank\030\002 \001(\t\022\014"
+  "\n\004suit\030\003 \001(\t\022\r\n\005value\030\004 \001(\005\"3\n\020CardCount"
+  "erEntry\022\014\n\004rank\030\001 \001(\t\022\021\n\tremaining\030\002 \001(\005"
+  "\"\357\001\n\013TableAction\022\021\n\taction_id\030\001 \001(\t\022\021\n\tp"
+  "layer_id\030\002 \001(\t\0223\n\013action_type\030\003 \001(\0162\036.la"
+  "ndlords.protocol.ActionType\022\'\n\005cards\030\004 \003"
+  "(\0132\030.landlords.protocol.Card\022\017\n\007pattern\030"
+  "\005 \001(\t\022\024\n\014timestamp_ms\030\006 \001(\003\0225\n\014pattern_t"
+  "ype\030\007 \001(\0162\037.landlords.protocol.PatternTy"
+  "pe\"\325\004\n\014RoomSnapshot\022\017\n\007room_id\030\001 \001(\t\022,\n\005"
+  "phase\030\002 \001(\0162\035.landlords.protocol.RoomPha"
+  "se\022+\n\004mode\030\003 \001(\0162\035.landlords.protocol.Ma"
+  "tchMode\022/\n\007players\030\004 \003(\0132\036.landlords.pro"
+  "tocol.RoomPlayer\022,\n\nself_cards\030\005 \003(\0132\030.l"
+  "andlords.protocol.Card\0220\n\016landlord_cards"
+  "\030\006 \003(\0132\030.landlords.protocol.Card\0227\n\016rece"
+  "nt_actions\030\007 \003(\0132\037.landlords.protocol.Ta"
+  "bleAction\022\036\n\026current_turn_player_id\030\010 \001("
+  "\t\022\023\n\013status_text\030\t \001(\t\022:\n\014card_counter\030\n"
+  " \003(\0132$.landlords.protocol.CardCounterEnt"
+  "ry\022\022\n\nbase_score\030\013 \001(\005\022\022\n\nmultiplier\030\014 \001"
+  "(\005\022\033\n\023current_round_score\030\r \001(\005\022\030\n\020sprin"
+  "g_triggered\030\016 \001(\010\022\023\n\013turn_serial\030\017 \001(\005\022\021"
+  "\n\troom_code\030\020 \001(\t\022\027\n\017owner_player_id\030\021 \001"
+  "(\t\"5\n\020PlayCardsRequest\022\017\n\007room_id\030\001 \001(\t\022"
+  "\020\n\010card_ids\030\002 \003(\t\"\036\n\013PassRequest\022\017\n\007room"
+  "_id\030\001 \001(\t\"#\n\020ReconnectRequest\022\017\n\007room_id"
+  "\030\001 \001(\t\"*\n\020HeartbeatRequest\022\026\n\016client_tim"
+  "e_ms\030\001 \001(\003\"+\n\021HeartbeatResponse\022\026\n\016serve"
+  "r_time_ms\030\001 \001(\003\"i\n\021OperationResponse\022\017\n\007"
+  "success\030\001 \001(\010\022\017\n\007message\030\002 \001(\t\0222\n\010snapsh"
+  "ot\030\003 \001(\0132 .landlords.protocol.RoomSnapsh"
+  "ot\"M\n\rErrorResponse\022+\n\004code\030\001 \001(\0162\035.land"
+  "lords.protocol.ErrorCode\022\017\n\007message\030\002 \001("
+  "\t\"\327\014\n\rClientMessage\022\022\n\nrequest_id\030\001 \001(\t\022"
+  "\025\n\rsession_token\030\002 \001(\t\022\?\n\020register_reque"
+  "st\030\n \001(\0132#.landlords.protocol.RegisterRe"
+  "questH\000\0229\n\rlogin_request\030\013 \001(\0132 .landlor"
+  "ds.protocol.LoginRequestH\000\0229\n\rmatch_requ"
+  "est\030\014 \001(\0132 .landlords.protocol.MatchRequ"
+  "estH\000\022B\n\022play_cards_request\030\r \001(\0132$.land"
+  "lords.protocol.PlayCardsRequestH\000\0227\n\014pas"
+  "s_request\030\016 \001(\0132\037.landlords.protocol.Pas"
+  "sRequestH\000\022A\n\021reconnect_request\030\017 \001(\0132$."
+  "landlords.protocol.ReconnectRequestH\000\022A\n"
+  "\021heartbeat_request\030\020 \001(\0132$.landlords.pro"
+  "tocol.HeartbeatRequestH\000\022J\n\026reset_passwo"
+  "rd_request\030\021 \001(\0132(.landlords.protocol.Re"
+  "setPasswordRequestH\000\022D\n\023create_room_requ"
+  "est\030\022 \001(\0132%.landlords.protocol.CreateRoo"
+  "mRequestH\000\022@\n\021join_room_request\030\023 \001(\0132#."
+  "landlords.protocol.JoinRoomRequestH\000\022B\n\022"
+  "room_ready_request\030\024 \001(\0132$.landlords.pro"
+  "tocol.RoomReadyRequestH\000\022<\n\017add_bot_requ"
+  "est\030\025 \001(\0132!.landlords.protocol.AddBotReq"
+  "uestH\000\022H\n\025remove_player_request\030\026 \001(\0132\'."
+  "landlords.protocol.RemovePlayerRequestH\000"
+  "\022F\n\024list_friends_request\030\027 \001(\0132&.landlor"
+  "ds.protocol.ListFriendsRequestH\000\022B\n\022add_"
+  "friend_request\030\030 \001(\0132$.landlords.protoco"
+  "l.AddFriendRequestH\000\022H\n\025invite_player_re"
+  "quest\030\031 \001(\0132\'.landlords.protocol.InviteP"
+  "layerRequestH\000\022[\n\037respond_room_invitatio"
+  "n_request\030\032 \001(\01320.landlords.protocol.Res"
+  "pondRoomInvitationRequestH\000\022B\n\022leave_roo"
+  "m_request\030\033 \001(\0132$.landlords.protocol.Lea"
+  "veRoomRequestH\000\022L\n\027update_nickname_reque"
+  "st\030\034 \001(\0132).landlords.protocol.UpdateNick"
+  "nameRequestH\000\022Y\n\036respond_friend_request_"
+  "request\030\035 \001(\0132/.landlords.protocol.Respo"
+  "ndFriendRequestRequestH\000\022H\n\025delete_frien"
+  "d_request\030\036 \001(\0132\'.landlords.protocol.Del"
+  "eteFriendRequestH\000\022L\n\027change_password_re"
+  "quest\030\037 \001(\0132).landlords.protocol.ChangeP"
+  "asswordRequestH\000B\t\n\007payload\"\340\013\n\rServerMe"
+  "ssage\022\022\n\nrequest_id\030\001 \001(\t\022A\n\021register_re"
+  "sponse\030\n \001(\0132$.landlords.protocol.Regist"
+  "erResponseH\000\022;\n\016login_response\030\013 \001(\0132!.l"
+  "andlords.protocol.LoginResponseH\000\022;\n\016mat"
+  "ch_response\030\014 \001(\0132!.landlords.protocol.M"
+  "atchResponseH\000\022>\n\020match_found_push\030\r \001(\013"
+  "2\".landlords.protocol.MatchFoundPushH\000\0229"
+  "\n\rroom_snapshot\030\016 \001(\0132 .landlords.protoc"
+  "ol.RoomSnapshotH\000\022C\n\022operation_response\030"
+  "\017 \001(\0132%.landlords.protocol.OperationResp"
+  "onseH\000\022;\n\016error_response\030\020 \001(\0132!.landlor"
+  "ds.protocol.ErrorResponseH\000\022C\n\022heartbeat"
+  "_response\030\021 \001(\0132%.landlords.protocol.Hea"
+  "rtbeatResponseH\000\022L\n\027reset_password_respo"
+  "nse\030\022 \001(\0132).landlords.protocol.ResetPass"
+  "wordResponseH\000\022H\n\025list_friends_response\030"
+  "\023 \001(\0132\'.landlords.protocol.ListFriendsRe"
+  "sponseH\000\022D\n\023add_friend_response\030\024 \001(\0132%."
+  "landlords.protocol.AddFriendResponseH\000\022J"
+  "\n\026invite_player_response\030\025 \001(\0132(.landlor"
+  "ds.protocol.InvitePlayerResponseH\000\022F\n\024ro"
+  "om_invitation_push\030\026 \001(\0132&.landlords.pro"
+  "tocol.RoomInvitationPushH\000\022]\n respond_ro"
+  "om_invitation_response\030\027 \001(\01321.landlords"
+  ".protocol.RespondRoomInvitationResponseH"
+  "\000\022S\n\033room_invitation_result_push\030\030 \001(\0132,"
+  ".landlords.protocol.RoomInvitationResult"
+  "PushH\000\022N\n\030update_nickname_response\030\031 \001(\013"
+  "2*.landlords.protocol.UpdateNicknameResp"
+  "onseH\000\022[\n\037respond_friend_request_respons"
+  "e\030\032 \001(\01320.landlords.protocol.RespondFrie"
+  "ndRequestResponseH\000\022J\n\026delete_friend_res"
+  "ponse\030\033 \001(\0132(.landlords.protocol.DeleteF"
+  "riendResponseH\000\022B\n\022friend_center_push\030\034 "
+  "\001(\0132$.landlords.protocol.FriendCenterPus"
+  "hH\000\022N\n\030change_password_response\030\035 \001(\0132*."
+  "landlords.protocol.ChangePasswordRespons"
+  "eH\000B\t\n\007payload*\374\001\n\tErrorCode\022\032\n\026ERROR_CO"
+  "DE_UNSPECIFIED\020\000\022\036\n\032ERROR_CODE_INVALID_R"
+  "EQUEST\020\001\022\032\n\026ERROR_CODE_AUTH_FAILED\020\002\022\035\n\031"
+  "ERROR_CODE_ALREADY_EXISTS\020\003\022\030\n\024ERROR_COD"
+  "E_NOT_FOUND\020\004\022\"\n\036ERROR_CODE_MATCH_STATE_"
+  "INVALID\020\005\022!\n\035ERROR_CODE_GAME_STATE_INVAL"
+  "ID\020\006\022\027\n\023ERROR_CODE_INTERNAL\020\007*R\n\tMatchMo"
+  "de\022\032\n\026MATCH_MODE_UNSPECIFIED\020\000\022\025\n\021MATCH_"
+  "MODE_VS_BOT\020\001\022\022\n\016MATCH_MODE_PVP\020\002*|\n\rBot"
+  "Difficulty\022\036\n\032BOT_DIFFICULTY_UNSPECIFIED"
+  "\020\000\022\027\n\023BOT_DIFFICULTY_EASY\020\001\022\031\n\025BOT_DIFFI"
+  "CULTY_NORMAL\020\002\022\027\n\023BOT_DIFFICULTY_HARD\020\003*"
+  "[\n\nPlayerRole\022\033\n\027PLAYER_ROLE_UNSPECIFIED"
+  "\020\000\022\026\n\022PLAYER_ROLE_FARMER\020\001\022\030\n\024PLAYER_ROL"
+  "E_LANDLORD\020\002*\212\001\n\tRoomPhase\022\032\n\026ROOM_PHASE"
+  "_UNSPECIFIED\020\000\022\030\n\024ROOM_PHASE_PREPARING\020\001"
+  "\022\026\n\022ROOM_PHASE_WAITING\020\002\022\026\n\022ROOM_PHASE_P"
+  "LAYING\020\003\022\027\n\023ROOM_PHASE_FINISHED\020\004*U\n\nAct"
+  "ionType\022\033\n\027ACTION_TYPE_UNSPECIFIED\020\000\022\024\n\020"
+  "ACTION_TYPE_PLAY\020\001\022\024\n\020ACTION_TYPE_PASS\020\002"
+  "*\334\003\n\013PatternType\022\034\n\030PATTERN_TYPE_UNSPECI"
+  "FIED\020\000\022\027\n\023PATTERN_TYPE_SINGLE\020\001\022\025\n\021PATTE"
+  "RN_TYPE_PAIR\020\002\022\027\n\023PATTERN_TYPE_TRIPLE\020\003\022"
+  "#\n\037PATTERN_TYPE_TRIPLE_WITH_SINGLE\020\004\022!\n\035"
+  "PATTERN_TYPE_TRIPLE_WITH_PAIR\020\005\022\031\n\025PATTE"
+  "RN_TYPE_STRAIGHT\020\006\022\036\n\032PATTERN_TYPE_STRAI"
+  "GHT_PAIR\020\007\022\031\n\025PATTERN_TYPE_AIRPLANE\020\010\022%\n"
+  "!PATTERN_TYPE_AIRPLANE_WITH_SINGLE\020\t\022#\n\037"
+  "PATTERN_TYPE_AIRPLANE_WITH_PAIR\020\n\022\025\n\021PAT"
+  "TERN_TYPE_BOMB\020\013\022&\n\"PATTERN_TYPE_FOUR_WI"
+  "TH_TWO_SINGLES\020\014\022$\n PATTERN_TYPE_FOUR_WI"
+  "TH_TWO_PAIRS\020\r\022\027\n\023PATTERN_TYPE_ROCKET\020\016*"
+  "\262\001\n\020InvitationResult\022!\n\035INVITATION_RESUL"
+  "T_UNSPECIFIED\020\000\022\036\n\032INVITATION_RESULT_ACC"
+  "EPTED\020\001\022\036\n\032INVITATION_RESULT_REJECTED\020\002\022"
+  "\034\n\030INVITATION_RESULT_FAILED\020\003\022\035\n\031INVITAT"
+  "ION_RESULT_EXPIRED\020\004*\247\001\n\023FriendRequestSt"
+  "atus\022%\n!FRIEND_REQUEST_STATUS_UNSPECIFIE"
+  "D\020\000\022!\n\035FRIEND_REQUEST_STATUS_PENDING\020\001\022\""
+  "\n\036FRIEND_REQUEST_STATUS_ACCEPTED\020\002\022\"\n\036FR"
+  "IEND_REQUEST_STATUS_REJECTED\020\003b\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_landlords_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_landlords_2eproto = {
-    false, false, 9827, descriptor_table_protodef_landlords_2eproto,
+    false, false, 10118, descriptor_table_protodef_landlords_2eproto,
     "landlords.proto",
-    &descriptor_table_landlords_2eproto_once, nullptr, 0, 50,
+    &descriptor_table_landlords_2eproto_once, nullptr, 0, 52,
     schemas, file_default_instances, TableStruct_landlords_2eproto::offsets,
     file_level_metadata_landlords_2eproto, file_level_enum_descriptors_landlords_2eproto,
     file_level_service_descriptors_landlords_2eproto,
@@ -4936,6 +4991,470 @@ void ResetPasswordResponse::InternalSwap(ResetPasswordResponse* other) {
 
 // ===================================================================
 
+class ChangePasswordRequest::_Internal {
+ public:
+};
+
+ChangePasswordRequest::ChangePasswordRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:landlords.protocol.ChangePasswordRequest)
+}
+ChangePasswordRequest::ChangePasswordRequest(const ChangePasswordRequest& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  current_password_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    current_password_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_current_password().empty()) {
+    current_password_.Set(from._internal_current_password(), 
+      GetArenaForAllocation());
+  }
+  new_password_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    new_password_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_new_password().empty()) {
+    new_password_.Set(from._internal_new_password(), 
+      GetArenaForAllocation());
+  }
+  // @@protoc_insertion_point(copy_constructor:landlords.protocol.ChangePasswordRequest)
+}
+
+inline void ChangePasswordRequest::SharedCtor() {
+current_password_.InitDefault();
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  current_password_.Set("", GetArenaForAllocation());
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+new_password_.InitDefault();
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  new_password_.Set("", GetArenaForAllocation());
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+}
+
+ChangePasswordRequest::~ChangePasswordRequest() {
+  // @@protoc_insertion_point(destructor:landlords.protocol.ChangePasswordRequest)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void ChangePasswordRequest::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  current_password_.Destroy();
+  new_password_.Destroy();
+}
+
+void ChangePasswordRequest::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void ChangePasswordRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:landlords.protocol.ChangePasswordRequest)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  current_password_.ClearToEmpty();
+  new_password_.ClearToEmpty();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* ChangePasswordRequest::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // string current_password = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          auto str = _internal_mutable_current_password();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "landlords.protocol.ChangePasswordRequest.current_password"));
+        } else
+          goto handle_unusual;
+        continue;
+      // string new_password = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+          auto str = _internal_mutable_new_password();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "landlords.protocol.ChangePasswordRequest.new_password"));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* ChangePasswordRequest::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:landlords.protocol.ChangePasswordRequest)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // string current_password = 1;
+  if (!this->_internal_current_password().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_current_password().data(), static_cast<int>(this->_internal_current_password().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "landlords.protocol.ChangePasswordRequest.current_password");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_current_password(), target);
+  }
+
+  // string new_password = 2;
+  if (!this->_internal_new_password().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_new_password().data(), static_cast<int>(this->_internal_new_password().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "landlords.protocol.ChangePasswordRequest.new_password");
+    target = stream->WriteStringMaybeAliased(
+        2, this->_internal_new_password(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:landlords.protocol.ChangePasswordRequest)
+  return target;
+}
+
+size_t ChangePasswordRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:landlords.protocol.ChangePasswordRequest)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // string current_password = 1;
+  if (!this->_internal_current_password().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_current_password());
+  }
+
+  // string new_password = 2;
+  if (!this->_internal_new_password().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_new_password());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ChangePasswordRequest::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    ChangePasswordRequest::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ChangePasswordRequest::GetClassData() const { return &_class_data_; }
+
+void ChangePasswordRequest::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<ChangePasswordRequest *>(to)->MergeFrom(
+      static_cast<const ChangePasswordRequest &>(from));
+}
+
+
+void ChangePasswordRequest::MergeFrom(const ChangePasswordRequest& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:landlords.protocol.ChangePasswordRequest)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_current_password().empty()) {
+    _internal_set_current_password(from._internal_current_password());
+  }
+  if (!from._internal_new_password().empty()) {
+    _internal_set_new_password(from._internal_new_password());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ChangePasswordRequest::CopyFrom(const ChangePasswordRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:landlords.protocol.ChangePasswordRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool ChangePasswordRequest::IsInitialized() const {
+  return true;
+}
+
+void ChangePasswordRequest::InternalSwap(ChangePasswordRequest* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &current_password_, lhs_arena,
+      &other->current_password_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &new_password_, lhs_arena,
+      &other->new_password_, rhs_arena
+  );
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata ChangePasswordRequest::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
+      file_level_metadata_landlords_2eproto[10]);
+}
+
+// ===================================================================
+
+class ChangePasswordResponse::_Internal {
+ public:
+};
+
+ChangePasswordResponse::ChangePasswordResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:landlords.protocol.ChangePasswordResponse)
+}
+ChangePasswordResponse::ChangePasswordResponse(const ChangePasswordResponse& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  message_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    message_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_message().empty()) {
+    message_.Set(from._internal_message(), 
+      GetArenaForAllocation());
+  }
+  success_ = from.success_;
+  // @@protoc_insertion_point(copy_constructor:landlords.protocol.ChangePasswordResponse)
+}
+
+inline void ChangePasswordResponse::SharedCtor() {
+message_.InitDefault();
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  message_.Set("", GetArenaForAllocation());
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+success_ = false;
+}
+
+ChangePasswordResponse::~ChangePasswordResponse() {
+  // @@protoc_insertion_point(destructor:landlords.protocol.ChangePasswordResponse)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void ChangePasswordResponse::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  message_.Destroy();
+}
+
+void ChangePasswordResponse::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void ChangePasswordResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:landlords.protocol.ChangePasswordResponse)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  message_.ClearToEmpty();
+  success_ = false;
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* ChangePasswordResponse::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // bool success = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          success_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // string message = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+          auto str = _internal_mutable_message();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "landlords.protocol.ChangePasswordResponse.message"));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* ChangePasswordResponse::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:landlords.protocol.ChangePasswordResponse)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // bool success = 1;
+  if (this->_internal_success() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteBoolToArray(1, this->_internal_success(), target);
+  }
+
+  // string message = 2;
+  if (!this->_internal_message().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_message().data(), static_cast<int>(this->_internal_message().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "landlords.protocol.ChangePasswordResponse.message");
+    target = stream->WriteStringMaybeAliased(
+        2, this->_internal_message(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:landlords.protocol.ChangePasswordResponse)
+  return target;
+}
+
+size_t ChangePasswordResponse::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:landlords.protocol.ChangePasswordResponse)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // string message = 2;
+  if (!this->_internal_message().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_message());
+  }
+
+  // bool success = 1;
+  if (this->_internal_success() != 0) {
+    total_size += 1 + 1;
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ChangePasswordResponse::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    ChangePasswordResponse::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ChangePasswordResponse::GetClassData() const { return &_class_data_; }
+
+void ChangePasswordResponse::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<ChangePasswordResponse *>(to)->MergeFrom(
+      static_cast<const ChangePasswordResponse &>(from));
+}
+
+
+void ChangePasswordResponse::MergeFrom(const ChangePasswordResponse& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:landlords.protocol.ChangePasswordResponse)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_message().empty()) {
+    _internal_set_message(from._internal_message());
+  }
+  if (from._internal_success() != 0) {
+    _internal_set_success(from._internal_success());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ChangePasswordResponse::CopyFrom(const ChangePasswordResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:landlords.protocol.ChangePasswordResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool ChangePasswordResponse::IsInitialized() const {
+  return true;
+}
+
+void ChangePasswordResponse::InternalSwap(ChangePasswordResponse* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &message_, lhs_arena,
+      &other->message_, rhs_arena
+  );
+  swap(success_, other->success_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata ChangePasswordResponse::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
+      file_level_metadata_landlords_2eproto[11]);
+}
+
+// ===================================================================
+
 class UpdateNicknameRequest::_Internal {
  public:
 };
@@ -5126,7 +5645,7 @@ void UpdateNicknameRequest::InternalSwap(UpdateNicknameRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata UpdateNicknameRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[10]);
+      file_level_metadata_landlords_2eproto[12]);
 }
 
 // ===================================================================
@@ -5395,7 +5914,7 @@ void UpdateNicknameResponse::InternalSwap(UpdateNicknameResponse* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata UpdateNicknameResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[11]);
+      file_level_metadata_landlords_2eproto[13]);
 }
 
 // ===================================================================
@@ -5606,7 +6125,7 @@ void MatchRequest::InternalSwap(MatchRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata MatchRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[12]);
+      file_level_metadata_landlords_2eproto[14]);
 }
 
 // ===================================================================
@@ -5645,7 +6164,7 @@ const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*CreateRoomRequest::GetClassDat
 ::PROTOBUF_NAMESPACE_ID::Metadata CreateRoomRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[13]);
+      file_level_metadata_landlords_2eproto[15]);
 }
 
 // ===================================================================
@@ -5840,7 +6359,7 @@ void JoinRoomRequest::InternalSwap(JoinRoomRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata JoinRoomRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[14]);
+      file_level_metadata_landlords_2eproto[16]);
 }
 
 // ===================================================================
@@ -6035,7 +6554,7 @@ void LeaveRoomRequest::InternalSwap(LeaveRoomRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata LeaveRoomRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[15]);
+      file_level_metadata_landlords_2eproto[17]);
 }
 
 // ===================================================================
@@ -6256,7 +6775,7 @@ void RoomReadyRequest::InternalSwap(RoomReadyRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata RoomReadyRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[16]);
+      file_level_metadata_landlords_2eproto[18]);
 }
 
 // ===================================================================
@@ -6514,7 +7033,7 @@ void AddBotRequest::InternalSwap(AddBotRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata AddBotRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[17]);
+      file_level_metadata_landlords_2eproto[19]);
 }
 
 // ===================================================================
@@ -6757,7 +7276,7 @@ void RemovePlayerRequest::InternalSwap(RemovePlayerRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata RemovePlayerRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[18]);
+      file_level_metadata_landlords_2eproto[20]);
 }
 
 // ===================================================================
@@ -6796,7 +7315,7 @@ const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ListFriendsRequest::GetClassDa
 ::PROTOBUF_NAMESPACE_ID::Metadata ListFriendsRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[19]);
+      file_level_metadata_landlords_2eproto[21]);
 }
 
 // ===================================================================
@@ -7016,7 +7535,7 @@ void ListFriendsResponse::InternalSwap(ListFriendsResponse* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata ListFriendsResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[20]);
+      file_level_metadata_landlords_2eproto[22]);
 }
 
 // ===================================================================
@@ -7211,7 +7730,7 @@ void AddFriendRequest::InternalSwap(AddFriendRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata AddFriendRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[21]);
+      file_level_metadata_landlords_2eproto[23]);
 }
 
 // ===================================================================
@@ -7520,7 +8039,7 @@ void AddFriendResponse::InternalSwap(AddFriendResponse* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata AddFriendResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[22]);
+      file_level_metadata_landlords_2eproto[24]);
 }
 
 // ===================================================================
@@ -7741,7 +8260,7 @@ void RespondFriendRequestRequest::InternalSwap(RespondFriendRequestRequest* othe
 ::PROTOBUF_NAMESPACE_ID::Metadata RespondFriendRequestRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[23]);
+      file_level_metadata_landlords_2eproto[25]);
 }
 
 // ===================================================================
@@ -8050,7 +8569,7 @@ void RespondFriendRequestResponse::InternalSwap(RespondFriendRequestResponse* ot
 ::PROTOBUF_NAMESPACE_ID::Metadata RespondFriendRequestResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[24]);
+      file_level_metadata_landlords_2eproto[26]);
 }
 
 // ===================================================================
@@ -8245,7 +8764,7 @@ void DeleteFriendRequest::InternalSwap(DeleteFriendRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata DeleteFriendRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[25]);
+      file_level_metadata_landlords_2eproto[27]);
 }
 
 // ===================================================================
@@ -8514,7 +9033,7 @@ void DeleteFriendResponse::InternalSwap(DeleteFriendResponse* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata DeleteFriendResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[26]);
+      file_level_metadata_landlords_2eproto[28]);
 }
 
 // ===================================================================
@@ -8783,7 +9302,7 @@ void InvitePlayerRequest::InternalSwap(InvitePlayerRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata InvitePlayerRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[27]);
+      file_level_metadata_landlords_2eproto[29]);
 }
 
 // ===================================================================
@@ -9004,7 +9523,7 @@ void InvitePlayerResponse::InternalSwap(InvitePlayerResponse* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata InvitePlayerResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[28]);
+      file_level_metadata_landlords_2eproto[30]);
 }
 
 // ===================================================================
@@ -9465,7 +9984,7 @@ void RoomInvitationPush::InternalSwap(RoomInvitationPush* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata RoomInvitationPush::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[29]);
+      file_level_metadata_landlords_2eproto[31]);
 }
 
 // ===================================================================
@@ -9686,7 +10205,7 @@ void RespondRoomInvitationRequest::InternalSwap(RespondRoomInvitationRequest* ot
 ::PROTOBUF_NAMESPACE_ID::Metadata RespondRoomInvitationRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[30]);
+      file_level_metadata_landlords_2eproto[32]);
 }
 
 // ===================================================================
@@ -9955,7 +10474,7 @@ void RespondRoomInvitationResponse::InternalSwap(RespondRoomInvitationResponse* 
 ::PROTOBUF_NAMESPACE_ID::Metadata RespondRoomInvitationResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[31]);
+      file_level_metadata_landlords_2eproto[33]);
 }
 
 // ===================================================================
@@ -10371,7 +10890,7 @@ void RoomInvitationResultPush::InternalSwap(RoomInvitationResultPush* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata RoomInvitationResultPush::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[32]);
+      file_level_metadata_landlords_2eproto[34]);
 }
 
 // ===================================================================
@@ -10558,7 +11077,7 @@ void FriendCenterPush::InternalSwap(FriendCenterPush* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata FriendCenterPush::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[33]);
+      file_level_metadata_landlords_2eproto[35]);
 }
 
 // ===================================================================
@@ -10779,7 +11298,7 @@ void MatchResponse::InternalSwap(MatchResponse* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata MatchResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[34]);
+      file_level_metadata_landlords_2eproto[36]);
 }
 
 // ===================================================================
@@ -11036,7 +11555,7 @@ void MatchFoundPush::InternalSwap(MatchFoundPush* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata MatchFoundPush::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[35]);
+      file_level_metadata_landlords_2eproto[37]);
 }
 
 // ===================================================================
@@ -11452,7 +11971,7 @@ void RoomPlayer::InternalSwap(RoomPlayer* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata RoomPlayer::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[36]);
+      file_level_metadata_landlords_2eproto[38]);
 }
 
 // ===================================================================
@@ -11769,7 +12288,7 @@ void Card::InternalSwap(Card* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata Card::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[37]);
+      file_level_metadata_landlords_2eproto[39]);
 }
 
 // ===================================================================
@@ -11990,7 +12509,7 @@ void CardCounterEntry::InternalSwap(CardCounterEntry* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata CardCounterEntry::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[38]);
+      file_level_metadata_landlords_2eproto[40]);
 }
 
 // ===================================================================
@@ -12402,7 +12921,7 @@ void TableAction::InternalSwap(TableAction* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata TableAction::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[39]);
+      file_level_metadata_landlords_2eproto[41]);
 }
 
 // ===================================================================
@@ -13130,7 +13649,7 @@ void RoomSnapshot::InternalSwap(RoomSnapshot* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata RoomSnapshot::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[40]);
+      file_level_metadata_landlords_2eproto[42]);
 }
 
 // ===================================================================
@@ -13363,7 +13882,7 @@ void PlayCardsRequest::InternalSwap(PlayCardsRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata PlayCardsRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[41]);
+      file_level_metadata_landlords_2eproto[43]);
 }
 
 // ===================================================================
@@ -13558,7 +14077,7 @@ void PassRequest::InternalSwap(PassRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata PassRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[42]);
+      file_level_metadata_landlords_2eproto[44]);
 }
 
 // ===================================================================
@@ -13753,7 +14272,7 @@ void ReconnectRequest::InternalSwap(ReconnectRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata ReconnectRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[43]);
+      file_level_metadata_landlords_2eproto[45]);
 }
 
 // ===================================================================
@@ -13924,7 +14443,7 @@ void HeartbeatRequest::InternalSwap(HeartbeatRequest* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata HeartbeatRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[44]);
+      file_level_metadata_landlords_2eproto[46]);
 }
 
 // ===================================================================
@@ -14095,7 +14614,7 @@ void HeartbeatResponse::InternalSwap(HeartbeatResponse* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata HeartbeatResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[45]);
+      file_level_metadata_landlords_2eproto[47]);
 }
 
 // ===================================================================
@@ -14364,7 +14883,7 @@ void OperationResponse::InternalSwap(OperationResponse* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata OperationResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[46]);
+      file_level_metadata_landlords_2eproto[48]);
 }
 
 // ===================================================================
@@ -14588,7 +15107,7 @@ void ErrorResponse::InternalSwap(ErrorResponse* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata ErrorResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[47]);
+      file_level_metadata_landlords_2eproto[49]);
 }
 
 // ===================================================================
@@ -14616,6 +15135,7 @@ class ClientMessage::_Internal {
   static const ::landlords::protocol::UpdateNicknameRequest& update_nickname_request(const ClientMessage* msg);
   static const ::landlords::protocol::RespondFriendRequestRequest& respond_friend_request_request(const ClientMessage* msg);
   static const ::landlords::protocol::DeleteFriendRequest& delete_friend_request(const ClientMessage* msg);
+  static const ::landlords::protocol::ChangePasswordRequest& change_password_request(const ClientMessage* msg);
 };
 
 const ::landlords::protocol::RegisterRequest&
@@ -14701,6 +15221,10 @@ ClientMessage::_Internal::respond_friend_request_request(const ClientMessage* ms
 const ::landlords::protocol::DeleteFriendRequest&
 ClientMessage::_Internal::delete_friend_request(const ClientMessage* msg) {
   return *msg->payload_.delete_friend_request_;
+}
+const ::landlords::protocol::ChangePasswordRequest&
+ClientMessage::_Internal::change_password_request(const ClientMessage* msg) {
+  return *msg->payload_.change_password_request_;
 }
 void ClientMessage::set_allocated_register_request(::landlords::protocol::RegisterRequest* register_request) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
@@ -15017,6 +15541,21 @@ void ClientMessage::set_allocated_delete_friend_request(::landlords::protocol::D
   }
   // @@protoc_insertion_point(field_set_allocated:landlords.protocol.ClientMessage.delete_friend_request)
 }
+void ClientMessage::set_allocated_change_password_request(::landlords::protocol::ChangePasswordRequest* change_password_request) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  clear_payload();
+  if (change_password_request) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(change_password_request);
+    if (message_arena != submessage_arena) {
+      change_password_request = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, change_password_request, submessage_arena);
+    }
+    set_has_change_password_request();
+    payload_.change_password_request_ = change_password_request;
+  }
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.ClientMessage.change_password_request)
+}
 ClientMessage::ClientMessage(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
@@ -15126,6 +15665,10 @@ ClientMessage::ClientMessage(const ClientMessage& from)
     }
     case kDeleteFriendRequest: {
       _internal_mutable_delete_friend_request()->::landlords::protocol::DeleteFriendRequest::MergeFrom(from._internal_delete_friend_request());
+      break;
+    }
+    case kChangePasswordRequest: {
+      _internal_mutable_change_password_request()->::landlords::protocol::ChangePasswordRequest::MergeFrom(from._internal_change_password_request());
       break;
     }
     case PAYLOAD_NOT_SET: {
@@ -15295,6 +15838,12 @@ void ClientMessage::clear_payload() {
     case kDeleteFriendRequest: {
       if (GetArenaForAllocation() == nullptr) {
         delete payload_.delete_friend_request_;
+      }
+      break;
+    }
+    case kChangePasswordRequest: {
+      if (GetArenaForAllocation() == nullptr) {
+        delete payload_.change_password_request_;
       }
       break;
     }
@@ -15512,6 +16061,14 @@ const char* ClientMessage::_InternalParse(const char* ptr, ::_pbi::ParseContext*
         } else
           goto handle_unusual;
         continue;
+      // .landlords.protocol.ChangePasswordRequest change_password_request = 31;
+      case 31:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 250)) {
+          ptr = ctx->ParseMessage(_internal_mutable_change_password_request(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
       default:
         goto handle_unusual;
     }  // switch
@@ -15708,6 +16265,13 @@ uint8_t* ClientMessage::_InternalSerialize(
         _Internal::delete_friend_request(this).GetCachedSize(), target, stream);
   }
 
+  // .landlords.protocol.ChangePasswordRequest change_password_request = 31;
+  if (_internal_has_change_password_request()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(31, _Internal::change_password_request(this),
+        _Internal::change_password_request(this).GetCachedSize(), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -15886,6 +16450,13 @@ size_t ClientMessage::ByteSizeLong() const {
           *payload_.delete_friend_request_);
       break;
     }
+    // .landlords.protocol.ChangePasswordRequest change_password_request = 31;
+    case kChangePasswordRequest: {
+      total_size += 2 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *payload_.change_password_request_);
+      break;
+    }
     case PAYLOAD_NOT_SET: {
       break;
     }
@@ -16003,6 +16574,10 @@ void ClientMessage::MergeFrom(const ClientMessage& from) {
       _internal_mutable_delete_friend_request()->::landlords::protocol::DeleteFriendRequest::MergeFrom(from._internal_delete_friend_request());
       break;
     }
+    case kChangePasswordRequest: {
+      _internal_mutable_change_password_request()->::landlords::protocol::ChangePasswordRequest::MergeFrom(from._internal_change_password_request());
+      break;
+    }
     case PAYLOAD_NOT_SET: {
       break;
     }
@@ -16041,7 +16616,7 @@ void ClientMessage::InternalSwap(ClientMessage* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata ClientMessage::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[48]);
+      file_level_metadata_landlords_2eproto[50]);
 }
 
 // ===================================================================
@@ -16067,6 +16642,7 @@ class ServerMessage::_Internal {
   static const ::landlords::protocol::RespondFriendRequestResponse& respond_friend_request_response(const ServerMessage* msg);
   static const ::landlords::protocol::DeleteFriendResponse& delete_friend_response(const ServerMessage* msg);
   static const ::landlords::protocol::FriendCenterPush& friend_center_push(const ServerMessage* msg);
+  static const ::landlords::protocol::ChangePasswordResponse& change_password_response(const ServerMessage* msg);
 };
 
 const ::landlords::protocol::RegisterResponse&
@@ -16144,6 +16720,10 @@ ServerMessage::_Internal::delete_friend_response(const ServerMessage* msg) {
 const ::landlords::protocol::FriendCenterPush&
 ServerMessage::_Internal::friend_center_push(const ServerMessage* msg) {
   return *msg->payload_.friend_center_push_;
+}
+const ::landlords::protocol::ChangePasswordResponse&
+ServerMessage::_Internal::change_password_response(const ServerMessage* msg) {
+  return *msg->payload_.change_password_response_;
 }
 void ServerMessage::set_allocated_register_response(::landlords::protocol::RegisterResponse* register_response) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
@@ -16430,6 +17010,21 @@ void ServerMessage::set_allocated_friend_center_push(::landlords::protocol::Frie
   }
   // @@protoc_insertion_point(field_set_allocated:landlords.protocol.ServerMessage.friend_center_push)
 }
+void ServerMessage::set_allocated_change_password_response(::landlords::protocol::ChangePasswordResponse* change_password_response) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  clear_payload();
+  if (change_password_response) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(change_password_response);
+    if (message_arena != submessage_arena) {
+      change_password_response = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, change_password_response, submessage_arena);
+    }
+    set_has_change_password_response();
+    payload_.change_password_response_ = change_password_response;
+  }
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.ServerMessage.change_password_response)
+}
 ServerMessage::ServerMessage(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
@@ -16523,6 +17118,10 @@ ServerMessage::ServerMessage(const ServerMessage& from)
     }
     case kFriendCenterPush: {
       _internal_mutable_friend_center_push()->::landlords::protocol::FriendCenterPush::MergeFrom(from._internal_friend_center_push());
+      break;
+    }
+    case kChangePasswordResponse: {
+      _internal_mutable_change_password_response()->::landlords::protocol::ChangePasswordResponse::MergeFrom(from._internal_change_password_response());
       break;
     }
     case PAYLOAD_NOT_SET: {
@@ -16675,6 +17274,12 @@ void ServerMessage::clear_payload() {
     case kFriendCenterPush: {
       if (GetArenaForAllocation() == nullptr) {
         delete payload_.friend_center_push_;
+      }
+      break;
+    }
+    case kChangePasswordResponse: {
+      if (GetArenaForAllocation() == nullptr) {
+        delete payload_.change_password_response_;
       }
       break;
     }
@@ -16865,6 +17470,14 @@ const char* ServerMessage::_InternalParse(const char* ptr, ::_pbi::ParseContext*
         } else
           goto handle_unusual;
         continue;
+      // .landlords.protocol.ChangePasswordResponse change_password_response = 29;
+      case 29:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 234)) {
+          ptr = ctx->ParseMessage(_internal_mutable_change_password_response(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
       default:
         goto handle_unusual;
     }  // switch
@@ -17037,6 +17650,13 @@ uint8_t* ServerMessage::_InternalSerialize(
         _Internal::friend_center_push(this).GetCachedSize(), target, stream);
   }
 
+  // .landlords.protocol.ChangePasswordResponse change_password_response = 29;
+  if (_internal_has_change_password_response()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(29, _Internal::change_password_response(this),
+        _Internal::change_password_response(this).GetCachedSize(), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -17194,6 +17814,13 @@ size_t ServerMessage::ByteSizeLong() const {
           *payload_.friend_center_push_);
       break;
     }
+    // .landlords.protocol.ChangePasswordResponse change_password_response = 29;
+    case kChangePasswordResponse: {
+      total_size += 2 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *payload_.change_password_response_);
+      break;
+    }
     case PAYLOAD_NOT_SET: {
       break;
     }
@@ -17300,6 +17927,10 @@ void ServerMessage::MergeFrom(const ServerMessage& from) {
       _internal_mutable_friend_center_push()->::landlords::protocol::FriendCenterPush::MergeFrom(from._internal_friend_center_push());
       break;
     }
+    case kChangePasswordResponse: {
+      _internal_mutable_change_password_response()->::landlords::protocol::ChangePasswordResponse::MergeFrom(from._internal_change_password_response());
+      break;
+    }
     case PAYLOAD_NOT_SET: {
       break;
     }
@@ -17334,7 +17965,7 @@ void ServerMessage::InternalSwap(ServerMessage* other) {
 ::PROTOBUF_NAMESPACE_ID::Metadata ServerMessage::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_landlords_2eproto_getter, &descriptor_table_landlords_2eproto_once,
-      file_level_metadata_landlords_2eproto[49]);
+      file_level_metadata_landlords_2eproto[51]);
 }
 
 // @@protoc_insertion_point(namespace_scope)
@@ -17380,6 +18011,14 @@ Arena::CreateMaybeMessage< ::landlords::protocol::ResetPasswordRequest >(Arena* 
 template<> PROTOBUF_NOINLINE ::landlords::protocol::ResetPasswordResponse*
 Arena::CreateMaybeMessage< ::landlords::protocol::ResetPasswordResponse >(Arena* arena) {
   return Arena::CreateMessageInternal< ::landlords::protocol::ResetPasswordResponse >(arena);
+}
+template<> PROTOBUF_NOINLINE ::landlords::protocol::ChangePasswordRequest*
+Arena::CreateMaybeMessage< ::landlords::protocol::ChangePasswordRequest >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::landlords::protocol::ChangePasswordRequest >(arena);
+}
+template<> PROTOBUF_NOINLINE ::landlords::protocol::ChangePasswordResponse*
+Arena::CreateMaybeMessage< ::landlords::protocol::ChangePasswordResponse >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::landlords::protocol::ChangePasswordResponse >(arena);
 }
 template<> PROTOBUF_NOINLINE ::landlords::protocol::UpdateNicknameRequest*
 Arena::CreateMaybeMessage< ::landlords::protocol::UpdateNicknameRequest >(Arena* arena) {
@@ -17545,3 +18184,4 @@ PROTOBUF_NAMESPACE_CLOSE
 
 // @@protoc_insertion_point(global_scope)
 #include <google/protobuf/port_undef.inc>
+

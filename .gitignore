@@ -48,6 +48,7 @@ app.*.map.json
 /.codex-appdata/
 /.codex-localappdata/
 /.tooling/
+/.dart_appdata/
 **/.git.bak/
 /runtime/
 /runtime_logs/
