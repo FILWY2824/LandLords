@@ -129,6 +129,25 @@ class AppController extends ChangeNotifier {
       _popupNoticeQueue.clear();
       _friendCenterSnapshot = const FriendCenterSnapshot.empty();
       _roomSubscription ??= _gateway.roomSnapshots.listen((snapshot) {
+        final profile = _profile;
+        final wasRemovedFromPendingRoom =
+            profile != null &&
+            snapshot.mode == MatchMode.online &&
+            snapshot.phase == RoomPhase.preparing &&
+            snapshot.players.every((player) => player.playerId != profile.userId);
+        if (wasRemovedFromPendingRoom) {
+          _gateway.clearCurrentRoomCache();
+          _roomSnapshot = null;
+          _errorText = null;
+          _lobbyNotice = null;
+          _stage = AppStage.lobby;
+          showDialogNotice(
+            title: '已离开房间',
+            message: '房主已将你移出当前房间。',
+          );
+          notifyListeners();
+          return;
+        }
         _roomSnapshot = snapshot;
         _errorText = null;
         _lobbyNotice = null;
@@ -474,6 +493,12 @@ class AppController extends ChangeNotifier {
       },
     );
     await _recoverFromTransportFailure();
+    if (_errorText != null && _shouldDismissInvitationAfterError(_errorText!)) {
+      final message = _friendlyRoomActionMessage(_errorText!);
+      dismissActiveInvitation();
+      showDialogNotice(title: '邀请已失效', message: message);
+      return true;
+    }
     if (_errorText != null) {
       final shouldDismiss = _shouldDismissInvitationAfterError(_errorText!);
       showDialogNotice(
@@ -825,6 +850,27 @@ class AppController extends ChangeNotifier {
 
 String _friendlyRoomActionMessage(String raw) {
     final text = raw.replaceFirst('Exception: ', '');
+    if (text.contains('only host can remove')) {
+      return '只有房主可以移除房间内的其他玩家。';
+    }
+    if (text.contains('cannot remove yourself')) {
+      return '不能移除自己，如需离开请使用退出房间。';
+    }
+    if (text.contains('player not found')) {
+      return '没有找到这位玩家，房间状态可能已经变化。';
+    }
+    if (text.contains('invitation timed out')) {
+      return '这条房间邀请已超时。';
+    }
+    if (text.contains('room seats changed')) {
+      return '房间座位已变化，这条邀请已经失效。';
+    }
+    if (text.contains('room started')) {
+      return '房间已经开局，这条邀请已经失效。';
+    }
+    if (text.contains('room closed')) {
+      return '房间已经关闭，这条邀请已经失效。';
+    }
     if (text.contains('invalid create room snapshot')) {
       return '鍒涘缓鎴块棿杩斿洖浜嗗紓甯哥姸鎬侊紝宸查樆姝㈣娆¤繘鍏ワ紝璇烽噸鏂板皾璇曘€?';
     }
@@ -922,9 +968,13 @@ String _friendlyRoomActionMessage(String raw) {
   bool _shouldDismissInvitationAfterError(String raw) {
     final text = raw.replaceFirst('Exception: ', '').toLowerCase();
     return text.contains('invitation expired') ||
+        text.contains('invitation timed out') ||
         text.contains('room is no longer available') ||
         text.contains('room not found') ||
-        text.contains('room is full');
+        text.contains('room is full') ||
+        text.contains('room seats changed') ||
+        text.contains('room started') ||
+        text.contains('room closed');
   }
 
   Future<void> _guard(String busyText, Future<void> Function() action) async {

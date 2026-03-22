@@ -335,6 +335,9 @@ class _PollingGateway implements GameGateway {
   RoomSnapshot? currentSnapshot(String roomId) => null;
 
   @override
+  void clearCurrentRoomCache() {}
+
+  @override
   Future<void> register({
     required String account,
     required String nickname,

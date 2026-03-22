@@ -90,6 +90,108 @@ void main() {
     expect(controller.roomSnapshot, isNull);
     expect(controller.activePopupNotice, isNotNull);
   });
+
+  test('being removed from a pending room returns the player to the lobby', () async {
+    final gateway = _RoomStateGateway(
+      createRoomResult: _buildRoomSnapshot(
+        roomId: 'pending-room',
+        mode: MatchMode.online,
+        phase: RoomPhase.preparing,
+        turnSerial: 0,
+      ).copyWithPlayers(const [
+        RoomPlayer(
+          playerId: 'user-player1',
+          displayName: '玩家1',
+          isBot: false,
+          role: PlayerRole.farmer,
+          cardsLeft: 0,
+          roundScore: 0,
+          seatIndex: 0,
+          ready: false,
+          occupied: true,
+        ),
+        RoomPlayer(
+          playerId: '',
+          displayName: '空位',
+          isBot: false,
+          role: PlayerRole.farmer,
+          cardsLeft: 0,
+          roundScore: 0,
+          seatIndex: 1,
+          ready: false,
+          occupied: false,
+        ),
+        RoomPlayer(
+          playerId: '',
+          displayName: '空位',
+          isBot: false,
+          role: PlayerRole.farmer,
+          cardsLeft: 0,
+          roundScore: 0,
+          seatIndex: 2,
+          ready: false,
+          occupied: false,
+        ),
+      ]),
+    );
+    final controller = AppController(gateway: gateway);
+    addTearDown(controller.dispose);
+
+    await controller.login('player1', 'pass123');
+    await controller.createRoom();
+
+    gateway.emitRoomSnapshot(
+      _buildRoomSnapshot(
+        roomId: 'pending-room',
+        mode: MatchMode.online,
+        phase: RoomPhase.preparing,
+        turnSerial: 0,
+      ).copyWithPlayers(const [
+        RoomPlayer(
+          playerId: 'user-player2',
+          displayName: '玩家2',
+          isBot: false,
+          role: PlayerRole.farmer,
+          cardsLeft: 0,
+          roundScore: 0,
+          seatIndex: 0,
+          ready: false,
+          occupied: true,
+        ),
+        RoomPlayer(
+          playerId: '',
+          displayName: '空位',
+          isBot: false,
+          role: PlayerRole.farmer,
+          cardsLeft: 0,
+          roundScore: 0,
+          seatIndex: 1,
+          ready: false,
+          occupied: false,
+        ),
+        RoomPlayer(
+          playerId: '',
+          displayName: '空位',
+          isBot: false,
+          role: PlayerRole.farmer,
+          cardsLeft: 0,
+          roundScore: 0,
+          seatIndex: 2,
+          ready: false,
+          occupied: false,
+        ),
+      ]),
+    );
+    await _drainAsyncWork();
+
+    expect(controller.stage, AppStage.lobby);
+    expect(controller.roomSnapshot, isNull);
+    expect(
+      controller.activePopupNotice?.message,
+      contains('移出'),
+    );
+    expect(gateway.cacheCleared, isTrue);
+  });
 }
 
 Future<void> _drainAsyncWork() async {
@@ -180,6 +282,7 @@ class _RoomStateGateway implements GameGateway {
   int leaveRoomCalls = 0;
   int refreshCurrentRoomCalls = 0;
   String? lastLeftRoomId;
+  bool cacheCleared = false;
 
   @override
   Stream<RoomSnapshot> get roomSnapshots => _roomController.stream;
@@ -451,9 +554,18 @@ class _RoomStateGateway implements GameGateway {
   RoomSnapshot? currentSnapshot(String roomId) => null;
 
   @override
+  void clearCurrentRoomCache() {
+    cacheCleared = true;
+  }
+
+  @override
   Future<void> close() async {
     await _roomController.close();
     await _notificationController.close();
+  }
+
+  void emitRoomSnapshot(RoomSnapshot snapshot) {
+    _roomController.add(snapshot);
   }
 }
 

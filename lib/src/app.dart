@@ -582,6 +582,9 @@ class _InvitationFeedbackDialog extends StatelessWidget {
 }
 
 String _friendlyInvitationFeedbackDetail(String raw) {
+  if (raw.contains('invitation timed out')) {
+    return '这条房间邀请已超时。';
+  }
   if (raw.contains('player joined the room')) {
     return '已加入你的房间。';
   }

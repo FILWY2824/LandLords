@@ -165,5 +165,7 @@ abstract class GameGateway {
 
   RoomSnapshot? currentSnapshot(String roomId);
 
+  void clearCurrentRoomCache();
+
   Future<void> close();
 }

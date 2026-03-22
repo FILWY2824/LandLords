@@ -65,6 +65,7 @@ app.*.map.json
 # Native build outputs
 /backend/server/build/
 /backend/server/build-vs/
+/backend/server/build-vs-codex/
 **/CMakeFiles/
 **/CMakeCache.txt
 **/cmake_install.cmake

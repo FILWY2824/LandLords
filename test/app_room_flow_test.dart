@@ -81,6 +81,11 @@ void main() {
     expect(gateway.lastInvitedAccount, 'friend1');
     expect(gateway.lastInvitedSeatIndex, isNotNull);
     expect(find.text(_inviteSentText), findsOneWidget);
+
+    await tester.tap(find.byType(FilledButton).last);
+    await _advanceUi(tester);
+
+    expect(find.text(_inviteSentText), findsNothing);
   });
 
   testWidgets('invitee sees invitation dialog and accepting enters room', (
@@ -102,6 +107,30 @@ void main() {
 
     expect(gateway.acceptInvitationCalls, 1);
     expect(find.text(_prepareText), findsWidgets);
+  });
+
+  testWidgets('expired invitation closes the dialog and shows one timeout notice', (
+    tester,
+  ) async {
+    final gateway = _ScriptedGateway()..expireInvitationOnResponse = true;
+
+    await _pumpApp(tester, gateway, const Size(1600, 900));
+    await _loginIntoLobby(tester);
+
+    gateway.emitInvitation();
+    await tester.pump();
+    await _advanceUi(tester);
+
+    expect(find.text(_inviteDialogTitle), findsOneWidget);
+
+    await tester.tap(find.text(_acceptText));
+    await _advanceUi(tester);
+
+    expect(find.textContaining('超时'), findsOneWidget);
+    expect(find.text(_inviteDialogTitle), findsNothing);
+
+    await _advanceUi(tester);
+    expect(find.textContaining('超时'), findsOneWidget);
   });
 }
 
@@ -171,6 +200,7 @@ class _ScriptedGateway implements GameGateway {
   int acceptInvitationCalls = 0;
   String? lastInvitedAccount;
   int? lastInvitedSeatIndex;
+  bool expireInvitationOnResponse = false;
   int _idSeed = 0;
 
   @override
@@ -178,6 +208,11 @@ class _ScriptedGateway implements GameGateway {
 
   @override
   Stream<GatewayNotification> get notifications => _notificationController.stream;
+
+  @override
+  void clearCurrentRoomCache() {
+    _currentSnapshot = null;
+  }
 
   @override
   Future<void> register({
@@ -480,6 +515,9 @@ class _ScriptedGateway implements GameGateway {
     required String invitationId,
     required bool accept,
   }) async {
+    if (expireInvitationOnResponse) {
+      throw Exception('invitation timed out');
+    }
     if (!accept) {
       return null;
     }

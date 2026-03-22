@@ -1031,6 +1031,9 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     if (!mounted || result == null) {
       return;
     }
+    if (!result.message.contains('DouZero')) {
+      return;
+    }
     widget.controller.showDialogNotice(
       title: result.message.contains('邀请') ? '邀请已发送' : '操作已完成',
       message: result.message,
@@ -1403,7 +1406,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     required bool isSelf,
   }) {
     final isEmpty = !player.occupied;
-    final canRemoveBot = isOwner && player.isBot && player.occupied;
+    final canRemoveOccupiedPlayer = isOwner && player.occupied && !isSelf;
     final accent = isSelf ? const Color(0xFF64B4FF) : const Color(0xFFD7EBFF);
     final title = isEmpty ? '空位' : player.displayName;
     final detail = isEmpty
@@ -1458,7 +1461,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                 ),
               ),
               const Spacer(),
-              if (canRemoveBot)
+              if (canRemoveOccupiedPlayer)
                 IconButton(
                   tooltip: '移除机器人',
                   visualDensity: VisualDensity.compact,
@@ -1879,7 +1882,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     required bool isSelf,
   }) {
     final isEmpty = !player.occupied;
-    final canRemoveBot = isOwner && player.isBot && player.occupied;
+    final canRemoveOccupiedPlayer = isOwner && player.occupied && !isSelf;
     final accent = isSelf ? const Color(0xFF64B4FF) : const Color(0xFFD7EBFF);
     final title = isEmpty ? '空位' : player.displayName;
     final detail = isEmpty
@@ -1938,8 +1941,9 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                 ),
               ),
               const Spacer(),
-              if (canRemoveBot)
+              if (canRemoveOccupiedPlayer)
                 IconButton(
+                  tooltip: '移除玩家',
                   onPressed: widget.controller.isBusy
                       ? null
                       : () => widget.controller.removePlayerFromRoom(

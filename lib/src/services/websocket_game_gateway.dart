@@ -663,6 +663,12 @@ class WebSocketGameGateway implements GameGateway {
       _latestSnapshot?.roomId == roomId ? _latestSnapshot : null;
 
   @override
+  void clearCurrentRoomCache() {
+    _latestSnapshot = null;
+    _lastRoomId = null;
+  }
+
+  @override
   Future<void> close() async {
     _handleDisconnect();
     await _snapshotController.close();
@@ -995,6 +1001,9 @@ class WebSocketGameGateway implements GameGateway {
       );
 
   String _localizeInvitationFeedbackMessage(String raw) {
+    if (raw.contains('invitation timed out')) {
+      return '这条房间邀请已超时。';
+    }
     if (raw.contains('player joined the room')) {
       return '已加入你的房间。';
     }

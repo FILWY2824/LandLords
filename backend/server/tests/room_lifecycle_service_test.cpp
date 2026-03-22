@@ -79,6 +79,16 @@ const ServerMessage& RequireLatestInvitationResultPush(
   throw std::runtime_error("missing room invitation result push");
 }
 
+const ServerMessage& RequireErrorResponse(
+    const FakeConnection& connection,
+    std::string_view request_id) {
+  const auto& response = RequireResponse(connection, request_id);
+  if (!response.has_error_response()) {
+    throw std::runtime_error("missing error response for request " + std::string(request_id));
+  }
+  return response;
+}
+
 ClientMessage MakeRegister(
     std::string request_id,
     std::string account,
@@ -146,6 +156,20 @@ ClientMessage MakeRoomReady(
   auto* payload = message.mutable_room_ready_request();
   payload->set_room_id(std::move(room_id));
   payload->set_ready(ready);
+  return message;
+}
+
+ClientMessage MakeRemovePlayer(
+    std::string request_id,
+    std::string session_token,
+    std::string room_id,
+    std::string player_id) {
+  ClientMessage message;
+  message.set_request_id(std::move(request_id));
+  message.set_session_token(std::move(session_token));
+  auto* payload = message.mutable_remove_player_request();
+  payload->set_room_id(std::move(room_id));
+  payload->set_player_id(std::move(player_id));
   return message;
 }
 
@@ -471,12 +495,106 @@ void RunInvitationRoomSwitchServiceTest() {
   std::filesystem::remove_all(runtime_dir);
 }
 
+void RunHostRemovePlayerServiceTest() {
+  const auto runtime_dir =
+      std::filesystem::path("runtime") / "host-remove-player-service-test";
+  std::filesystem::remove_all(runtime_dir);
+
+  auto user_repository =
+      std::make_shared<FileUserRepository>(runtime_dir / "users.db");
+  auto friend_request_repository =
+      std::make_shared<FileFriendRequestRepository>(runtime_dir / "friend_requests.db");
+
+  GameService service(user_repository, friend_request_repository);
+  auto owner_connection = std::make_shared<FakeConnection>("owner");
+  auto guest_connection = std::make_shared<FakeConnection>("guest");
+
+  service.HandleMessage(
+      owner_connection,
+      MakeRegister("register-owner-remove", "owner_remove_acc", "owner", "pass123"));
+  service.HandleMessage(
+      guest_connection,
+      MakeRegister("register-guest-remove", "guest_remove_acc", "guest", "pass123"));
+
+  service.HandleMessage(
+      owner_connection,
+      MakeLogin("login-owner-remove", "owner_remove_acc", "pass123"));
+  service.HandleMessage(
+      guest_connection,
+      MakeLogin("login-guest-remove", "guest_remove_acc", "pass123"));
+
+  const auto& owner_login = RequireResponse(*owner_connection, "login-owner-remove");
+  const auto& guest_login = RequireResponse(*guest_connection, "login-guest-remove");
+  Require(owner_login.login_response().success(), "owner login for remove test failed");
+  Require(guest_login.login_response().success(), "guest login for remove test failed");
+
+  const std::string owner_token = owner_login.login_response().session_token();
+  const std::string guest_token = guest_login.login_response().session_token();
+  const std::string guest_user_id = guest_login.login_response().profile().user_id();
+
+  service.HandleMessage(
+      owner_connection,
+      MakeCreateRoom("create-room-remove", owner_token));
+  const auto& create_room = RequireResponse(*owner_connection, "create-room-remove");
+  Require(create_room.operation_response().success(), "host remove test room creation failed");
+  const auto& created_snapshot = create_room.operation_response().snapshot();
+
+  service.HandleMessage(
+      guest_connection,
+      MakeJoinRoom(
+          "join-room-remove",
+          guest_token,
+          created_snapshot.room_code()));
+  const auto& join_room = RequireResponse(*guest_connection, "join-room-remove");
+  Require(join_room.operation_response().success(), "guest join for remove test failed");
+  Require(OccupiedCount(join_room.operation_response().snapshot()) == 2,
+          "remove test room should contain two players before removal");
+
+  service.HandleMessage(
+      owner_connection,
+      MakeRemovePlayer(
+          "remove-guest",
+          owner_token,
+          created_snapshot.room_id(),
+          guest_user_id));
+  const auto& remove_response = RequireResponse(*owner_connection, "remove-guest");
+  Require(remove_response.has_operation_response(), "remove player should return operation response");
+  Require(remove_response.operation_response().success(), "host remove player should succeed");
+  Require(remove_response.operation_response().message() == "player_removed",
+          "remove player should use the unified removal message");
+  Require(OccupiedCount(remove_response.operation_response().snapshot()) == 1,
+          "room should only keep the host after removing the guest");
+
+  const auto& guest_push = RequireLatestRoomSnapshot(*guest_connection);
+  Require(OccupiedCount(guest_push) == 1,
+          "removed guest should receive the updated pending snapshot");
+  bool guest_still_present = false;
+  for (const auto& player : guest_push.players()) {
+    if (player.player_id() == guest_user_id) {
+      guest_still_present = true;
+      break;
+    }
+  }
+  Require(!guest_still_present, "removed guest should no longer appear in the room snapshot");
+
+  service.HandleMessage(
+      guest_connection,
+      MakeReconnect("guest-reconnect-after-remove", guest_token, created_snapshot.room_id()));
+  const auto& reconnect_error =
+      RequireErrorResponse(*guest_connection, "guest-reconnect-after-remove");
+  Require(reconnect_error.error_response().message() == "room not found",
+          "removed guest should not be able to reconnect into the old room");
+
+  std::filesystem::remove_all(runtime_dir);
+}
+
 }  // namespace
 
 int main() {
   try {
     RunRoomLifecycleServiceTest();
     RunInvitationRoomSwitchServiceTest();
+    RunHostRemovePlayerServiceTest();
     std::cout << "room lifecycle service test passed\n";
     return 0;
   } catch (const std::exception& error) {

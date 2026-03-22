@@ -438,6 +438,9 @@ class LocalDemoGateway implements GameGateway {
       );
 
   @override
+  void clearCurrentRoomCache() {}
+
+  @override
   Future<void> close() async {
     await _snapshotController.close();
     await _notificationController.close();

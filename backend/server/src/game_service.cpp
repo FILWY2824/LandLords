@@ -1623,19 +1623,26 @@ void GameService::HandleRemovePlayer(const std::shared_ptr<network::IConnection>
     return;
   }
   if ((*pending_room)->owner_player_id != (*session)->user.user_id) {
-    SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "only host can remove bot");
+    SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "only host can remove players");
+    return;
+  }
+  if (message.remove_player_request().player_id() == (*session)->user.user_id) {
+    SendError(connection,
+              message.request_id(),
+              landlords::protocol::ERROR_CODE_MATCH_STATE_INVALID,
+              "cannot remove yourself");
     return;
   }
 
   bool removed = false;
+  bool removed_bot = false;
+  std::string removed_player_id;
   for (auto& seat : (*pending_room)->seats) {
     if (seat.player_id != message.remove_player_request().player_id()) {
       continue;
     }
-    if (!seat.is_bot) {
-      SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_MATCH_STATE_INVALID, "only bot can be removed");
-      return;
-    }
+    removed_bot = seat.is_bot;
+    removed_player_id = seat.player_id;
     seat = PendingSeat{};
     removed = true;
     break;
@@ -1649,10 +1656,28 @@ void GameService::HandleRemovePlayer(const std::shared_ptr<network::IConnection>
   response.set_request_id(message.request_id());
   auto* operation = response.mutable_operation_response();
   operation->set_success(true);
-  operation->set_message("bot_removed");
+  operation->set_message("player_removed");
   *operation->mutable_snapshot() =
       BuildPendingRoomSnapshot(**pending_room, (*session)->user.user_id);
   connection->Send(response);
+
+  if (!removed_bot) {
+    const auto removed_sessions = FindSessionsByUserId(removed_player_id);
+    for (auto* removed_session : removed_sessions) {
+      if (removed_session == nullptr) {
+        continue;
+      }
+      removed_session->room_id.clear();
+      if (const auto removed_connection = removed_session->connection.lock()) {
+        landlords::protocol::ServerMessage push;
+        *push.mutable_room_snapshot() =
+            BuildPendingRoomSnapshot(**pending_room, removed_player_id);
+        removed_connection->Send(push);
+      }
+    }
+  }
+
+  ExpireInvitationsForRoom((*pending_room)->room_id, "room seats changed");
   SendPendingSnapshotToRoom(**pending_room);
 }
 
@@ -1836,7 +1861,23 @@ void GameService::HandleReconnect(const std::shared_ptr<network::IConnection>& c
   const std::string room_id = message.reconnect_request().room_id().empty()
                                   ? (*session)->room_id
                                   : message.reconnect_request().room_id();
+  if (room_id.empty() || (*session)->room_id != room_id) {
+    SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_NOT_FOUND, "room not found");
+    return;
+  }
   if (auto pending_room = FindPendingRoom(room_id); pending_room.has_value()) {
+    const bool player_in_pending_room = std::any_of(
+        (*pending_room)->seats.begin(),
+        (*pending_room)->seats.end(),
+        [&](const PendingSeat& seat) { return seat.player_id == (*session)->user.user_id; });
+    if (!player_in_pending_room) {
+      (*session)->room_id.clear();
+      SendError(connection,
+                message.request_id(),
+                landlords::protocol::ERROR_CODE_NOT_FOUND,
+                "room not found");
+      return;
+    }
     (*session)->room_id = room_id;
     landlords::protocol::ServerMessage response;
     response.set_request_id(message.request_id());
