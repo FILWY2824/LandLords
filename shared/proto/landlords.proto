@@ -90,6 +90,33 @@ message OnlineUser {
   bool online = 4;
 }
 
+enum FriendRequestStatus {
+  FRIEND_REQUEST_STATUS_UNSPECIFIED = 0;
+  FRIEND_REQUEST_STATUS_PENDING = 1;
+  FRIEND_REQUEST_STATUS_ACCEPTED = 2;
+  FRIEND_REQUEST_STATUS_REJECTED = 3;
+}
+
+message FriendRequestEntry {
+  string request_id = 1;
+  string requester_user_id = 2;
+  string requester_account = 3;
+  string requester_nickname = 4;
+  string receiver_user_id = 5;
+  string receiver_account = 6;
+  string receiver_nickname = 7;
+  FriendRequestStatus status = 8;
+  int64 created_at_ms = 9;
+  int64 updated_at_ms = 10;
+}
+
+message FriendCenterSnapshot {
+  repeated OnlineUser friends = 1;
+  repeated FriendRequestEntry pending_requests = 2;
+  repeated FriendRequestEntry history_requests = 3;
+  int32 pending_request_count = 4;
+}
+
 message RegisterRequest {
   string nickname = 1;
   string account = 2;
@@ -169,6 +196,7 @@ message ListFriendsRequest {}
 
 message ListFriendsResponse {
   repeated OnlineUser users = 1;
+  FriendCenterSnapshot snapshot = 2;
 }
 
 message AddFriendRequest {
@@ -178,7 +206,30 @@ message AddFriendRequest {
 message AddFriendResponse {
   bool success = 1;
   string message = 2;
-  OnlineUser user = 3;
+  FriendRequestEntry request = 3;
+  FriendCenterSnapshot snapshot = 4;
+}
+
+message RespondFriendRequestRequest {
+  string request_id = 1;
+  bool accept = 2;
+}
+
+message RespondFriendRequestResponse {
+  bool success = 1;
+  string message = 2;
+  FriendRequestEntry request = 3;
+  FriendCenterSnapshot snapshot = 4;
+}
+
+message DeleteFriendRequest {
+  string friend_user_id = 1;
+}
+
+message DeleteFriendResponse {
+  bool success = 1;
+  string message = 2;
+  FriendCenterSnapshot snapshot = 3;
 }
 
 message InvitePlayerRequest {
@@ -220,6 +271,10 @@ message RoomInvitationResultPush {
   string invitee_account = 4;
   string invitee_nickname = 5;
   string message = 6;
+}
+
+message FriendCenterPush {
+  FriendCenterSnapshot snapshot = 1;
 }
 
 message MatchResponse {
@@ -342,6 +397,8 @@ message ClientMessage {
     RespondRoomInvitationRequest respond_room_invitation_request = 26;
     LeaveRoomRequest leave_room_request = 27;
     UpdateNicknameRequest update_nickname_request = 28;
+    RespondFriendRequestRequest respond_friend_request_request = 29;
+    DeleteFriendRequest delete_friend_request = 30;
   }
 }
 
@@ -364,5 +421,8 @@ message ServerMessage {
     RespondRoomInvitationResponse respond_room_invitation_response = 23;
     RoomInvitationResultPush room_invitation_result_push = 24;
     UpdateNicknameResponse update_nickname_response = 25;
+    RespondFriendRequestResponse respond_friend_request_response = 26;
+    DeleteFriendResponse delete_friend_response = 27;
+    FriendCenterPush friend_center_push = 28;
   }
 }

@@ -876,7 +876,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     await _showSeatAssignmentForSeat(snapshot, emptySeat.seatIndex);
     return;
     // ignore: dead_code
-    final users = await widget.controller.fetchFriends();
+    final users = const <OnlineUser>[];
     if (!mounted) {
       return;
     }
@@ -1827,7 +1827,21 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                 style: OutlinedButton.styleFrom(
                                   minimumSize: const Size.fromHeight(56),
                                 ),
-                                icon: const Icon(Icons.groups_rounded, size: 18),
+                                icon: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    const Icon(Icons.groups_rounded, size: 18),
+                                    if (widget.controller.pendingFriendRequestCount > 0)
+                                      const Positioned(
+                                        right: -2,
+                                        top: -2,
+                                        child: CircleAvatar(
+                                          radius: 4,
+                                          backgroundColor: Color(0xFFE5534B),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                                 label: const Text('\u597d\u53cb\u4e2d\u5fc3'),
                               ),
                             ),

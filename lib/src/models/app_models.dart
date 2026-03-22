@@ -10,6 +10,8 @@ enum ActionType { play, pass }
 
 enum InvitationFeedbackStatus { accepted, rejected, failed, expired }
 
+enum FriendRequestStatus { pending, accepted, rejected, handled }
+
 extension BotDifficultyPresentation on BotDifficulty {
   String get label => switch (this) {
         BotDifficulty.easy => '简单',
@@ -125,6 +127,68 @@ class OnlineUser {
   String get displayName => nickname.isNotEmpty ? nickname : account;
 
   String get username => displayName;
+}
+
+class FriendRequestEntry {
+  const FriendRequestEntry({
+    required this.requestId,
+    required this.requesterUserId,
+    required this.requesterAccount,
+    required this.requesterNickname,
+    required this.receiverUserId,
+    required this.receiverAccount,
+    required this.receiverNickname,
+    required this.status,
+    required this.createdAtMs,
+    required this.updatedAtMs,
+  });
+
+  final String requestId;
+  final String requesterUserId;
+  final String requesterAccount;
+  final String requesterNickname;
+  final String receiverUserId;
+  final String receiverAccount;
+  final String receiverNickname;
+  final FriendRequestStatus status;
+  final int createdAtMs;
+  final int updatedAtMs;
+
+  String get requesterName =>
+      requesterNickname.isNotEmpty ? requesterNickname : requesterAccount;
+
+  String get receiverName =>
+      receiverNickname.isNotEmpty ? receiverNickname : receiverAccount;
+
+  bool isIncomingFor(String userId) => receiverUserId == userId;
+
+  bool isOutgoingFor(String userId) => requesterUserId == userId;
+
+  String counterpartNameFor(String userId) =>
+      isIncomingFor(userId) ? requesterName : receiverName;
+
+  String counterpartAccountFor(String userId) =>
+      isIncomingFor(userId) ? requesterAccount : receiverAccount;
+}
+
+class FriendCenterSnapshot {
+  const FriendCenterSnapshot({
+    required this.friends,
+    required this.pendingRequests,
+    required this.historyRequests,
+    required this.pendingRequestCount,
+  });
+
+  const FriendCenterSnapshot.empty()
+    : friends = const [],
+      pendingRequests = const [],
+      historyRequests = const [],
+      pendingRequestCount = 0;
+
+  final List<OnlineUser> friends;
+  final List<FriendRequestEntry> pendingRequests;
+  final List<FriendRequestEntry> historyRequests;
+  final int pendingRequestCount;
 }
 
 class RoomInvitation {

@@ -257,5 +257,34 @@ class InvitationResult extends $pb.ProtobufEnum {
   const InvitationResult._(super.value, super.name);
 }
 
+class FriendRequestStatus extends $pb.ProtobufEnum {
+  static const FriendRequestStatus FRIEND_REQUEST_STATUS_UNSPECIFIED =
+      FriendRequestStatus._(
+          0, _omitEnumNames ? '' : 'FRIEND_REQUEST_STATUS_UNSPECIFIED');
+  static const FriendRequestStatus FRIEND_REQUEST_STATUS_PENDING =
+      FriendRequestStatus._(
+          1, _omitEnumNames ? '' : 'FRIEND_REQUEST_STATUS_PENDING');
+  static const FriendRequestStatus FRIEND_REQUEST_STATUS_ACCEPTED =
+      FriendRequestStatus._(
+          2, _omitEnumNames ? '' : 'FRIEND_REQUEST_STATUS_ACCEPTED');
+  static const FriendRequestStatus FRIEND_REQUEST_STATUS_REJECTED =
+      FriendRequestStatus._(
+          3, _omitEnumNames ? '' : 'FRIEND_REQUEST_STATUS_REJECTED');
+
+  static const $core.List<FriendRequestStatus> values = <FriendRequestStatus>[
+    FRIEND_REQUEST_STATUS_UNSPECIFIED,
+    FRIEND_REQUEST_STATUS_PENDING,
+    FRIEND_REQUEST_STATUS_ACCEPTED,
+    FRIEND_REQUEST_STATUS_REJECTED,
+  ];
+
+  static final $core.List<FriendRequestStatus?> _byValue =
+      $pb.ProtobufEnum.$_initByValueList(values, 3);
+  static FriendRequestStatus? valueOf($core.int value) =>
+      value < 0 || value >= _byValue.length ? null : _byValue[value];
+
+  const FriendRequestStatus._(super.value, super.name);
+}
+
 const $core.bool _omitEnumNames =
     $core.bool.fromEnvironment('protobuf.omit_enum_names');

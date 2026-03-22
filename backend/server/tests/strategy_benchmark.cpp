@@ -100,7 +100,6 @@ std::vector<Candidate> BuildCandidates() {
   Require(wp != nullptr, "failed to load WP ONNX strategy");
 
   return {
-      Candidate{.key = "heuristic", .label = "Heuristic", .strategy = nullptr},
       Candidate{.key = "sl", .label = "SL", .strategy = std::move(sl)},
       Candidate{.key = "adp", .label = "DouZero-ADP", .strategy = std::move(adp)},
       Candidate{.key = "wp", .label = "DouZero-WP", .strategy = std::move(wp)},

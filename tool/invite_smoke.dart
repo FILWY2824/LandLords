@@ -54,9 +54,17 @@ Future<void> runInviteSmoke(String transport) async {
     );
 
     stdout.writeln('[$transport] linking friends');
-    await ownerGateway.addFriend(
+    await ownerGateway.sendFriendRequest(
       sessionToken: ownerLogin.sessionToken,
       account: guestAccount,
+    );
+    final friendCenter = await guestGateway.fetchFriendCenter(
+      sessionToken: guestLogin.sessionToken,
+    );
+    await guestGateway.respondFriendRequest(
+      sessionToken: guestLogin.sessionToken,
+      requestId: friendCenter.pendingRequests.single.requestId,
+      accept: true,
     );
 
     stdout.writeln('[$transport] creating room');

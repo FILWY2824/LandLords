@@ -102,7 +102,6 @@ void ConfigureOnnxDir() {
             "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_WP");
   _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR",
             "F:/CodeXProject/LandLords/backend/ai_models/onnx/sl");
-  _putenv_s("LANDLORDS_BOT_BACKEND", "onnx");
 #else
   setenv("LANDLORDS_DOUZERO_ONNX_DIR_EASY",
          "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_ADP",
@@ -116,7 +115,6 @@ void ConfigureOnnxDir() {
   setenv("LANDLORDS_DOUZERO_ONNX_DIR",
          "F:/CodeXProject/LandLords/backend/ai_models/onnx/sl",
          1);
-  setenv("LANDLORDS_BOT_BACKEND", "onnx", 1);
 #endif
 }
 

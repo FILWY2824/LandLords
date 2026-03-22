@@ -58,6 +58,16 @@ struct UserRecord {
   std::vector<std::string> friend_user_ids;
 };
 
+struct FriendRequestRecord {
+  std::string request_id;
+  std::string requester_user_id;
+  std::string receiver_user_id;
+  landlords::protocol::FriendRequestStatus status =
+      landlords::protocol::FRIEND_REQUEST_STATUS_PENDING;
+  std::int64_t created_at_ms = 0;
+  std::int64_t updated_at_ms = 0;
+};
+
 struct PlayerState {
   std::string player_id;
   std::string display_name;

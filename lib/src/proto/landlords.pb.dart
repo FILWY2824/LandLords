@@ -250,6 +250,247 @@ class OnlineUser extends $pb.GeneratedMessage {
   void clearOnline() => $_clearField(4);
 }
 
+class FriendRequestEntry extends $pb.GeneratedMessage {
+  factory FriendRequestEntry({
+    $core.String? requestId,
+    $core.String? requesterUserId,
+    $core.String? requesterAccount,
+    $core.String? requesterNickname,
+    $core.String? receiverUserId,
+    $core.String? receiverAccount,
+    $core.String? receiverNickname,
+    FriendRequestStatus? status,
+    $fixnum.Int64? createdAtMs,
+    $fixnum.Int64? updatedAtMs,
+  }) {
+    final result = create();
+    if (requestId != null) result.requestId = requestId;
+    if (requesterUserId != null) result.requesterUserId = requesterUserId;
+    if (requesterAccount != null) result.requesterAccount = requesterAccount;
+    if (requesterNickname != null) result.requesterNickname = requesterNickname;
+    if (receiverUserId != null) result.receiverUserId = receiverUserId;
+    if (receiverAccount != null) result.receiverAccount = receiverAccount;
+    if (receiverNickname != null) result.receiverNickname = receiverNickname;
+    if (status != null) result.status = status;
+    if (createdAtMs != null) result.createdAtMs = createdAtMs;
+    if (updatedAtMs != null) result.updatedAtMs = updatedAtMs;
+    return result;
+  }
+
+  FriendRequestEntry._();
+
+  factory FriendRequestEntry.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory FriendRequestEntry.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'FriendRequestEntry',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'requestId')
+    ..aOS(2, _omitFieldNames ? '' : 'requesterUserId')
+    ..aOS(3, _omitFieldNames ? '' : 'requesterAccount')
+    ..aOS(4, _omitFieldNames ? '' : 'requesterNickname')
+    ..aOS(5, _omitFieldNames ? '' : 'receiverUserId')
+    ..aOS(6, _omitFieldNames ? '' : 'receiverAccount')
+    ..aOS(7, _omitFieldNames ? '' : 'receiverNickname')
+    ..aE<FriendRequestStatus>(8, _omitFieldNames ? '' : 'status',
+        enumValues: FriendRequestStatus.values)
+    ..aInt64(9, _omitFieldNames ? '' : 'createdAtMs')
+    ..aInt64(10, _omitFieldNames ? '' : 'updatedAtMs')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FriendRequestEntry clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FriendRequestEntry copyWith(void Function(FriendRequestEntry) updates) =>
+      super.copyWith((message) => updates(message as FriendRequestEntry))
+          as FriendRequestEntry;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static FriendRequestEntry create() => FriendRequestEntry._();
+  @$core.override
+  FriendRequestEntry createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static FriendRequestEntry getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<FriendRequestEntry>(create);
+  static FriendRequestEntry? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get requestId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set requestId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRequestId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRequestId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get requesterUserId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set requesterUserId($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasRequesterUserId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearRequesterUserId() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get requesterAccount => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set requesterAccount($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasRequesterAccount() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearRequesterAccount() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get requesterNickname => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set requesterNickname($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasRequesterNickname() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearRequesterNickname() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get receiverUserId => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set receiverUserId($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasReceiverUserId() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearReceiverUserId() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.String get receiverAccount => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set receiverAccount($core.String value) => $_setString(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasReceiverAccount() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearReceiverAccount() => $_clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.String get receiverNickname => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set receiverNickname($core.String value) => $_setString(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasReceiverNickname() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearReceiverNickname() => $_clearField(7);
+
+  @$pb.TagNumber(8)
+  FriendRequestStatus get status => $_getN(7);
+  @$pb.TagNumber(8)
+  set status(FriendRequestStatus value) => $_setField(8, value);
+  @$pb.TagNumber(8)
+  $core.bool hasStatus() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearStatus() => $_clearField(8);
+
+  @$pb.TagNumber(9)
+  $fixnum.Int64 get createdAtMs => $_getI64(8);
+  @$pb.TagNumber(9)
+  set createdAtMs($fixnum.Int64 value) => $_setInt64(8, value);
+  @$pb.TagNumber(9)
+  $core.bool hasCreatedAtMs() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearCreatedAtMs() => $_clearField(9);
+
+  @$pb.TagNumber(10)
+  $fixnum.Int64 get updatedAtMs => $_getI64(9);
+  @$pb.TagNumber(10)
+  set updatedAtMs($fixnum.Int64 value) => $_setInt64(9, value);
+  @$pb.TagNumber(10)
+  $core.bool hasUpdatedAtMs() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearUpdatedAtMs() => $_clearField(10);
+}
+
+class FriendCenterSnapshot extends $pb.GeneratedMessage {
+  factory FriendCenterSnapshot({
+    $core.Iterable<OnlineUser>? friends,
+    $core.Iterable<FriendRequestEntry>? pendingRequests,
+    $core.Iterable<FriendRequestEntry>? historyRequests,
+    $core.int? pendingRequestCount,
+  }) {
+    final result = create();
+    if (friends != null) result.friends.addAll(friends);
+    if (pendingRequests != null) result.pendingRequests.addAll(pendingRequests);
+    if (historyRequests != null) result.historyRequests.addAll(historyRequests);
+    if (pendingRequestCount != null)
+      result.pendingRequestCount = pendingRequestCount;
+    return result;
+  }
+
+  FriendCenterSnapshot._();
+
+  factory FriendCenterSnapshot.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory FriendCenterSnapshot.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'FriendCenterSnapshot',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..pPM<OnlineUser>(1, _omitFieldNames ? '' : 'friends',
+        subBuilder: OnlineUser.create)
+    ..pPM<FriendRequestEntry>(2, _omitFieldNames ? '' : 'pendingRequests',
+        subBuilder: FriendRequestEntry.create)
+    ..pPM<FriendRequestEntry>(3, _omitFieldNames ? '' : 'historyRequests',
+        subBuilder: FriendRequestEntry.create)
+    ..aI(4, _omitFieldNames ? '' : 'pendingRequestCount')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FriendCenterSnapshot clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FriendCenterSnapshot copyWith(void Function(FriendCenterSnapshot) updates) =>
+      super.copyWith((message) => updates(message as FriendCenterSnapshot))
+          as FriendCenterSnapshot;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static FriendCenterSnapshot create() => FriendCenterSnapshot._();
+  @$core.override
+  FriendCenterSnapshot createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static FriendCenterSnapshot getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<FriendCenterSnapshot>(create);
+  static FriendCenterSnapshot? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $pb.PbList<OnlineUser> get friends => $_getList(0);
+
+  @$pb.TagNumber(2)
+  $pb.PbList<FriendRequestEntry> get pendingRequests => $_getList(1);
+
+  @$pb.TagNumber(3)
+  $pb.PbList<FriendRequestEntry> get historyRequests => $_getList(2);
+
+  @$pb.TagNumber(4)
+  $core.int get pendingRequestCount => $_getIZ(3);
+  @$pb.TagNumber(4)
+  set pendingRequestCount($core.int value) => $_setSignedInt32(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasPendingRequestCount() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearPendingRequestCount() => $_clearField(4);
+}
+
 class RegisterRequest extends $pb.GeneratedMessage {
   factory RegisterRequest({
     $core.String? nickname,
@@ -1320,9 +1561,11 @@ class ListFriendsRequest extends $pb.GeneratedMessage {
 class ListFriendsResponse extends $pb.GeneratedMessage {
   factory ListFriendsResponse({
     $core.Iterable<OnlineUser>? users,
+    FriendCenterSnapshot? snapshot,
   }) {
     final result = create();
     if (users != null) result.users.addAll(users);
+    if (snapshot != null) result.snapshot = snapshot;
     return result;
   }
 
@@ -1342,6 +1585,8 @@ class ListFriendsResponse extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..pPM<OnlineUser>(1, _omitFieldNames ? '' : 'users',
         subBuilder: OnlineUser.create)
+    ..aOM<FriendCenterSnapshot>(2, _omitFieldNames ? '' : 'snapshot',
+        subBuilder: FriendCenterSnapshot.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1365,6 +1610,17 @@ class ListFriendsResponse extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(1)
   $pb.PbList<OnlineUser> get users => $_getList(0);
+
+  @$pb.TagNumber(2)
+  FriendCenterSnapshot get snapshot => $_getN(1);
+  @$pb.TagNumber(2)
+  set snapshot(FriendCenterSnapshot value) => $_setField(2, value);
+  @$pb.TagNumber(2)
+  $core.bool hasSnapshot() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSnapshot() => $_clearField(2);
+  @$pb.TagNumber(2)
+  FriendCenterSnapshot ensureSnapshot() => $_ensure(1);
 }
 
 class AddFriendRequest extends $pb.GeneratedMessage {
@@ -1426,12 +1682,14 @@ class AddFriendResponse extends $pb.GeneratedMessage {
   factory AddFriendResponse({
     $core.bool? success,
     $core.String? message,
-    OnlineUser? user,
+    FriendRequestEntry? request,
+    FriendCenterSnapshot? snapshot,
   }) {
     final result = create();
     if (success != null) result.success = success;
     if (message != null) result.message = message;
-    if (user != null) result.user = user;
+    if (request != null) result.request = request;
+    if (snapshot != null) result.snapshot = snapshot;
     return result;
   }
 
@@ -1451,8 +1709,10 @@ class AddFriendResponse extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..aOB(1, _omitFieldNames ? '' : 'success')
     ..aOS(2, _omitFieldNames ? '' : 'message')
-    ..aOM<OnlineUser>(3, _omitFieldNames ? '' : 'user',
-        subBuilder: OnlineUser.create)
+    ..aOM<FriendRequestEntry>(3, _omitFieldNames ? '' : 'request',
+        subBuilder: FriendRequestEntry.create)
+    ..aOM<FriendCenterSnapshot>(4, _omitFieldNames ? '' : 'snapshot',
+        subBuilder: FriendCenterSnapshot.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1493,15 +1753,333 @@ class AddFriendResponse extends $pb.GeneratedMessage {
   void clearMessage() => $_clearField(2);
 
   @$pb.TagNumber(3)
-  OnlineUser get user => $_getN(2);
+  FriendRequestEntry get request => $_getN(2);
   @$pb.TagNumber(3)
-  set user(OnlineUser value) => $_setField(3, value);
+  set request(FriendRequestEntry value) => $_setField(3, value);
   @$pb.TagNumber(3)
-  $core.bool hasUser() => $_has(2);
+  $core.bool hasRequest() => $_has(2);
   @$pb.TagNumber(3)
-  void clearUser() => $_clearField(3);
+  void clearRequest() => $_clearField(3);
   @$pb.TagNumber(3)
-  OnlineUser ensureUser() => $_ensure(2);
+  FriendRequestEntry ensureRequest() => $_ensure(2);
+
+  @$pb.TagNumber(4)
+  FriendCenterSnapshot get snapshot => $_getN(3);
+  @$pb.TagNumber(4)
+  set snapshot(FriendCenterSnapshot value) => $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasSnapshot() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearSnapshot() => $_clearField(4);
+  @$pb.TagNumber(4)
+  FriendCenterSnapshot ensureSnapshot() => $_ensure(3);
+}
+
+class RespondFriendRequestRequest extends $pb.GeneratedMessage {
+  factory RespondFriendRequestRequest({
+    $core.String? requestId,
+    $core.bool? accept,
+  }) {
+    final result = create();
+    if (requestId != null) result.requestId = requestId;
+    if (accept != null) result.accept = accept;
+    return result;
+  }
+
+  RespondFriendRequestRequest._();
+
+  factory RespondFriendRequestRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory RespondFriendRequestRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RespondFriendRequestRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'requestId')
+    ..aOB(2, _omitFieldNames ? '' : 'accept')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RespondFriendRequestRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RespondFriendRequestRequest copyWith(
+          void Function(RespondFriendRequestRequest) updates) =>
+      super.copyWith(
+              (message) => updates(message as RespondFriendRequestRequest))
+          as RespondFriendRequestRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RespondFriendRequestRequest create() =>
+      RespondFriendRequestRequest._();
+  @$core.override
+  RespondFriendRequestRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static RespondFriendRequestRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RespondFriendRequestRequest>(create);
+  static RespondFriendRequestRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get requestId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set requestId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRequestId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRequestId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get accept => $_getBF(1);
+  @$pb.TagNumber(2)
+  set accept($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasAccept() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearAccept() => $_clearField(2);
+}
+
+class RespondFriendRequestResponse extends $pb.GeneratedMessage {
+  factory RespondFriendRequestResponse({
+    $core.bool? success,
+    $core.String? message,
+    FriendRequestEntry? request,
+    FriendCenterSnapshot? snapshot,
+  }) {
+    final result = create();
+    if (success != null) result.success = success;
+    if (message != null) result.message = message;
+    if (request != null) result.request = request;
+    if (snapshot != null) result.snapshot = snapshot;
+    return result;
+  }
+
+  RespondFriendRequestResponse._();
+
+  factory RespondFriendRequestResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory RespondFriendRequestResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RespondFriendRequestResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..aOM<FriendRequestEntry>(3, _omitFieldNames ? '' : 'request',
+        subBuilder: FriendRequestEntry.create)
+    ..aOM<FriendCenterSnapshot>(4, _omitFieldNames ? '' : 'snapshot',
+        subBuilder: FriendCenterSnapshot.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RespondFriendRequestResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RespondFriendRequestResponse copyWith(
+          void Function(RespondFriendRequestResponse) updates) =>
+      super.copyWith(
+              (message) => updates(message as RespondFriendRequestResponse))
+          as RespondFriendRequestResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RespondFriendRequestResponse create() =>
+      RespondFriendRequestResponse._();
+  @$core.override
+  RespondFriendRequestResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static RespondFriendRequestResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RespondFriendRequestResponse>(create);
+  static RespondFriendRequestResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  FriendRequestEntry get request => $_getN(2);
+  @$pb.TagNumber(3)
+  set request(FriendRequestEntry value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasRequest() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearRequest() => $_clearField(3);
+  @$pb.TagNumber(3)
+  FriendRequestEntry ensureRequest() => $_ensure(2);
+
+  @$pb.TagNumber(4)
+  FriendCenterSnapshot get snapshot => $_getN(3);
+  @$pb.TagNumber(4)
+  set snapshot(FriendCenterSnapshot value) => $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasSnapshot() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearSnapshot() => $_clearField(4);
+  @$pb.TagNumber(4)
+  FriendCenterSnapshot ensureSnapshot() => $_ensure(3);
+}
+
+class DeleteFriendRequest extends $pb.GeneratedMessage {
+  factory DeleteFriendRequest({
+    $core.String? friendUserId,
+  }) {
+    final result = create();
+    if (friendUserId != null) result.friendUserId = friendUserId;
+    return result;
+  }
+
+  DeleteFriendRequest._();
+
+  factory DeleteFriendRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory DeleteFriendRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'DeleteFriendRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'friendUserId')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DeleteFriendRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DeleteFriendRequest copyWith(void Function(DeleteFriendRequest) updates) =>
+      super.copyWith((message) => updates(message as DeleteFriendRequest))
+          as DeleteFriendRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DeleteFriendRequest create() => DeleteFriendRequest._();
+  @$core.override
+  DeleteFriendRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static DeleteFriendRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<DeleteFriendRequest>(create);
+  static DeleteFriendRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get friendUserId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set friendUserId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasFriendUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearFriendUserId() => $_clearField(1);
+}
+
+class DeleteFriendResponse extends $pb.GeneratedMessage {
+  factory DeleteFriendResponse({
+    $core.bool? success,
+    $core.String? message,
+    FriendCenterSnapshot? snapshot,
+  }) {
+    final result = create();
+    if (success != null) result.success = success;
+    if (message != null) result.message = message;
+    if (snapshot != null) result.snapshot = snapshot;
+    return result;
+  }
+
+  DeleteFriendResponse._();
+
+  factory DeleteFriendResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory DeleteFriendResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'DeleteFriendResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..aOM<FriendCenterSnapshot>(3, _omitFieldNames ? '' : 'snapshot',
+        subBuilder: FriendCenterSnapshot.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DeleteFriendResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DeleteFriendResponse copyWith(void Function(DeleteFriendResponse) updates) =>
+      super.copyWith((message) => updates(message as DeleteFriendResponse))
+          as DeleteFriendResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DeleteFriendResponse create() => DeleteFriendResponse._();
+  @$core.override
+  DeleteFriendResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static DeleteFriendResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<DeleteFriendResponse>(create);
+  static DeleteFriendResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  FriendCenterSnapshot get snapshot => $_getN(2);
+  @$pb.TagNumber(3)
+  set snapshot(FriendCenterSnapshot value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasSnapshot() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSnapshot() => $_clearField(3);
+  @$pb.TagNumber(3)
+  FriendCenterSnapshot ensureSnapshot() => $_ensure(2);
 }
 
 class InvitePlayerRequest extends $pb.GeneratedMessage {
@@ -2047,6 +2625,64 @@ class RoomInvitationResultPush extends $pb.GeneratedMessage {
   $core.bool hasMessage() => $_has(5);
   @$pb.TagNumber(6)
   void clearMessage() => $_clearField(6);
+}
+
+class FriendCenterPush extends $pb.GeneratedMessage {
+  factory FriendCenterPush({
+    FriendCenterSnapshot? snapshot,
+  }) {
+    final result = create();
+    if (snapshot != null) result.snapshot = snapshot;
+    return result;
+  }
+
+  FriendCenterPush._();
+
+  factory FriendCenterPush.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory FriendCenterPush.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'FriendCenterPush',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOM<FriendCenterSnapshot>(1, _omitFieldNames ? '' : 'snapshot',
+        subBuilder: FriendCenterSnapshot.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FriendCenterPush clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FriendCenterPush copyWith(void Function(FriendCenterPush) updates) =>
+      super.copyWith((message) => updates(message as FriendCenterPush))
+          as FriendCenterPush;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static FriendCenterPush create() => FriendCenterPush._();
+  @$core.override
+  FriendCenterPush createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static FriendCenterPush getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<FriendCenterPush>(create);
+  static FriendCenterPush? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  FriendCenterSnapshot get snapshot => $_getN(0);
+  @$pb.TagNumber(1)
+  set snapshot(FriendCenterSnapshot value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSnapshot() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSnapshot() => $_clearField(1);
+  @$pb.TagNumber(1)
+  FriendCenterSnapshot ensureSnapshot() => $_ensure(0);
 }
 
 class MatchResponse extends $pb.GeneratedMessage {
@@ -3297,6 +3933,8 @@ enum ClientMessage_Payload {
   respondRoomInvitationRequest,
   leaveRoomRequest,
   updateNicknameRequest,
+  respondFriendRequestRequest,
+  deleteFriendRequest,
   notSet
 }
 
@@ -3323,6 +3961,8 @@ class ClientMessage extends $pb.GeneratedMessage {
     RespondRoomInvitationRequest? respondRoomInvitationRequest,
     LeaveRoomRequest? leaveRoomRequest,
     UpdateNicknameRequest? updateNicknameRequest,
+    RespondFriendRequestRequest? respondFriendRequestRequest,
+    DeleteFriendRequest? deleteFriendRequest,
   }) {
     final result = create();
     if (requestId != null) result.requestId = requestId;
@@ -3352,6 +3992,10 @@ class ClientMessage extends $pb.GeneratedMessage {
     if (leaveRoomRequest != null) result.leaveRoomRequest = leaveRoomRequest;
     if (updateNicknameRequest != null)
       result.updateNicknameRequest = updateNicknameRequest;
+    if (respondFriendRequestRequest != null)
+      result.respondFriendRequestRequest = respondFriendRequestRequest;
+    if (deleteFriendRequest != null)
+      result.deleteFriendRequest = deleteFriendRequest;
     return result;
   }
 
@@ -3385,6 +4029,8 @@ class ClientMessage extends $pb.GeneratedMessage {
     26: ClientMessage_Payload.respondRoomInvitationRequest,
     27: ClientMessage_Payload.leaveRoomRequest,
     28: ClientMessage_Payload.updateNicknameRequest,
+    29: ClientMessage_Payload.respondFriendRequestRequest,
+    30: ClientMessage_Payload.deleteFriendRequest,
     0: ClientMessage_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -3411,7 +4057,9 @@ class ClientMessage extends $pb.GeneratedMessage {
       25,
       26,
       27,
-      28
+      28,
+      29,
+      30
     ])
     ..aOS(1, _omitFieldNames ? '' : 'requestId')
     ..aOS(2, _omitFieldNames ? '' : 'sessionToken')
@@ -3456,6 +4104,11 @@ class ClientMessage extends $pb.GeneratedMessage {
     ..aOM<UpdateNicknameRequest>(
         28, _omitFieldNames ? '' : 'updateNicknameRequest',
         subBuilder: UpdateNicknameRequest.create)
+    ..aOM<RespondFriendRequestRequest>(
+        29, _omitFieldNames ? '' : 'respondFriendRequestRequest',
+        subBuilder: RespondFriendRequestRequest.create)
+    ..aOM<DeleteFriendRequest>(30, _omitFieldNames ? '' : 'deleteFriendRequest',
+        subBuilder: DeleteFriendRequest.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -3496,6 +4149,8 @@ class ClientMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(26)
   @$pb.TagNumber(27)
   @$pb.TagNumber(28)
+  @$pb.TagNumber(29)
+  @$pb.TagNumber(30)
   ClientMessage_Payload whichPayload() =>
       _ClientMessage_PayloadByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(10)
@@ -3517,6 +4172,8 @@ class ClientMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(26)
   @$pb.TagNumber(27)
   @$pb.TagNumber(28)
+  @$pb.TagNumber(29)
+  @$pb.TagNumber(30)
   void clearPayload() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -3748,6 +4405,30 @@ class ClientMessage extends $pb.GeneratedMessage {
   void clearUpdateNicknameRequest() => $_clearField(28);
   @$pb.TagNumber(28)
   UpdateNicknameRequest ensureUpdateNicknameRequest() => $_ensure(20);
+
+  @$pb.TagNumber(29)
+  RespondFriendRequestRequest get respondFriendRequestRequest => $_getN(21);
+  @$pb.TagNumber(29)
+  set respondFriendRequestRequest(RespondFriendRequestRequest value) =>
+      $_setField(29, value);
+  @$pb.TagNumber(29)
+  $core.bool hasRespondFriendRequestRequest() => $_has(21);
+  @$pb.TagNumber(29)
+  void clearRespondFriendRequestRequest() => $_clearField(29);
+  @$pb.TagNumber(29)
+  RespondFriendRequestRequest ensureRespondFriendRequestRequest() =>
+      $_ensure(21);
+
+  @$pb.TagNumber(30)
+  DeleteFriendRequest get deleteFriendRequest => $_getN(22);
+  @$pb.TagNumber(30)
+  set deleteFriendRequest(DeleteFriendRequest value) => $_setField(30, value);
+  @$pb.TagNumber(30)
+  $core.bool hasDeleteFriendRequest() => $_has(22);
+  @$pb.TagNumber(30)
+  void clearDeleteFriendRequest() => $_clearField(30);
+  @$pb.TagNumber(30)
+  DeleteFriendRequest ensureDeleteFriendRequest() => $_ensure(22);
 }
 
 enum ServerMessage_Payload {
@@ -3767,6 +4448,9 @@ enum ServerMessage_Payload {
   respondRoomInvitationResponse,
   roomInvitationResultPush,
   updateNicknameResponse,
+  respondFriendRequestResponse,
+  deleteFriendResponse,
+  friendCenterPush,
   notSet
 }
 
@@ -3789,6 +4473,9 @@ class ServerMessage extends $pb.GeneratedMessage {
     RespondRoomInvitationResponse? respondRoomInvitationResponse,
     RoomInvitationResultPush? roomInvitationResultPush,
     UpdateNicknameResponse? updateNicknameResponse,
+    RespondFriendRequestResponse? respondFriendRequestResponse,
+    DeleteFriendResponse? deleteFriendResponse,
+    FriendCenterPush? friendCenterPush,
   }) {
     final result = create();
     if (requestId != null) result.requestId = requestId;
@@ -3815,6 +4502,11 @@ class ServerMessage extends $pb.GeneratedMessage {
       result.roomInvitationResultPush = roomInvitationResultPush;
     if (updateNicknameResponse != null)
       result.updateNicknameResponse = updateNicknameResponse;
+    if (respondFriendRequestResponse != null)
+      result.respondFriendRequestResponse = respondFriendRequestResponse;
+    if (deleteFriendResponse != null)
+      result.deleteFriendResponse = deleteFriendResponse;
+    if (friendCenterPush != null) result.friendCenterPush = friendCenterPush;
     return result;
   }
 
@@ -3845,6 +4537,9 @@ class ServerMessage extends $pb.GeneratedMessage {
     23: ServerMessage_Payload.respondRoomInvitationResponse,
     24: ServerMessage_Payload.roomInvitationResultPush,
     25: ServerMessage_Payload.updateNicknameResponse,
+    26: ServerMessage_Payload.respondFriendRequestResponse,
+    27: ServerMessage_Payload.deleteFriendResponse,
+    28: ServerMessage_Payload.friendCenterPush,
     0: ServerMessage_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -3852,7 +4547,27 @@ class ServerMessage extends $pb.GeneratedMessage {
       package:
           const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
       createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25])
+    ..oo(0, [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28
+    ])
     ..aOS(1, _omitFieldNames ? '' : 'requestId')
     ..aOM<RegisterResponse>(10, _omitFieldNames ? '' : 'registerResponse',
         subBuilder: RegisterResponse.create)
@@ -3891,6 +4606,14 @@ class ServerMessage extends $pb.GeneratedMessage {
     ..aOM<UpdateNicknameResponse>(
         25, _omitFieldNames ? '' : 'updateNicknameResponse',
         subBuilder: UpdateNicknameResponse.create)
+    ..aOM<RespondFriendRequestResponse>(
+        26, _omitFieldNames ? '' : 'respondFriendRequestResponse',
+        subBuilder: RespondFriendRequestResponse.create)
+    ..aOM<DeleteFriendResponse>(
+        27, _omitFieldNames ? '' : 'deleteFriendResponse',
+        subBuilder: DeleteFriendResponse.create)
+    ..aOM<FriendCenterPush>(28, _omitFieldNames ? '' : 'friendCenterPush',
+        subBuilder: FriendCenterPush.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -3928,6 +4651,9 @@ class ServerMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(23)
   @$pb.TagNumber(24)
   @$pb.TagNumber(25)
+  @$pb.TagNumber(26)
+  @$pb.TagNumber(27)
+  @$pb.TagNumber(28)
   ServerMessage_Payload whichPayload() =>
       _ServerMessage_PayloadByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(10)
@@ -3946,6 +4672,9 @@ class ServerMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(23)
   @$pb.TagNumber(24)
   @$pb.TagNumber(25)
+  @$pb.TagNumber(26)
+  @$pb.TagNumber(27)
+  @$pb.TagNumber(28)
   void clearPayload() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -4137,6 +4866,41 @@ class ServerMessage extends $pb.GeneratedMessage {
   void clearUpdateNicknameResponse() => $_clearField(25);
   @$pb.TagNumber(25)
   UpdateNicknameResponse ensureUpdateNicknameResponse() => $_ensure(16);
+
+  @$pb.TagNumber(26)
+  RespondFriendRequestResponse get respondFriendRequestResponse => $_getN(17);
+  @$pb.TagNumber(26)
+  set respondFriendRequestResponse(RespondFriendRequestResponse value) =>
+      $_setField(26, value);
+  @$pb.TagNumber(26)
+  $core.bool hasRespondFriendRequestResponse() => $_has(17);
+  @$pb.TagNumber(26)
+  void clearRespondFriendRequestResponse() => $_clearField(26);
+  @$pb.TagNumber(26)
+  RespondFriendRequestResponse ensureRespondFriendRequestResponse() =>
+      $_ensure(17);
+
+  @$pb.TagNumber(27)
+  DeleteFriendResponse get deleteFriendResponse => $_getN(18);
+  @$pb.TagNumber(27)
+  set deleteFriendResponse(DeleteFriendResponse value) => $_setField(27, value);
+  @$pb.TagNumber(27)
+  $core.bool hasDeleteFriendResponse() => $_has(18);
+  @$pb.TagNumber(27)
+  void clearDeleteFriendResponse() => $_clearField(27);
+  @$pb.TagNumber(27)
+  DeleteFriendResponse ensureDeleteFriendResponse() => $_ensure(18);
+
+  @$pb.TagNumber(28)
+  FriendCenterPush get friendCenterPush => $_getN(19);
+  @$pb.TagNumber(28)
+  set friendCenterPush(FriendCenterPush value) => $_setField(28, value);
+  @$pb.TagNumber(28)
+  $core.bool hasFriendCenterPush() => $_has(19);
+  @$pb.TagNumber(28)
+  void clearFriendCenterPush() => $_clearField(28);
+  @$pb.TagNumber(28)
+  FriendCenterPush ensureFriendCenterPush() => $_ensure(19);
 }
 
 const $core.bool _omitFieldNames =

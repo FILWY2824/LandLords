@@ -27,7 +27,6 @@ class IBotStrategy {
       const landlords::protocol::RoomSnapshot& snapshot) = 0;
 };
 
-std::shared_ptr<IBotStrategy> CreateBotStrategyFromEnv();
 std::shared_ptr<IBotStrategy> CreateBotStrategyForDifficulty(
     landlords::protocol::BotDifficulty difficulty);
 

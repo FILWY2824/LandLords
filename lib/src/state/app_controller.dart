@@ -44,6 +44,7 @@ class AppController extends ChangeNotifier {
   RoomInvitation? _activeInvitation;
   InvitationFeedback? _activeInvitationFeedback;
   AppDialogNotice? _activePopupNotice;
+  FriendCenterSnapshot _friendCenterSnapshot = const FriendCenterSnapshot.empty();
 
   AppStage get stage => _stage;
   UserProfile? get profile => _profile;
@@ -55,6 +56,8 @@ class AppController extends ChangeNotifier {
   RoomInvitation? get activeInvitation => _activeInvitation;
   InvitationFeedback? get activeInvitationFeedback => _activeInvitationFeedback;
   AppDialogNotice? get activePopupNotice => _activePopupNotice;
+  FriendCenterSnapshot get friendCenterSnapshot => _friendCenterSnapshot;
+  int get pendingFriendRequestCount => _friendCenterSnapshot.pendingRequestCount;
   bool get isBusy => _busyText != null;
   bool get isMatching => _stage == AppStage.matching;
   int get matchingElapsedSeconds => _matchingElapsedSeconds;
@@ -124,6 +127,7 @@ class AppController extends ChangeNotifier {
       _activeInvitationFeedback = null;
       _activePopupNotice = null;
       _popupNoticeQueue.clear();
+      _friendCenterSnapshot = const FriendCenterSnapshot.empty();
       _roomSubscription ??= _gateway.roomSnapshots.listen((snapshot) {
         _roomSnapshot = snapshot;
         _errorText = null;
@@ -136,6 +140,9 @@ class AppController extends ChangeNotifier {
       });
       _stage = AppStage.lobby;
     });
+    if (_sessionToken != null) {
+      unawaited(refreshFriendCenter(silent: true));
+    }
   }
 
   Future<void> startMatch(
@@ -252,7 +259,11 @@ class AppController extends ChangeNotifier {
       return;
     }
     await _guard('正在创建房间...', () async {
-      _roomSnapshot = await _gateway.createRoom(sessionToken: _sessionToken!);
+      final snapshot = await _gateway.createRoom(sessionToken: _sessionToken!);
+      if (!_isValidCreatedRoomSnapshot(snapshot)) {
+        throw Exception('invalid create room snapshot');
+      }
+      _roomSnapshot = snapshot;
       _stage = AppStage.game;
       _lobbyNotice = null;
     });
@@ -269,10 +280,14 @@ class AppController extends ChangeNotifier {
       return;
     }
     await _guard('正在进入房间...', () async {
-      _roomSnapshot = await _gateway.joinRoom(
+      final snapshot = await _gateway.joinRoom(
         sessionToken: _sessionToken!,
         roomCode: roomCode,
       );
+      if (!_isValidJoinedRoomSnapshot(snapshot)) {
+        throw Exception('invalid join room snapshot');
+      }
+      _roomSnapshot = snapshot;
       _stage = AppStage.game;
       _lobbyNotice = null;
     });
@@ -331,31 +346,81 @@ class AppController extends ChangeNotifier {
     });
   }
 
-  Future<List<OnlineUser>> fetchFriends() async {
+  Future<FriendCenterSnapshot> refreshFriendCenter({bool silent = false}) async {
     if (_sessionToken == null) {
-      return const [];
+      return const FriendCenterSnapshot.empty();
     }
     try {
-      return await _gateway.fetchFriends(sessionToken: _sessionToken!);
+      final snapshot = await _gateway.fetchFriendCenter(
+        sessionToken: _sessionToken!,
+      );
+      _friendCenterSnapshot = snapshot;
+      if (!silent) {
+        notifyListeners();
+      }
+      return snapshot;
     } catch (error) {
-      _errorText = error.toString().replaceFirst('Exception: ', '');
-      notifyListeners();
-      return const [];
+      if (!silent) {
+        _errorText = error.toString().replaceFirst('Exception: ', '');
+        notifyListeners();
+      }
+      return _friendCenterSnapshot;
     }
   }
 
-  Future<OnlineUser?> addFriendByAccount(String account) async {
+  Future<FriendCenterSnapshot?> sendFriendRequestByAccount(String account) async {
     if (_sessionToken == null) {
       return null;
     }
-    OnlineUser? added;
+    FriendCenterSnapshot? snapshot;
     await _guard('正在添加好友...', () async {
-      added = await _gateway.addFriend(
+      snapshot = await _gateway.sendFriendRequest(
         sessionToken: _sessionToken!,
         account: account,
       );
+      if (snapshot != null) {
+        _friendCenterSnapshot = snapshot!;
+      }
     });
-    return added;
+    return snapshot;
+  }
+
+  Future<FriendCenterSnapshot?> respondFriendRequest({
+    required String requestId,
+    required bool accept,
+  }) async {
+    if (_sessionToken == null) {
+      return null;
+    }
+    FriendCenterSnapshot? snapshot;
+    await _guard(accept ? '姝ｅ湪鍚屾剰鐢宠...' : '姝ｅ湪鎷掔粷鐢宠...', () async {
+      snapshot = await _gateway.respondFriendRequest(
+        sessionToken: _sessionToken!,
+        requestId: requestId,
+        accept: accept,
+      );
+      if (snapshot != null) {
+        _friendCenterSnapshot = snapshot!;
+      }
+    });
+    return snapshot;
+  }
+
+  Future<FriendCenterSnapshot?> deleteFriend(String friendUserId) async {
+    if (_sessionToken == null) {
+      return null;
+    }
+    FriendCenterSnapshot? snapshot;
+    await _guard('姝ｅ湪鍒犻櫎濂藉弸...', () async {
+      snapshot = await _gateway.deleteFriend(
+        sessionToken: _sessionToken!,
+        friendUserId: friendUserId,
+      );
+      if (snapshot != null) {
+        _friendCenterSnapshot = snapshot!;
+      }
+    });
+    return snapshot;
   }
 
   Future<void> invitePlayerToRoom({
@@ -410,10 +475,14 @@ class AppController extends ChangeNotifier {
     );
     await _recoverFromTransportFailure();
     if (_errorText != null) {
+      final shouldDismiss = _shouldDismissInvitationAfterError(_errorText!);
       showDialogNotice(
         title: '邀请处理失败',
         message: _friendlyRoomActionMessage(_errorText!),
       );
+      if (shouldDismiss) {
+        dismissActiveInvitation();
+      }
       return false;
     }
     dismissActiveInvitation();
@@ -426,6 +495,7 @@ class AppController extends ChangeNotifier {
     }
     try {
       await _gateway.recoverConnection();
+      await refreshFriendCenter(silent: true);
       _errorText = null;
     } catch (error) {
       _errorText = error.toString().replaceFirst('Exception: ', '');
@@ -631,22 +701,23 @@ class AppController extends ChangeNotifier {
     _matchingTimer = null;
     _matchingElapsedSeconds = 0;
     final snapshot = _roomSnapshot;
-    if (snapshot != null &&
-        snapshot.mode == MatchMode.online &&
-        snapshot.phase == RoomPhase.preparing &&
-        _sessionToken != null) {
+    final sessionToken = _sessionToken;
+    final shouldCloseRoomOnLeave = snapshot != null &&
+        sessionToken != null &&
+        (snapshot.mode == MatchMode.vsBot ||
+            (snapshot.mode == MatchMode.online &&
+                snapshot.phase == RoomPhase.preparing));
+    if (shouldCloseRoomOnLeave) {
       try {
         await _gateway.leaveRoom(
-          sessionToken: _sessionToken!,
+          sessionToken: sessionToken,
           roomId: snapshot.roomId,
         );
       } catch (error) {
         _errorText = error.toString().replaceFirst('Exception: ', '');
       }
       _roomSnapshot = null;
-    } else if (snapshot == null ||
-        snapshot.mode == MatchMode.vsBot ||
-        snapshot.phase == RoomPhase.finished) {
+    } else if (snapshot == null || snapshot.phase == RoomPhase.finished) {
       _roomSnapshot = null;
     }
     _stage = AppStage.lobby;
@@ -671,18 +742,16 @@ class AppController extends ChangeNotifier {
     _activeInvitationFeedback = null;
     _activePopupNotice = null;
     _popupNoticeQueue.clear();
+    _friendCenterSnapshot = const FriendCenterSnapshot.empty();
     _stage = AppStage.login;
     notifyListeners();
   }
 
   void resumeRoom() {
-    if (!hasResumeRoom) {
+    if (!hasResumeRoom || _busyText != null) {
       return;
     }
-    _stage = AppStage.game;
-    _errorText = null;
-    _lobbyNotice = null;
-    notifyListeners();
+    unawaited(_resumeRoomInternal());
   }
 
   void clearError() {
@@ -731,11 +800,20 @@ class AppController extends ChangeNotifier {
           _feedbackQueue.addLast(feedback);
         }
         notifyListeners();
+      case FriendCenterNotification():
+        _friendCenterSnapshot = notification.snapshot;
+        notifyListeners();
     }
   }
 
   String _friendlyMatchMessage(String raw) {
     final text = raw.replaceFirst('Exception: ', '');
+    if (text.contains('invalid create room snapshot')) {
+      return '鍒涘缓鎴块棿杩斿洖浜嗗紓甯哥姸鎬侊紝宸查樆姝㈣娆¤繘鍏ワ紝璇烽噸鏂板皾璇曘€?';
+    }
+    if (text.contains('invalid join room snapshot')) {
+      return '杩涘叆鎴块棿杩斿洖浜嗗紓甯哥姸鎬侊紝璇烽噸鏂板皾璇曘€?';
+    }
     if (text.contains('timeout')) {
       return '暂时没有匹配到玩家，请稍后再试。';
     }
@@ -745,16 +823,31 @@ class AppController extends ChangeNotifier {
     return '匹配暂时没有成功，请稍后再试。';
   }
 
-  String _friendlyRoomActionMessage(String raw) {
+String _friendlyRoomActionMessage(String raw) {
     final text = raw.replaceFirst('Exception: ', '');
+    if (text.contains('invalid create room snapshot')) {
+      return '鍒涘缓鎴块棿杩斿洖浜嗗紓甯哥姸鎬侊紝宸查樆姝㈣娆¤繘鍏ワ紝璇烽噸鏂板皾璇曘€?';
+    }
+    if (text.contains('invalid join room snapshot')) {
+      return '杩涘叆鎴块棿杩斿洖浜嗗紓甯哥姸鎬侊紝璇烽噸鏂板皾璇曘€?';
+    }
     if (text.contains('already in room')) {
       return '你当前已经在房间中，可以先退出当前房间后再重新创建或加入。';
     }
     if (text.contains('room not found')) {
       return '没有找到这个房间，请检查房间号是否正确。';
     }
+    if (text.contains('room is no longer available')) {
+      return '该房间已经不可用，无法处理这次邀请。';
+    }
     if (text.contains('room is full')) {
       return '房间已经满员了，请换一个房间号再试。';
+    }
+    if (text.contains('invitation expired')) {
+      return '这条房间邀请已经失效了。';
+    }
+    if (text.contains('player is currently in another room')) {
+      return '你当前正在其他房间中，暂时无法加入该房间。';
     }
     if (text.contains('timeout')) {
       return '请求超时了，请检查网络后重新尝试。';
@@ -826,6 +919,14 @@ class AppController extends ChangeNotifier {
         text.contains('超时');
   }
 
+  bool _shouldDismissInvitationAfterError(String raw) {
+    final text = raw.replaceFirst('Exception: ', '').toLowerCase();
+    return text.contains('invitation expired') ||
+        text.contains('room is no longer available') ||
+        text.contains('room not found') ||
+        text.contains('room is full');
+  }
+
   Future<void> _guard(String busyText, Future<void> Function() action) async {
     if (_busyText != null) {
       _errorText = _busyOperationError;
@@ -848,5 +949,62 @@ class AppController extends ChangeNotifier {
       _busyText = null;
       notifyListeners();
     }
+  }
+
+  Future<void> _resumeRoomInternal() async {
+    _errorText = null;
+    _lobbyNotice = null;
+    _busyText = '姝ｅ湪鎭㈠瀵瑰眬...';
+    notifyListeners();
+    try {
+      final snapshot = await _gateway.refreshCurrentRoom();
+      if (snapshot != null) {
+        _roomSnapshot = snapshot;
+      }
+      if (_roomSnapshot == null) {
+        throw Exception('room not found');
+      }
+      _stage = AppStage.game;
+    } catch (error) {
+      final message = error.toString().replaceFirst('Exception: ', '');
+      if (message.contains('room not found')) {
+        _roomSnapshot = null;
+        showDialogNotice(
+          message: '褰撳墠瀵瑰眬宸叉棤娉曟仮澶嶏紝璇峰洖鍒板ぇ鍘呴噸鏂板紑濮嬨€?',
+          deduplicate: false,
+        );
+      } else {
+        _errorText = message;
+        showDialogNotice(
+          message: _friendlyRoomActionMessage(message),
+          deduplicate: false,
+        );
+      }
+    } finally {
+      _busyText = null;
+      notifyListeners();
+    }
+  }
+
+  bool _isValidCreatedRoomSnapshot(RoomSnapshot snapshot) {
+    final profile = _profile;
+    if (!_isPreparingOnlineRoomSnapshot(snapshot) || profile == null) {
+      return false;
+    }
+    final occupiedPlayers = snapshot.players
+        .where((player) => player.occupied)
+        .toList(growable: false);
+    return snapshot.ownerPlayerId == profile.userId &&
+        occupiedPlayers.length == 1 &&
+        occupiedPlayers.first.playerId == profile.userId;
+  }
+
+  bool _isValidJoinedRoomSnapshot(RoomSnapshot snapshot) {
+    return _isPreparingOnlineRoomSnapshot(snapshot);
+  }
+
+  bool _isPreparingOnlineRoomSnapshot(RoomSnapshot snapshot) {
+    return snapshot.mode == MatchMode.online &&
+        snapshot.phase == RoomPhase.preparing;
   }
 }

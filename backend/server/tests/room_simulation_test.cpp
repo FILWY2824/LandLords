@@ -1,4 +1,5 @@
 #include "landlords/ai/bot_strategy.h"
+#include "landlords/ai/bot_strategy.h"
 #include "landlords/game/bid_strategy.h"
 #include "landlords/game/room.h"
 
@@ -7,6 +8,7 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace {
@@ -51,6 +53,114 @@ class InvalidSuggestionStrategy final : public landlords::ai::IBotStrategy {
     decision.card_ids = {"not-a-real-card"};
     return decision;
   }
+};
+
+bool StartsWith(std::string_view text, std::string_view prefix) {
+  return text.substr(0, prefix.size()) == prefix;
+}
+
+bool IsSystemAction(const auto& action) {
+  const std::string_view label = action.pattern();
+  return label == "managed_on" || label == "managed_off" ||
+         label == "bid_pass" || StartsWith(label, "bid_");
+}
+
+std::vector<Card> ProtoCardsToCore(const auto& cards) {
+  std::vector<Card> converted;
+  converted.reserve(cards.size());
+  for (const auto& card : cards) {
+    converted.push_back(Card{
+        .id = card.id(),
+        .rank = card.rank(),
+        .suit = card.suit(),
+        .value = card.value(),
+    });
+  }
+  return converted;
+}
+
+std::optional<landlords::core::CardPattern> CurrentTablePattern(
+    const landlords::protocol::RoomSnapshot& snapshot) {
+  int trailing_passes = 0;
+  for (int index = snapshot.recent_actions_size() - 1; index >= 0; --index) {
+    const auto& action = snapshot.recent_actions(index);
+    if (IsSystemAction(action)) {
+      continue;
+    }
+    if (action.action_type() == landlords::protocol::ACTION_TYPE_PASS) {
+      ++trailing_passes;
+      continue;
+    }
+    if (action.action_type() != landlords::protocol::ACTION_TYPE_PLAY ||
+        action.cards_size() == 0) {
+      continue;
+    }
+    if (trailing_passes >= 2) {
+      return std::nullopt;
+    }
+    const auto pattern = landlords::core::EvaluatePattern(ProtoCardsToCore(action.cards()));
+    return pattern.type == landlords::core::PatternType::kInvalid
+               ? std::nullopt
+               : std::optional<landlords::core::CardPattern>(pattern);
+  }
+  return std::nullopt;
+}
+
+std::optional<std::vector<std::string>> ChooseLegalCardIds(
+    const landlords::protocol::RoomSnapshot& snapshot) {
+  const auto self_cards = ProtoCardsToCore(snapshot.self_cards());
+  const auto table = CurrentTablePattern(snapshot);
+  for (const auto& candidate : landlords::core::BuildCandidates(self_cards)) {
+    if (landlords::core::CanBeat(candidate, table)) {
+      std::vector<std::string> ids;
+      ids.reserve(candidate.cards.size());
+      for (const auto& card : candidate.cards) {
+        ids.push_back(card.id);
+      }
+      return ids;
+    }
+  }
+  if (table.has_value()) {
+    return std::vector<std::string>{};
+  }
+  return std::nullopt;
+}
+
+std::optional<landlords::ai::BotDecision> BuildDecisionFromIds(
+    const std::optional<std::vector<std::string>>& ids) {
+  if (!ids.has_value()) {
+    return std::nullopt;
+  }
+  landlords::ai::BotDecision decision;
+  decision.kind = ids->empty() ? landlords::ai::BotDecision::Kind::kPass
+                               : landlords::ai::BotDecision::Kind::kPlay;
+  decision.card_ids = *ids;
+  return decision;
+}
+
+class GreedyLegalStrategy final : public landlords::ai::IBotStrategy {
+ public:
+  std::optional<landlords::ai::BotDecision> ChooseMove(
+      const landlords::protocol::RoomSnapshot& snapshot) override {
+    return BuildDecisionFromIds(ChooseLegalCardIds(snapshot));
+  }
+};
+
+class InstrumentedLegalStrategy final : public landlords::ai::IBotStrategy {
+ public:
+  explicit InstrumentedLegalStrategy(int* choose_calls)
+      : choose_calls_(choose_calls) {}
+
+  std::optional<landlords::ai::BotDecision> ChooseMove(
+      const landlords::protocol::RoomSnapshot& snapshot) override {
+    if (choose_calls_ != nullptr) {
+      ++(*choose_calls_);
+    }
+    return BuildDecisionFromIds(ChooseLegalCardIds(snapshot));
+  }
+
+ private:
+  int* choose_calls_ = nullptr;
 };
 
 PlayerState MakePlayer(const std::string& name, bool bot) {
@@ -121,13 +231,18 @@ void VerifyFinishedRoom(const Room& room, const std::string& observer_id) {
 }
 
 void RunAutomatedRoomSimulation(int rounds) {
+  auto strategy = std::make_shared<GreedyLegalStrategy>();
   for (int index = 0; index < rounds; ++index) {
     std::vector<PlayerState> players;
     players.push_back(MakePlayer("Bot Alpha", true));
     players.push_back(MakePlayer("Bot Bravo", true));
     players.push_back(MakePlayer("Bot Charlie", true));
 
-    Room room(GenerateId("room"), MATCH_MODE_VS_BOT, players);
+    Room room(GenerateId("room"),
+              MATCH_MODE_VS_BOT,
+              players,
+              landlords::protocol::BOT_DIFFICULTY_NORMAL,
+              strategy);
     std::int64_t now_ms = NowMs();
     int guard = 0;
     while (!room.finished() && guard < 600) {
@@ -207,6 +322,7 @@ void RunManualTurnSimulation(int rounds) {
         continue;
       }
       const std::string turn_id = snapshot.current_turn_player_id();
+      const auto turn_snapshot = room.BuildSnapshotFor(turn_id);
       const auto* player = [&]() -> const PlayerState* {
         for (const auto& item : room.players()) {
           if (item.player_id == turn_id) {
@@ -225,18 +341,14 @@ void RunManualTurnSimulation(int rounds) {
         const auto error = room.CallScore(turn_id, bid);
         Require(!error.has_value(), "manual simulation bid failed: " + error.value_or(""));
       } else if (snapshot.phase() == ROOM_PHASE_PLAYING) {
-        const auto suggestion = room.FindSuggestion(turn_id);
-        if (suggestion.has_value()) {
-          std::vector<std::string> ids;
-          ids.reserve(suggestion->cards.size());
-          for (const auto& card : suggestion->cards) {
-            ids.push_back(card.id);
-          }
-          const auto error = room.PlayCards(turn_id, ids);
-          Require(!error.has_value(), "manual simulation play failed: " + error.value_or(""));
-        } else {
+        const auto suggestion = ChooseLegalCardIds(turn_snapshot);
+        Require(suggestion.has_value(), "manual simulation could not find a legal move");
+        if (suggestion->empty()) {
           const auto error = room.Pass(turn_id);
           Require(!error.has_value(), "manual simulation pass failed: " + error.value_or(""));
+        } else {
+          const auto error = room.PlayCards(turn_id, *suggestion);
+          Require(!error.has_value(), "manual simulation play failed: " + error.value_or(""));
         }
       }
       ++guard;
@@ -253,7 +365,12 @@ void RunTrusteeTimeoutSimulation() {
   players.push_back(MakePlayer("Bot Left", true));
   players.push_back(MakePlayer("Bot Right", true));
 
-  Room room(GenerateId("room"), MATCH_MODE_VS_BOT, players);
+  auto strategy = std::make_shared<GreedyLegalStrategy>();
+  Room room(GenerateId("room"),
+            MATCH_MODE_VS_BOT,
+            players,
+            landlords::protocol::BOT_DIFFICULTY_NORMAL,
+            strategy);
   std::int64_t now_ms = NowMs();
   int guard = 0;
   while (guard < 40) {
@@ -304,7 +421,12 @@ void RunManagedSingleStepSimulation() {
   players.push_back(MakePlayer("Bot Left", true));
   players.push_back(MakePlayer("Bot Right", true));
 
-  Room room(GenerateId("room"), MATCH_MODE_VS_BOT, players);
+  auto strategy = std::make_shared<GreedyLegalStrategy>();
+  Room room(GenerateId("room"),
+            MATCH_MODE_VS_BOT,
+            players,
+            landlords::protocol::BOT_DIFFICULTY_NORMAL,
+            strategy);
   const std::string human_id = players.front().player_id;
   std::int64_t now_ms = NowMs();
   int guard = 0;
@@ -363,7 +485,7 @@ void RunSuggestionUsesBotStrategyTest() {
   players.push_back(MakePlayer("Bot Left", true));
   players.push_back(MakePlayer("Bot Right", true));
 
-  auto strategy = std::make_shared<StubSuggestionStrategy>();
+  auto strategy = std::make_shared<GreedyLegalStrategy>();
   Room room(GenerateId("room"),
             MATCH_MODE_VS_BOT,
             players,
@@ -450,13 +572,92 @@ void RunSuggestionRejectsEmptyModelResponseTest() {
   Require(!suggested.has_value(), "empty model response should not fall back to heuristic");
 }
 
+void RunManagedAutoplayUsesBotStrategyTest() {
+  std::vector<PlayerState> players;
+  players.push_back(MakePlayer("Human", false));
+  players.push_back(MakePlayer("Bot Left", true));
+  players.push_back(MakePlayer("Bot Right", true));
+
+  int choose_calls = 0;
+  auto strategy = std::make_shared<InstrumentedLegalStrategy>(&choose_calls);
+  Room room(GenerateId("room"),
+            MATCH_MODE_VS_BOT,
+            players,
+            landlords::protocol::BOT_DIFFICULTY_HARD,
+            strategy);
+  const std::string human_id = players.front().player_id;
+
+  const auto bid_error = room.CallScore(human_id, 3);
+  Require(!bid_error.has_value(), "managed autoplay test failed to bid 3");
+
+  const auto managed_error = room.SetManaged(human_id, true);
+  Require(!managed_error.has_value(), "managed autoplay test failed to enable trustee");
+
+  const auto managed_snapshot = room.BuildSnapshotFor(human_id);
+  const auto managed_action_id =
+      managed_snapshot.recent_actions(managed_snapshot.recent_actions_size() - 1).action_id();
+  const auto ack_error = room.AcknowledgePresentation(human_id, managed_action_id);
+  Require(!ack_error.has_value(), "managed autoplay test failed to acknowledge trustee notice");
+
+  const bool advanced = room.TickManaged(NowMs() + 7000, 25000);
+  Require(advanced, "managed autoplay test did not advance after trustee tick");
+  Require(choose_calls > 0, "managed autoplay did not call the bot strategy");
+
+  const auto snapshot = room.BuildSnapshotFor(human_id);
+  Require(snapshot.recent_actions_size() >= 2,
+          "managed autoplay should append trustee action and model move");
+  const auto& last_action =
+      snapshot.recent_actions(snapshot.recent_actions_size() - 1);
+  Require(last_action.player_id() == human_id,
+          "managed autoplay should act for the managed human");
+  Require(last_action.pattern() != "managed_on",
+          "managed autoplay should produce a model move after entering trustee");
+}
+
+void RunManagedRejectsInvalidModelMoveTest() {
+  std::vector<PlayerState> players;
+  players.push_back(MakePlayer("Human", false));
+  players.push_back(MakePlayer("Bot Left", true));
+  players.push_back(MakePlayer("Bot Right", true));
+
+  auto strategy = std::make_shared<InvalidSuggestionStrategy>();
+  Room room(GenerateId("room"),
+            MATCH_MODE_VS_BOT,
+            players,
+            landlords::protocol::BOT_DIFFICULTY_HARD,
+            strategy);
+  const std::string human_id = players.front().player_id;
+
+  const auto bid_error = room.CallScore(human_id, 3);
+  Require(!bid_error.has_value(), "managed invalid model test failed to bid 3");
+  const auto managed_error = room.SetManaged(human_id, true);
+  Require(!managed_error.has_value(), "managed invalid model test failed to enable trustee");
+
+  const auto managed_snapshot = room.BuildSnapshotFor(human_id);
+  const auto managed_action_id =
+      managed_snapshot.recent_actions(managed_snapshot.recent_actions_size() - 1).action_id();
+  const auto ack_error = room.AcknowledgePresentation(human_id, managed_action_id);
+  Require(!ack_error.has_value(), "managed invalid model test failed to acknowledge trustee notice");
+
+  const auto before = room.BuildSnapshotFor(human_id);
+  room.TickManaged(NowMs() + 7000, 25000);
+  const auto after = room.BuildSnapshotFor(human_id);
+
+  Require(after.recent_actions_size() == before.recent_actions_size(),
+          "invalid model move should not fall back to a heuristic trustee action");
+  Require(after.current_turn_player_id() == human_id,
+          "invalid model move should keep the turn on the acting player");
+  Require(after.status_text() == "bot_strategy_invalid",
+          "invalid model move should surface the model failure status");
+}
+
 void RunPresentationAckGateTest() {
   std::vector<PlayerState> players;
   players.push_back(MakePlayer("Human", false));
   players.push_back(MakePlayer("Bot Left", true));
   players.push_back(MakePlayer("Bot Right", true));
 
-  auto strategy = std::make_shared<StubSuggestionStrategy>();
+  auto strategy = std::make_shared<GreedyLegalStrategy>();
   Room room(GenerateId("room"),
             MATCH_MODE_VS_BOT,
             players,
@@ -511,6 +712,8 @@ int main() {
     RunSuggestionRequiresModelTest();
     RunSuggestionRejectsInvalidModelMoveTest();
     RunSuggestionRejectsEmptyModelResponseTest();
+    RunManagedAutoplayUsesBotStrategyTest();
+    RunManagedRejectsInvalidModelMoveTest();
     RunPresentationAckGateTest();
     std::cout << "room simulation tests passed" << std::endl;
     return 0;

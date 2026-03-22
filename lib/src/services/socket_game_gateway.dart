@@ -254,6 +254,10 @@ class SocketGameGateway implements GameGateway {
     if (response.hasErrorResponse()) {
       throw Exception(response.errorResponse.message);
     }
+    if (_lastRoomId == roomId) {
+      _lastRoomId = null;
+      _latestSnapshot = null;
+    }
   }
 
   @override
@@ -326,7 +330,7 @@ class SocketGameGateway implements GameGateway {
   }
 
   @override
-  Future<List<app.OnlineUser>> fetchFriends({
+  Future<app.FriendCenterSnapshot> fetchFriendCenter({
     required String sessionToken,
   }) async {
     final response = await _send(
@@ -339,13 +343,21 @@ class SocketGameGateway implements GameGateway {
     if (!response.hasListFriendsResponse()) {
       throw Exception('未收到好友列表');
     }
-    return response.listFriendsResponse.users
-        .map(_mapOnlineUser)
-        .toList(growable: false);
+    if (response.listFriendsResponse.hasSnapshot()) {
+      return _mapFriendCenterSnapshot(response.listFriendsResponse.snapshot);
+    }
+    return app.FriendCenterSnapshot(
+      friends: response.listFriendsResponse.users
+          .map(_mapOnlineUser)
+          .toList(growable: false),
+      pendingRequests: const [],
+      historyRequests: const [],
+      pendingRequestCount: 0,
+    );
   }
 
   @override
-  Future<app.OnlineUser> addFriend({
+  Future<app.FriendCenterSnapshot> sendFriendRequest({
     required String sessionToken,
     required String account,
   }) async {
@@ -365,7 +377,71 @@ class SocketGameGateway implements GameGateway {
             : response.errorResponse.message,
       );
     }
-    return _mapOnlineUser(response.addFriendResponse.user);
+    if (!response.addFriendResponse.hasSnapshot()) {
+      throw Exception('friend center snapshot missing');
+    }
+    return _mapFriendCenterSnapshot(response.addFriendResponse.snapshot);
+  }
+
+  @override
+  Future<app.FriendCenterSnapshot> respondFriendRequest({
+    required String sessionToken,
+    required String requestId,
+    required bool accept,
+  }) async {
+    final response = await _send(
+      (message) =>
+          message.respondFriendRequestRequest = pb.RespondFriendRequestRequest(
+        requestId: requestId,
+        accept: accept,
+      ),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+    if (!response.hasRespondFriendRequestResponse() ||
+        !response.respondFriendRequestResponse.success) {
+      throw Exception(
+        response.hasRespondFriendRequestResponse()
+            ? response.respondFriendRequestResponse.message
+            : response.errorResponse.message,
+      );
+    }
+    if (!response.respondFriendRequestResponse.hasSnapshot()) {
+      throw Exception('friend center snapshot missing');
+    }
+    return _mapFriendCenterSnapshot(
+      response.respondFriendRequestResponse.snapshot,
+    );
+  }
+
+  @override
+  Future<app.FriendCenterSnapshot> deleteFriend({
+    required String sessionToken,
+    required String friendUserId,
+  }) async {
+    final response = await _send(
+      (message) => message.deleteFriendRequest = pb.DeleteFriendRequest(
+        friendUserId: friendUserId,
+      ),
+      sessionToken: sessionToken,
+    );
+    if (response.hasErrorResponse()) {
+      throw Exception(response.errorResponse.message);
+    }
+    if (!response.hasDeleteFriendResponse() ||
+        !response.deleteFriendResponse.success) {
+      throw Exception(
+        response.hasDeleteFriendResponse()
+            ? response.deleteFriendResponse.message
+            : response.errorResponse.message,
+      );
+    }
+    if (!response.deleteFriendResponse.hasSnapshot()) {
+      throw Exception('friend center snapshot missing');
+    }
+    return _mapFriendCenterSnapshot(response.deleteFriendResponse.snapshot);
   }
 
   @override
@@ -681,6 +757,13 @@ class SocketGameGateway implements GameGateway {
           ),
         );
       }
+      if (message.hasFriendCenterPush()) {
+        _notificationController.add(
+          FriendCenterNotification(
+            _mapFriendCenterSnapshot(message.friendCenterPush.snapshot),
+          ),
+        );
+      }
       if (message.requestId.isNotEmpty) {
         _pending.remove(message.requestId)?.complete(message);
       }
@@ -776,6 +859,44 @@ class SocketGameGateway implements GameGateway {
         account: user.account,
         nickname: user.nickname,
         online: user.online,
+      );
+
+  app.FriendRequestEntry _mapFriendRequestEntry(pb.FriendRequestEntry request) =>
+      app.FriendRequestEntry(
+        requestId: request.requestId,
+        requesterUserId: request.requesterUserId,
+        requesterAccount: request.requesterAccount,
+        requesterNickname: request.requesterNickname,
+        receiverUserId: request.receiverUserId,
+        receiverAccount: request.receiverAccount,
+        receiverNickname: request.receiverNickname,
+        status: switch (request.status) {
+          pbenum.FriendRequestStatus.FRIEND_REQUEST_STATUS_UNSPECIFIED =>
+            app.FriendRequestStatus.handled,
+          pbenum.FriendRequestStatus.FRIEND_REQUEST_STATUS_PENDING =>
+            app.FriendRequestStatus.pending,
+          pbenum.FriendRequestStatus.FRIEND_REQUEST_STATUS_ACCEPTED =>
+            app.FriendRequestStatus.accepted,
+          pbenum.FriendRequestStatus.FRIEND_REQUEST_STATUS_REJECTED =>
+            app.FriendRequestStatus.rejected,
+          _ => app.FriendRequestStatus.pending,
+        },
+        createdAtMs: request.createdAtMs.toInt(),
+        updatedAtMs: request.updatedAtMs.toInt(),
+      );
+
+  app.FriendCenterSnapshot _mapFriendCenterSnapshot(
+    pb.FriendCenterSnapshot snapshot,
+  ) =>
+      app.FriendCenterSnapshot(
+        friends: snapshot.friends.map(_mapOnlineUser).toList(growable: false),
+        pendingRequests: snapshot.pendingRequests
+            .map(_mapFriendRequestEntry)
+            .toList(growable: false),
+        historyRequests: snapshot.historyRequests
+            .map(_mapFriendRequestEntry)
+            .toList(growable: false),
+        pendingRequestCount: snapshot.pendingRequestCount,
       );
 
   RoomSnapshot _mapSnapshot(pb.RoomSnapshot snapshot) {
@@ -884,8 +1005,36 @@ class SocketGameGateway implements GameGateway {
         targetUserId: feedback.inviteeUserId,
         targetAccount: feedback.inviteeAccount,
         targetNickname: feedback.inviteeNickname,
-        detail: feedback.message,
+        detail: _localizeInvitationFeedbackMessage(feedback.message),
       );
+
+  String _localizeInvitationFeedbackMessage(String raw) {
+    if (raw.contains('player joined the room')) {
+      return '已加入你的房间。';
+    }
+    if (raw.contains('player rejected the invitation')) {
+      return '拒绝了这次入座邀请。';
+    }
+    if (raw.contains('player is currently in another room')) {
+      return '当前正在其他房间中，暂时无法加入。';
+    }
+    if (raw.contains('room is no longer available')) {
+      return '目标房间已经不可用。';
+    }
+    if (raw.contains('room is full')) {
+      return '目标房间已经满员。';
+    }
+    if (raw.contains('room seats changed')) {
+      return '房间座位已变化，邀请已失效。';
+    }
+    if (raw.contains('room started')) {
+      return '房间已经开局，邀请已失效。';
+    }
+    if (raw.contains('room closed')) {
+      return '房间已经关闭，邀请已失效。';
+    }
+    return raw;
+  }
 
   String _id() => base64Url.encode(
         utf8.encode(

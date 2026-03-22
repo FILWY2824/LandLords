@@ -420,34 +420,47 @@ class _ScriptedGateway implements GameGateway {
   }
 
   @override
-  Future<List<OnlineUser>> fetchFriends({
+  Future<FriendCenterSnapshot> fetchFriendCenter({
     required String sessionToken,
   }) async {
-    return const [
-      OnlineUser(
-        userId: 'user-friend1',
-        account: 'friend1',
-        nickname: '\u597d\u53cb1',
-        online: true,
-      ),
-    ];
+    return const FriendCenterSnapshot(
+      friends: [
+        OnlineUser(
+          userId: 'user-friend1',
+          account: 'friend1',
+          nickname: '\u597d\u53cb1',
+          online: true,
+        ),
+      ],
+      pendingRequests: [],
+      historyRequests: [],
+      pendingRequestCount: 0,
+    );
   }
 
   @override
-  Future<OnlineUser> addFriend({
+  Future<FriendCenterSnapshot> sendFriendRequest({
     required String sessionToken,
     required String account,
   }) async {
-    final profile = _usersByAccount[account];
-    if (profile == null) {
-      throw Exception('account not found');
-    }
-    return OnlineUser(
-      userId: profile.userId,
-      account: profile.account,
-      nickname: profile.nickname,
-      online: true,
-    );
+    return fetchFriendCenter(sessionToken: sessionToken);
+  }
+
+  @override
+  Future<FriendCenterSnapshot> respondFriendRequest({
+    required String sessionToken,
+    required String requestId,
+    required bool accept,
+  }) async {
+    return fetchFriendCenter(sessionToken: sessionToken);
+  }
+
+  @override
+  Future<FriendCenterSnapshot> deleteFriend({
+    required String sessionToken,
+    required String friendUserId,
+  }) async {
+    return fetchFriendCenter(sessionToken: sessionToken);
   }
 
   @override

@@ -17,6 +17,12 @@ class InvitationFeedbackNotification extends GatewayNotification {
   final InvitationFeedback feedback;
 }
 
+class FriendCenterNotification extends GatewayNotification {
+  const FriendCenterNotification(this.snapshot);
+
+  final FriendCenterSnapshot snapshot;
+}
+
 abstract class GameGateway {
   Stream<RoomSnapshot> get roomSnapshots;
   Stream<GatewayNotification> get notifications;
@@ -82,13 +88,24 @@ abstract class GameGateway {
     required String playerId,
   });
 
-  Future<List<OnlineUser>> fetchFriends({
+  Future<FriendCenterSnapshot> fetchFriendCenter({
     required String sessionToken,
   });
 
-  Future<OnlineUser> addFriend({
+  Future<FriendCenterSnapshot> sendFriendRequest({
     required String sessionToken,
     required String account,
+  });
+
+  Future<FriendCenterSnapshot> respondFriendRequest({
+    required String sessionToken,
+    required String requestId,
+    required bool accept,
+  });
+
+  Future<FriendCenterSnapshot> deleteFriend({
+    required String sessionToken,
+    required String friendUserId,
   });
 
   Future<void> invitePlayer({

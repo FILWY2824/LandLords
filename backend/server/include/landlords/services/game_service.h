@@ -13,13 +13,16 @@
 #include "landlords/ai/bot_strategy.h"
 #include "landlords/game/room.h"
 #include "landlords/network/tcp_server.h"
+#include "landlords/persistence/friend_request_repository.h"
 #include "landlords/persistence/user_repository.h"
 
 namespace landlords::services {
 
 class GameService {
  public:
-  explicit GameService(std::shared_ptr<persistence::IUserRepository> user_repository);
+  GameService(
+      std::shared_ptr<persistence::IUserRepository> user_repository,
+      std::shared_ptr<persistence::IFriendRequestRepository> friend_request_repository);
   ~GameService();
 
   void HandleMessage(const std::shared_ptr<network::IConnection>& connection,
@@ -64,6 +67,9 @@ class GameService {
   };
 
   std::optional<SessionState*> RequireSession(const std::string& session_token);
+  std::optional<SessionState*> RequireSessionForConnection(
+      const std::shared_ptr<network::IConnection>& connection,
+      const std::string& session_token);
   std::optional<SessionState*> FindSessionByUserId(const std::string& user_id);
   std::vector<SessionState*> FindSessionsByUserId(const std::string& user_id);
   void HandleRegister(const std::shared_ptr<network::IConnection>& connection,
@@ -86,6 +92,11 @@ class GameService {
                          const landlords::protocol::ClientMessage& message);
   void HandleAddFriend(const std::shared_ptr<network::IConnection>& connection,
                        const landlords::protocol::ClientMessage& message);
+  void HandleRespondFriendRequest(
+      const std::shared_ptr<network::IConnection>& connection,
+      const landlords::protocol::ClientMessage& message);
+  void HandleDeleteFriend(const std::shared_ptr<network::IConnection>& connection,
+                          const landlords::protocol::ClientMessage& message);
   void HandleInvitePlayer(const std::shared_ptr<network::IConnection>& connection,
                           const landlords::protocol::ClientMessage& message);
   void HandleRespondRoomInvitation(const std::shared_ptr<network::IConnection>& connection,
@@ -110,13 +121,27 @@ class GameService {
                  const std::string& request_id,
                  landlords::protocol::ErrorCode code,
                  const std::string& message);
+  void BindSessionConnection(SessionState& session,
+                             const std::shared_ptr<network::IConnection>& connection);
+  void RefreshSessionUser(SessionState& session);
+  void RefreshSessionsForUser(const core::UserRecord& user);
+  landlords::protocol::FriendRequestEntry BuildFriendRequestEntry(
+      const core::FriendRequestRecord& request) const;
+  landlords::protocol::FriendCenterSnapshot BuildFriendCenterSnapshot(
+      SessionState& session);
   void PersistFinishedRoomScores(const game::Room& room);
   void SendSnapshotToRoom(const game::Room& room);
   landlords::protocol::RoomSnapshot BuildPendingRoomSnapshot(
       const PendingRoom& room,
       const std::string& audience_player_id) const;
   landlords::protocol::OnlineUser BuildOnlineUser(const core::UserRecord& user);
+  void PushFriendCenterUpdateToUser(const std::string& user_id);
+  void PushFriendCenterUpdateToUsers(const std::vector<std::string>& user_ids);
+  bool AreFriends(const core::UserRecord& user, const std::string& friend_user_id) const;
+  void LinkFriends(core::UserRecord& left, core::UserRecord& right);
+  void UnlinkFriends(core::UserRecord& left, core::UserRecord& right);
   void SendPendingSnapshotToRoom(const PendingRoom& room);
+  void ReleaseTransientBotRoom(SessionState& session);
   bool EnsureSessionRoomAvailable(const SessionState& session);
   bool SessionCanJoinPendingRoom(const SessionState& session,
                                  const std::string& target_room_id) const;
@@ -143,6 +168,7 @@ class GameService {
       landlords::protocol::BotDifficulty difficulty) const;
 
   std::shared_ptr<persistence::IUserRepository> user_repository_;
+  std::shared_ptr<persistence::IFriendRequestRepository> friend_request_repository_;
   std::unordered_map<std::string, SessionState> sessions_by_token_;
   std::unordered_map<std::string, std::shared_ptr<game::Room>> rooms_by_id_;
   std::unordered_map<std::string, PendingRoom> pending_rooms_by_id_;
@@ -152,10 +178,10 @@ class GameService {
   std::vector<std::string> pvp_waiting_tokens_;
   std::mutex mutex_;
   std::atomic_bool running_{true};
-  std::thread tick_thread_;
   std::shared_ptr<ai::IBotStrategy> easy_bot_strategy_;
   std::shared_ptr<ai::IBotStrategy> standard_bot_strategy_;
   std::shared_ptr<ai::IBotStrategy> hard_bot_strategy_;
+  std::thread tick_thread_;
 };
 
 }  // namespace landlords::services

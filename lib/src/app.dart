@@ -537,6 +537,7 @@ class _InvitationFeedbackDialog extends StatelessWidget {
       InvitationFeedbackStatus.expired => '邀请已失效',
       InvitationFeedbackStatus.failed => '邀请未成功',
     };
+    final detail = _friendlyInvitationFeedbackDetail(feedback.detail);
     return ResponsiveDialogPanel(
       maxWidth: 400,
       maxHeight: 380,
@@ -558,7 +559,7 @@ class _InvitationFeedbackDialog extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                '${feedback.targetName}：${feedback.detail}',
+                '${feedback.targetName}：$detail',
                 style: const TextStyle(
                   color: Color(0xFF587790),
                   fontSize: 16,
@@ -578,6 +579,34 @@ class _InvitationFeedbackDialog extends StatelessWidget {
           ),
     );
   }
+}
+
+String _friendlyInvitationFeedbackDetail(String raw) {
+  if (raw.contains('player joined the room')) {
+    return '已加入你的房间。';
+  }
+  if (raw.contains('player rejected the invitation')) {
+    return '拒绝了这次入座邀请。';
+  }
+  if (raw.contains('player is currently in another room')) {
+    return '当前正在其他房间中，暂时无法加入。';
+  }
+  if (raw.contains('room is no longer available')) {
+    return '目标房间已经不可用。';
+  }
+  if (raw.contains('room is full')) {
+    return '目标房间已经满员。';
+  }
+  if (raw.contains('room seats changed')) {
+    return '房间座位已变化，邀请已失效。';
+  }
+  if (raw.contains('room started')) {
+    return '房间已经开局，邀请已失效。';
+  }
+  if (raw.contains('room closed')) {
+    return '房间已经关闭，邀请已失效。';
+  }
+  return raw;
 }
 
 class _PopupNoticeDialog extends StatelessWidget {

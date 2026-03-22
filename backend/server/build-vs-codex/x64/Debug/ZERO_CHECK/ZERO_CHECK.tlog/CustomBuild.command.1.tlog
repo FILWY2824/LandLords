@@ -1,0 +1,10 @@
+^F:\CODEXPROJECT\LANDLORDS\BACKEND\SERVER\BUILD-VS-CODEX\CMAKEFILES\5F9183C786DC4023BB90AECD149A989E\GENERATE.STAMP.RULE
+setlocal
+G:\StrawberryPerl\c\bin\cmake.exe -SF:/CodeXProject/LandLords/backend/server -BF:/CodeXProject/LandLords/backend/server/build-vs-codex --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file F:/CodeXProject/LandLords/backend/server/build-vs-codex/landlords_server.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

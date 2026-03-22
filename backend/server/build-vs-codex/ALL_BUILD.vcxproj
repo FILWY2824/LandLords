@@ -1,0 +1,208 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ResolveNugetPackages>false</ResolveNugetPackages>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D4ED2788-C2EE-3769-BC4C-DC2A6C6F5515}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>ALL_BUILD</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="F:\CodeXProject\LandLords\backend\server\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule F:/CodeXProject/LandLords/backend/server/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+G:\StrawberryPerl\c\bin\cmake.exe -SF:/CodeXProject/LandLords/backend/server -BF:/CodeXProject/LandLords/backend/server/build-vs-codex --check-stamp-file F:/CodeXProject/LandLords/backend/server/build-vs-codex/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeCXXCompiler.cmake;F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeRCCompiler.cmake;F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeSystem.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventConfig.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventConfigVersion.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventTargets-shared-release.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventTargets-shared.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeCXXInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeCommonLanguageInclude.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeFindDependencyMacro.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeGenericSystem.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeInitializeConfigs.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeLanguageInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeRCInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeSystemSpecificInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeSystemSpecificInitialize.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckCXXSourceCompiles.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckIncludeFileCXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckLibraryExists.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\CMakeCommonCompilerMacros.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\MSVC-CXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\MSVC.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindOpenSSL.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindPackageHandleStandardArgs.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindPackageMessage.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindProtobuf.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindThreads.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Internal\CheckSourceCompiles.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-Initialize.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-MSVC-CXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-MSVC.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\WindowsPaths.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\SelectLibraryConfigurations.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule F:/CodeXProject/LandLords/backend/server/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+G:\StrawberryPerl\c\bin\cmake.exe -SF:/CodeXProject/LandLords/backend/server -BF:/CodeXProject/LandLords/backend/server/build-vs-codex --check-stamp-file F:/CodeXProject/LandLords/backend/server/build-vs-codex/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeCXXCompiler.cmake;F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeRCCompiler.cmake;F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeSystem.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventConfig.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventConfigVersion.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventTargets-shared-release.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventTargets-shared.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeCXXInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeCommonLanguageInclude.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeFindDependencyMacro.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeGenericSystem.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeInitializeConfigs.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeLanguageInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeRCInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeSystemSpecificInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeSystemSpecificInitialize.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckCXXSourceCompiles.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckIncludeFileCXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckLibraryExists.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\CMakeCommonCompilerMacros.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\MSVC-CXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\MSVC.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindOpenSSL.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindPackageHandleStandardArgs.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindPackageMessage.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindProtobuf.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindThreads.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Internal\CheckSourceCompiles.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-Initialize.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-MSVC-CXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-MSVC.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\WindowsPaths.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\SelectLibraryConfigurations.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule F:/CodeXProject/LandLords/backend/server/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+G:\StrawberryPerl\c\bin\cmake.exe -SF:/CodeXProject/LandLords/backend/server -BF:/CodeXProject/LandLords/backend/server/build-vs-codex --check-stamp-file F:/CodeXProject/LandLords/backend/server/build-vs-codex/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeCXXCompiler.cmake;F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeRCCompiler.cmake;F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeSystem.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventConfig.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventConfigVersion.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventTargets-shared-release.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventTargets-shared.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeCXXInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeCommonLanguageInclude.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeFindDependencyMacro.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeGenericSystem.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeInitializeConfigs.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeLanguageInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeRCInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeSystemSpecificInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeSystemSpecificInitialize.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckCXXSourceCompiles.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckIncludeFileCXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckLibraryExists.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\CMakeCommonCompilerMacros.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\MSVC-CXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\MSVC.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindOpenSSL.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindPackageHandleStandardArgs.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindPackageMessage.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindProtobuf.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindThreads.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Internal\CheckSourceCompiles.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-Initialize.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-MSVC-CXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-MSVC.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\WindowsPaths.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\SelectLibraryConfigurations.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule F:/CodeXProject/LandLords/backend/server/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+G:\StrawberryPerl\c\bin\cmake.exe -SF:/CodeXProject/LandLords/backend/server -BF:/CodeXProject/LandLords/backend/server/build-vs-codex --check-stamp-file F:/CodeXProject/LandLords/backend/server/build-vs-codex/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeCXXCompiler.cmake;F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeRCCompiler.cmake;F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\3.29.2\CMakeSystem.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventConfig.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventConfigVersion.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventTargets-shared-release.cmake;F:\PersonalProject\Linux\libevent\out\vs2022_64\libevent\lib\cmake\libevent\LibeventTargets-shared.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeCXXInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeCommonLanguageInclude.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeFindDependencyMacro.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeGenericSystem.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeInitializeConfigs.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeLanguageInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeRCInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeSystemSpecificInformation.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CMakeSystemSpecificInitialize.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckCXXSourceCompiles.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckIncludeFileCXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\CheckLibraryExists.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\CMakeCommonCompilerMacros.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\MSVC-CXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Compiler\MSVC.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindOpenSSL.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindPackageHandleStandardArgs.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindPackageMessage.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindProtobuf.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\FindThreads.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Internal\CheckSourceCompiles.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-Initialize.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-MSVC-CXX.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows-MSVC.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\Windows.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\Platform\WindowsPaths.cmake;G:\StrawberryPerl\c\share\cmake-3.29\Modules\SelectLibraryConfigurations.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="F:\CodeXProject\LandLords\backend\server\build-vs-codex\ZERO_CHECK.vcxproj">
+      <Project>{BD7EEE12-3E31-31F5-8E66-103AE56644B5}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_friend_center_tests.vcxproj">
+      <Project>{E30991AB-97F6-3101-B09E-040410F4EA97}</Project>
+      <Name>landlords_friend_center_tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_onnx_decision_cli.vcxproj">
+      <Project>{D5B53BDD-E71F-3BEE-8F0A-B898712C3713}</Project>
+      <Name>landlords_onnx_decision_cli</Name>
+    </ProjectReference>
+    <ProjectReference Include="F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_onnx_tests.vcxproj">
+      <Project>{1CC803B0-70CF-3449-A342-ED0108C3881F}</Project>
+      <Name>landlords_onnx_tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_room_lifecycle_tests.vcxproj">
+      <Project>{03424EB0-75BA-3D5B-BE3E-07719A838768}</Project>
+      <Name>landlords_room_lifecycle_tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_room_tests.vcxproj">
+      <Project>{697FE111-E52D-3ADB-A016-B7D748DB20D0}</Project>
+      <Name>landlords_room_tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.vcxproj">
+      <Project>{185021DE-EA03-3BF3-AF45-02F26105D5CA}</Project>
+      <Name>landlords_server</Name>
+    </ProjectReference>
+    <ProjectReference Include="F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_strategy_benchmark.vcxproj">
+      <Project>{420365B8-AB6B-380A-A9D5-C8572F58FC42}</Project>
+      <Name>landlords_strategy_benchmark</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

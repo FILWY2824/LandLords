@@ -26,6 +26,7 @@ class LocalDemoGateway implements GameGateway {
   final Map<String, _LocalUser> _usersByName = {};
   final Map<String, _DemoRoom> _roomsById = {};
   final Map<String, String> _sessionToUserId = {};
+  final Map<String, _LocalFriendRequest> _friendRequestsById = {};
   final StreamController<RoomSnapshot> _snapshotController =
       StreamController<RoomSnapshot>.broadcast();
   final StreamController<GatewayNotification> _notificationController =
@@ -207,40 +208,92 @@ class LocalDemoGateway implements GameGateway {
   }
 
   @override
-  Future<List<OnlineUser>> fetchFriends({
+  Future<FriendCenterSnapshot> fetchFriendCenter({
     required String sessionToken,
   }) async {
     final userId = _requireUserId(sessionToken);
-    return _usersByName.values
-        .map((user) => user.profile)
-        .where((profile) => profile.userId != userId)
-        .map(
-          (profile) => OnlineUser(
-            userId: profile.userId,
-            account: profile.account,
-            nickname: profile.nickname,
-            online: true,
-          ),
-        )
-        .toList();
+    return _buildFriendCenterSnapshot(userId);
   }
 
   @override
-  Future<OnlineUser> addFriend({
+  Future<FriendCenterSnapshot> sendFriendRequest({
     required String sessionToken,
     required String account,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 180));
-    final friend = _usersByName[account];
-    if (friend == null) {
+    final requesterId = _requireUserId(sessionToken);
+    final requester = _userById(requesterId);
+    final receiver = _usersByName[account];
+    if (receiver == null) {
       throw Exception('账号不存在');
     }
-    return OnlineUser(
-      userId: friend.profile.userId,
-      account: friend.profile.account,
-      nickname: friend.profile.nickname,
-      online: true,
+    if (receiver.profile.userId == requesterId) {
+      throw Exception('不能添加自己');
+    }
+    if (requester.friendUserIds.contains(receiver.profile.userId)) {
+      throw Exception('这个账号已经在你的好友列表里了');
+    }
+    final existing = _findPendingFriendRequestBetween(
+      requesterId,
+      receiver.profile.userId,
     );
+    if (existing != null) {
+      throw Exception(
+        existing.requesterUserId == requesterId
+            ? '好友申请已发送'
+            : '对方已经向你发送好友申请，请在请求区处理',
+      );
+    }
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final request = _LocalFriendRequest(
+      requestId: _id('friend-request'),
+      requesterUserId: requesterId,
+      receiverUserId: receiver.profile.userId,
+      status: FriendRequestStatus.pending,
+      createdAtMs: now,
+      updatedAtMs: now,
+    );
+    _friendRequestsById[request.requestId] = request;
+    return _buildFriendCenterSnapshot(requesterId);
+  }
+
+  @override
+  Future<FriendCenterSnapshot> respondFriendRequest({
+    required String sessionToken,
+    required String requestId,
+    required bool accept,
+  }) async {
+    final userId = _requireUserId(sessionToken);
+    final request = _friendRequestsById[requestId];
+    if (request == null || request.receiverUserId != userId) {
+      throw Exception('好友申请不存在');
+    }
+    if (request.status != FriendRequestStatus.pending) {
+      throw Exception('好友申请已处理');
+    }
+    request.status =
+        accept ? FriendRequestStatus.accepted : FriendRequestStatus.rejected;
+    request.updatedAtMs = DateTime.now().millisecondsSinceEpoch;
+    if (accept) {
+      final requester = _userById(request.requesterUserId);
+      final receiver = _userById(request.receiverUserId);
+      requester.friendUserIds.add(receiver.profile.userId);
+      receiver.friendUserIds.add(requester.profile.userId);
+    }
+    return _buildFriendCenterSnapshot(userId);
+  }
+
+  @override
+  Future<FriendCenterSnapshot> deleteFriend({
+    required String sessionToken,
+    required String friendUserId,
+  }) async {
+    final userId = _requireUserId(sessionToken);
+    final user = _userById(userId);
+    final friend = _userById(friendUserId);
+    user.friendUserIds.remove(friendUserId);
+    friend.friendUserIds.remove(userId);
+    return _buildFriendCenterSnapshot(userId);
   }
 
   @override
@@ -410,6 +463,99 @@ class LocalDemoGateway implements GameGateway {
     );
   }
 
+  FriendCenterSnapshot _buildFriendCenterSnapshot(String userId) {
+    final user = _userById(userId);
+    final friends = user.friendUserIds
+        .map(_userById)
+        .map((friend) => _toOnlineUser(friend))
+        .toList()
+      ..sort((left, right) {
+        if (left.online != right.online) {
+          return left.online ? -1 : 1;
+        }
+        final byName = left.displayName.compareTo(right.displayName);
+        if (byName != 0) {
+          return byName;
+        }
+        return left.account.compareTo(right.account);
+      });
+
+    final requests = _friendRequestsById.values
+        .where(
+          (request) =>
+              request.requesterUserId == userId || request.receiverUserId == userId,
+        )
+        .toList()
+      ..sort((left, right) => right.updatedAtMs.compareTo(left.updatedAtMs));
+
+    final pendingRequests = <FriendRequestEntry>[];
+    final historyRequests = <FriendRequestEntry>[];
+    for (final request in requests) {
+      final entry = _toFriendRequestEntry(request);
+      final incoming = request.receiverUserId == userId;
+      if (incoming && request.status == FriendRequestStatus.pending) {
+        pendingRequests.add(entry);
+      } else {
+        historyRequests.add(entry);
+      }
+    }
+
+    return FriendCenterSnapshot(
+      friends: friends,
+      pendingRequests: pendingRequests,
+      historyRequests: historyRequests,
+      pendingRequestCount: pendingRequests.length,
+    );
+  }
+
+  _LocalUser _userById(String userId) {
+    return _usersByName.values.firstWhere(
+      (user) => user.profile.userId == userId,
+      orElse: () => throw Exception('玩家不存在'),
+    );
+  }
+
+  OnlineUser _toOnlineUser(_LocalUser user) => OnlineUser(
+        userId: user.profile.userId,
+        account: user.profile.account,
+        nickname: user.profile.nickname,
+        online: _sessionToUserId.containsValue(user.profile.userId),
+      );
+
+  FriendRequestEntry _toFriendRequestEntry(_LocalFriendRequest request) {
+    final requester = _userById(request.requesterUserId);
+    final receiver = _userById(request.receiverUserId);
+    return FriendRequestEntry(
+      requestId: request.requestId,
+      requesterUserId: request.requesterUserId,
+      requesterAccount: requester.profile.account,
+      requesterNickname: requester.profile.nickname,
+      receiverUserId: request.receiverUserId,
+      receiverAccount: receiver.profile.account,
+      receiverNickname: receiver.profile.nickname,
+      status: request.status,
+      createdAtMs: request.createdAtMs,
+      updatedAtMs: request.updatedAtMs,
+    );
+  }
+
+  _LocalFriendRequest? _findPendingFriendRequestBetween(
+    String leftUserId,
+    String rightUserId,
+  ) {
+    for (final request in _friendRequestsById.values) {
+      final pairMatched =
+          (request.requesterUserId == leftUserId &&
+              request.receiverUserId == rightUserId) ||
+          (request.requesterUserId == rightUserId &&
+              request.receiverUserId == leftUserId);
+      if (pairMatched && request.status == FriendRequestStatus.pending) {
+        return request;
+      }
+    }
+    return null;
+  }
+
   _DemoRoom _requireRoom(String roomId) {
     final room = _roomsById[roomId];
     if (room == null) {
@@ -434,10 +580,30 @@ class _LocalUser {
   _LocalUser({
     required this.profile,
     required this.password,
-  });
+    Set<String>? friendUserIds,
+  }) : friendUserIds = friendUserIds ?? <String>{};
 
   UserProfile profile;
   final String password;
+  final Set<String> friendUserIds;
+}
+
+class _LocalFriendRequest {
+  _LocalFriendRequest({
+    required this.requestId,
+    required this.requesterUserId,
+    required this.receiverUserId,
+    required this.status,
+    required this.createdAtMs,
+    required this.updatedAtMs,
+  });
+
+  final String requestId;
+  final String requesterUserId;
+  final String receiverUserId;
+  FriendRequestStatus status;
+  final int createdAtMs;
+  int updatedAtMs;
 }
 
 class _DemoRoom {

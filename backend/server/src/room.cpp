@@ -4,13 +4,12 @@
 #include "landlords/game/room.h"
 
 #include <algorithm>
-#include <array>
 #include <cstdlib>
-#include <map>
 #include <random>
 #include <sstream>
 #include <string_view>
 #include <unordered_set>
+#include <utility>
 
 namespace landlords::game {
 
@@ -64,6 +63,20 @@ const char* BotDifficultyName(landlords::protocol::BotDifficulty difficulty) {
   return "normal";
 }
 
+const char* ModelFailureStatus(std::string_view reason) {
+  if (reason == "model_unavailable") {
+    return "bot_strategy_unavailable";
+  }
+  if (reason == "model_empty") {
+    return "bot_strategy_empty";
+  }
+  return "bot_strategy_invalid";
+}
+
+std::int64_t ModelRetryDelayMs() {
+  return LoadDelayMs("LANDLORDS_BOT_MODEL_RETRY_DELAY_MS", 1500);
+}
+
 std::string CardsText(const std::vector<core::Card>& cards) {
   if (cards.empty()) {
     return "-";
@@ -91,125 +104,6 @@ void FillRoomPlayer(const core::PlayerState& player,
   target->set_seat_index(seat_index);
   target->set_ready(true);
   target->set_occupied(true);
-}
-
-bool SameSide(const core::PlayerState& left, const core::PlayerState& right) {
-  return left.is_landlord == right.is_landlord;
-}
-
-std::vector<core::Card> RemoveCardsById(const std::vector<core::Card>& hand,
-                                        const std::vector<core::Card>& chosen) {
-  std::unordered_set<std::string> ids;
-  ids.reserve(chosen.size());
-  for (const auto& card : chosen) {
-    ids.insert(card.id);
-  }
-
-  std::vector<core::Card> remaining;
-  remaining.reserve(hand.size());
-  for (const auto& card : hand) {
-    if (!ids.contains(card.id)) {
-      remaining.push_back(card);
-    }
-  }
-  return remaining;
-}
-
-std::map<int, int> CountByValue(const std::vector<core::Card>& hand) {
-  std::map<int, int> counts;
-  for (const auto& card : hand) {
-    ++counts[card.value];
-  }
-  return counts;
-}
-
-int ConsecutiveBonus(const std::map<int, int>& counts, int min_count, int min_length) {
-  std::vector<int> values;
-  values.reserve(counts.size());
-  for (const auto& [value, count] : counts) {
-    if (count >= min_count && value < 15) {
-      values.push_back(value);
-    }
-  }
-
-  int bonus = 0;
-  for (std::size_t start = 0; start < values.size();) {
-    std::size_t end = start;
-    while (end + 1 < values.size() && values[end + 1] == values[end] + 1) {
-      ++end;
-    }
-    const int run_length = static_cast<int>(end - start + 1);
-    if (run_length >= min_length) {
-      bonus += run_length - min_length + 1;
-    }
-    start = end + 1;
-  }
-  return bonus;
-}
-
-int EstimateHandBurden(const std::vector<core::Card>& hand) {
-  const auto counts = CountByValue(hand);
-  int burden = 0;
-  for (const auto& [value, count] : counts) {
-    if (count == 1) {
-      burden += value >= 15 ? 6 : 3;
-    } else if (count == 2) {
-      burden += 2;
-    } else if (count == 3) {
-      burden += 1;
-    } else if (count == 4) {
-      burden += 4;
-    }
-  }
-
-  burden -= ConsecutiveBonus(counts, 1, 5) * 4;
-  burden -= ConsecutiveBonus(counts, 2, 3) * 4;
-  burden -= ConsecutiveBonus(counts, 3, 2) * 5;
-  return std::max(burden, 0);
-}
-
-int HighCardPenalty(const std::vector<core::Card>& cards) {
-  int penalty = 0;
-  for (const auto& card : cards) {
-    if (card.value >= 16) {
-      penalty += 16;
-    } else if (card.value == 15) {
-      penalty += 9;
-    } else if (card.value == 14) {
-      penalty += 4;
-    }
-  }
-  return penalty;
-}
-
-int PatternPenalty(core::PatternType type, bool leading) {
-  switch (type) {
-    case core::PatternType::kStraight:
-    case core::PatternType::kStraightPair:
-    case core::PatternType::kAirplane:
-    case core::PatternType::kAirplaneWithSingle:
-    case core::PatternType::kAirplaneWithPair:
-      return leading ? -12 : -4;
-    case core::PatternType::kTripleWithSingle:
-    case core::PatternType::kTripleWithPair:
-      return leading ? -6 : 4;
-    case core::PatternType::kTriple:
-      return leading ? -2 : 8;
-    case core::PatternType::kSingle:
-      return leading ? 18 : 11;
-    case core::PatternType::kPair:
-      return leading ? 13 : 7;
-    case core::PatternType::kFourWithTwoSingles:
-    case core::PatternType::kFourWithTwoPairs:
-      return 24;
-    case core::PatternType::kBomb:
-      return 90;
-    case core::PatternType::kRocket:
-      return 120;
-    case core::PatternType::kInvalid:
-      return 999;
-  }
-  return 0;
 }
 
 int AnnouncementDelayMs(const core::RoomAction& action) {
@@ -248,83 +142,6 @@ int AnnouncementDelayMs(const core::RoomAction& action) {
     return LoadDelayMs("LANDLORDS_ROCKET_NOTICE_DELAY_MS", 3800);
   }
   return LoadDelayMs("LANDLORDS_DEFAULT_NOTICE_DELAY_MS", 2200);
-}
-
-bool CanFinishWithMove(const core::PlayerState& player, const core::CardPattern& candidate) {
-  return candidate.cards.size() == player.hand.size();
-}
-
-bool IsWeakPattern(const std::optional<core::CardPattern>& pattern) {
-  if (!pattern.has_value()) {
-    return true;
-  }
-
-  switch (pattern->type) {
-    case core::PatternType::kSingle:
-      return pattern->weight <= 10;
-    case core::PatternType::kPair:
-      return pattern->weight <= 9;
-    case core::PatternType::kTriple:
-    case core::PatternType::kTripleWithSingle:
-    case core::PatternType::kTripleWithPair:
-      return pattern->weight <= 8;
-    case core::PatternType::kStraight:
-    case core::PatternType::kStraightPair:
-      return pattern->length <= 6;
-    case core::PatternType::kAirplane:
-    case core::PatternType::kAirplaneWithSingle:
-    case core::PatternType::kAirplaneWithPair:
-      return false;
-    case core::PatternType::kBomb:
-    case core::PatternType::kRocket:
-      return false;
-    case core::PatternType::kFourWithTwoSingles:
-    case core::PatternType::kFourWithTwoPairs:
-      return false;
-    case core::PatternType::kInvalid:
-      return true;
-  }
-  return true;
-}
-
-int ScoreMove(const core::PlayerState& player,
-              const core::CardPattern& candidate,
-              bool leading,
-              bool opponent_threat,
-              bool teammate_takeover,
-              bool must_protect_control) {
-  const auto remaining = RemoveCardsById(player.hand, candidate.cards);
-  if (remaining.empty()) {
-    return -100000;
-  }
-
-  int score = EstimateHandBurden(remaining) * 12;
-  score += PatternPenalty(candidate.type, leading);
-  score += leading ? candidate.weight : candidate.weight * 2;
-
-  if (opponent_threat || must_protect_control) {
-    score -= candidate.weight * 2;
-  } else {
-    score += HighCardPenalty(candidate.cards);
-  }
-
-  if (player.hand.size() <= 6U) {
-    score -= candidate.length * 6;
-  } else if (leading &&
-             (candidate.type == core::PatternType::kSingle ||
-              candidate.type == core::PatternType::kPair)) {
-    score += 8;
-  }
-
-  if (candidate.type == core::PatternType::kBomb || candidate.type == core::PatternType::kRocket) {
-    score += opponent_threat ? 10 : 60;
-  }
-
-  if (teammate_takeover) {
-    score += must_protect_control ? 10 : 48;
-  }
-
-  return score;
 }
 
 std::int64_t NextDecisionDelayMs(const core::PlayerState& player,
@@ -431,17 +248,6 @@ landlords::protocol::RoomSnapshot Room::BuildSnapshotFor(const std::string& play
   return snapshot;
 }
 
-std::optional<core::CardPattern> Room::FindSuggestion(const std::string& player_id) const {
-  if (phase_ != landlords::protocol::ROOM_PHASE_PLAYING) {
-    return std::nullopt;
-  }
-  const auto* player = FindPlayer(player_id);
-  if (player == nullptr) {
-    return std::nullopt;
-  }
-  return FindPlayablePattern(*player);
-}
-
 std::optional<std::vector<std::string>> Room::SuggestCardIds(const std::string& player_id) const {
   if (phase_ != landlords::protocol::ROOM_PHASE_PLAYING) {
     return std::nullopt;
@@ -455,75 +261,14 @@ std::optional<std::vector<std::string>> Room::SuggestCardIds(const std::string& 
     return std::nullopt;
   }
 
-  const auto strategy = ResolveBotStrategyForPlayer(player_id);
-  if (strategy == nullptr) {
-    LANDLORDS_LOG(landlords::core::LogLevel::kWarn,
-                  "room",
-                  "room=" << room_id_ << " suggest player=" << player_id
-                          << " difficulty=" << BotDifficultyName(bot_difficulty_)
-                          << " source=model_unavailable");
-    return std::nullopt;
-  }
-
-  const auto decision = strategy->ChooseMove(BuildSnapshotFor(player_id));
+  std::string failure_reason;
+  const auto decision = ResolveModelMove(*player, &failure_reason);
   if (!decision.has_value()) {
     LANDLORDS_LOG(landlords::core::LogLevel::kWarn,
                   "room",
                   "room=" << room_id_ << " suggest player=" << player_id
                           << " difficulty=" << BotDifficultyName(bot_difficulty_)
-                          << " source=model_empty");
-    return std::nullopt;
-  }
-
-  if (decision->kind == ai::BotDecision::Kind::kPass) {
-    if (IsLeadTurnFor(player_id)) {
-      LANDLORDS_LOG(landlords::core::LogLevel::kWarn,
-                    "room",
-                    "room=" << room_id_ << " suggest player=" << player_id
-                            << " difficulty=" << BotDifficultyName(bot_difficulty_)
-                            << " source=model_invalid reason=lead_player_cannot_pass");
-      return std::nullopt;
-    }
-    LANDLORDS_LOG(landlords::core::LogLevel::kInfo,
-                  "room",
-                  "room=" << room_id_ << " suggest player=" << player_id
-                          << " difficulty=" << BotDifficultyName(bot_difficulty_)
-                          << " source=model cards=0");
-    return std::vector<std::string>{};
-  }
-
-  std::unordered_set<std::string> wanted(decision->card_ids.begin(), decision->card_ids.end());
-  std::vector<core::Card> chosen;
-  chosen.reserve(decision->card_ids.size());
-  for (const auto& card : player->hand) {
-    if (wanted.contains(card.id)) {
-      chosen.push_back(card);
-    }
-  }
-  if (chosen.size() != decision->card_ids.size()) {
-    LANDLORDS_LOG(landlords::core::LogLevel::kWarn,
-                  "room",
-                  "room=" << room_id_ << " suggest player=" << player_id
-                          << " difficulty=" << BotDifficultyName(bot_difficulty_)
-                          << " source=model_invalid reason=invalid_cards");
-    return std::nullopt;
-  }
-
-  const auto pattern = core::EvaluatePattern(chosen);
-  if (pattern.type == core::PatternType::kInvalid) {
-    LANDLORDS_LOG(landlords::core::LogLevel::kWarn,
-                  "room",
-                  "room=" << room_id_ << " suggest player=" << player_id
-                          << " difficulty=" << BotDifficultyName(bot_difficulty_)
-                          << " source=model_invalid reason=invalid_pattern");
-    return std::nullopt;
-  }
-  if (!core::CanBeat(pattern, last_pattern_)) {
-    LANDLORDS_LOG(landlords::core::LogLevel::kWarn,
-                  "room",
-                  "room=" << room_id_ << " suggest player=" << player_id
-                          << " difficulty=" << BotDifficultyName(bot_difficulty_)
-                          << " source=model_invalid reason=cannot_beat_table");
+                          << " source=model_failure reason=" << failure_reason);
     return std::nullopt;
   }
 
@@ -531,8 +276,8 @@ std::optional<std::vector<std::string>> Room::SuggestCardIds(const std::string& 
                 "room",
                 "room=" << room_id_ << " suggest player=" << player_id
                         << " difficulty=" << BotDifficultyName(bot_difficulty_)
-                        << " source=model cards=" << decision->card_ids.size());
-  return decision->card_ids;
+                        << " source=model cards=" << decision->size());
+  return decision;
 }
 
 std::optional<std::string> Room::CallScore(const std::string& player_id, int score) {
@@ -749,45 +494,31 @@ void Room::DriveBots() {
                           << " bid=" << bid);
     error = CallScore(player->player_id, bid);
   } else if (phase_ == landlords::protocol::ROOM_PHASE_PLAYING) {
-    auto try_heuristic = [&]() {
-      const auto suggestion = FindPlayablePattern(*player);
-      if (suggestion.has_value()) {
-        std::vector<std::string> ids;
-        ids.reserve(suggestion->cards.size());
-        for (const auto& card : suggestion->cards) {
-          ids.push_back(card.id);
-        }
-        return PlayCards(player->player_id, ids);
-      }
-      return Pass(player->player_id);
-    };
-
-    if ((player->is_bot || player->is_managed)) {
-      const auto strategy = ResolveBotStrategyForPlayer(player->player_id);
-      const auto remote =
-          strategy != nullptr ? strategy->ChooseMove(BuildSnapshotFor(player->player_id))
-                              : std::optional<ai::BotDecision>{};
-      if (remote.has_value()) {
-        error = remote->kind == ai::BotDecision::Kind::kPass
-                    ? Pass(player->player_id)
-                    : PlayCards(player->player_id, remote->card_ids);
-        if (error.has_value()) {
-          LANDLORDS_LOG(landlords::core::LogLevel::kWarn,
-                        "room",
-                        "remote strategy produced invalid move for player=" << player->player_id
-                                                                            << " error=" << *error
-                                                                            << "; falling back to heuristic");
-          error = try_heuristic();
-        }
-      } else {
-        LANDLORDS_LOG(landlords::core::LogLevel::kWarn,
-                      "room",
-                      "remote strategy unavailable for player=" << player->player_id
-                                                                << "; falling back to heuristic");
-        error = try_heuristic();
-      }
+    std::string failure_reason;
+    const auto decision = ResolveModelMove(*player, &failure_reason);
+    if (!decision.has_value()) {
+      LANDLORDS_LOG(landlords::core::LogLevel::kError,
+                    "room",
+                    "room=" << room_id_ << " auto play player=" << player->player_id
+                            << " difficulty=" << BotDifficultyName(bot_difficulty_)
+                            << " source=model_failure reason=" << failure_reason);
+      status_text_ = ModelFailureStatus(failure_reason);
+      turn_started_ms_ = now_ms;
+      decision_ready_at_ms_ = now_ms + ModelRetryDelayMs();
     } else {
-      error = try_heuristic();
+      error = decision->empty() ? Pass(player->player_id)
+                                : PlayCards(player->player_id, *decision);
+      if (error.has_value()) {
+        LANDLORDS_LOG(landlords::core::LogLevel::kError,
+                      "room",
+                      "room=" << room_id_ << " auto play player=" << player->player_id
+                              << " difficulty=" << BotDifficultyName(bot_difficulty_)
+                              << " source=model_apply_failure error=" << *error);
+        status_text_ = "bot_strategy_apply_failed";
+        turn_started_ms_ = now_ms;
+        decision_ready_at_ms_ = now_ms + ModelRetryDelayMs();
+        error.reset();
+      }
     }
   }
   auto_playing_ = false;
@@ -914,100 +645,6 @@ std::optional<std::string> Room::AcknowledgePresentation(const std::string& play
   return std::nullopt;
 }
 
-std::optional<core::CardPattern> Room::FindPlayablePattern(const core::PlayerState& player) const {
-  const auto candidates = core::BuildCandidates(player.hand);
-  if (candidates.empty()) {
-    return std::nullopt;
-  }
-
-  const bool leading = !last_pattern_.has_value();
-  const auto* last_player =
-      last_action_player_id_.empty() ? nullptr : FindPlayer(last_action_player_id_);
-  const auto* current_player = FindPlayer(player.player_id);
-  if (current_player == nullptr) {
-    return std::nullopt;
-  }
-
-  const auto* next_player = [&]() -> const core::PlayerState* {
-    const int index = FindPlayerIndex(player.player_id);
-    if (index < 0) {
-      return nullptr;
-    }
-    return &players_[NextPlayerIndex(index)];
-  }();
-
-  const bool opponent_threat = std::any_of(players_.begin(), players_.end(), [&](const auto& other) {
-    return other.player_id != player.player_id && !SameSide(other, player) && other.hand.size() <= 2U;
-  });
-  const bool next_player_is_opponent = next_player != nullptr && !SameSide(*next_player, *current_player);
-  const bool next_player_critical =
-      next_player_is_opponent && next_player->hand.size() <= 4U;
-  const bool teammate_led =
-      !leading && last_player != nullptr && last_player->player_id != player.player_id &&
-      SameSide(*last_player, player);
-
-  std::vector<core::CardPattern> valid;
-  valid.reserve(candidates.size());
-  for (const auto& candidate : candidates) {
-    if (core::CanBeat(candidate, last_pattern_)) {
-      valid.push_back(candidate);
-    }
-  }
-  if (valid.empty()) {
-    return std::nullopt;
-  }
-
-  if (teammate_led) {
-    for (const auto& candidate : valid) {
-      if (CanFinishWithMove(player, candidate)) {
-        return candidate;
-      }
-    }
-
-    const bool teammate_closing = last_player->hand.size() <= 2U;
-    const bool weak_table = IsWeakPattern(last_pattern_);
-    if ((teammate_closing && !next_player_critical) || (!weak_table && !opponent_threat && !next_player_critical)) {
-      return std::nullopt;
-    }
-  }
-
-  if (!opponent_threat && !next_player_critical) {
-    std::vector<core::CardPattern> conservative;
-    for (const auto& candidate : valid) {
-      if (candidate.type != core::PatternType::kBomb &&
-          candidate.type != core::PatternType::kRocket) {
-        conservative.push_back(candidate);
-      }
-    }
-    if (!conservative.empty()) {
-      valid = std::move(conservative);
-    }
-  }
-
-  std::sort(valid.begin(), valid.end(), [&](const auto& left, const auto& right) {
-    const int left_score = ScoreMove(player,
-                                     left,
-                                     leading,
-                                     opponent_threat,
-                                     teammate_led,
-                                     next_player_critical);
-    const int right_score = ScoreMove(player,
-                                      right,
-                                      leading,
-                                      opponent_threat,
-                                      teammate_led,
-                                      next_player_critical);
-    if (left_score != right_score) {
-      return left_score < right_score;
-    }
-    if (left.length != right.length) {
-      return left.length > right.length;
-    }
-    return left.weight < right.weight;
-  });
-  return valid.front();
-}
-
 int Room::NextPlayerIndex(int current_index) const {
   return (current_index + 1) % static_cast<int>(players_.size());
 }
@@ -1095,6 +732,56 @@ std::optional<core::CardPattern> Room::CurrentPattern() const {
 
 bool Room::IsLeadTurnFor(const std::string& player_id) const {
   return !last_pattern_.has_value() || last_action_player_id_ == player_id;
+}
+
+std::optional<std::vector<std::string>> Room::ResolveModelMove(
+    const core::PlayerState& player,
+    std::string* failure_reason) const {
+  auto set_failure = [&](std::string reason) -> std::optional<std::vector<std::string>> {
+    if (failure_reason != nullptr) {
+      *failure_reason = std::move(reason);
+    }
+    return std::nullopt;
+  };
+
+  const auto strategy = ResolveBotStrategyForPlayer(player.player_id);
+  if (strategy == nullptr) {
+    return set_failure("model_unavailable");
+  }
+
+  const auto decision = strategy->ChooseMove(BuildSnapshotFor(player.player_id));
+  if (!decision.has_value()) {
+    return set_failure("model_empty");
+  }
+
+  if (decision->kind == ai::BotDecision::Kind::kPass) {
+    if (IsLeadTurnFor(player.player_id)) {
+      return set_failure("lead_player_cannot_pass");
+    }
+    return std::vector<std::string>{};
+  }
+
+  std::unordered_set<std::string> wanted(decision->card_ids.begin(), decision->card_ids.end());
+  std::vector<core::Card> chosen;
+  chosen.reserve(decision->card_ids.size());
+  for (const auto& card : player.hand) {
+    if (wanted.contains(card.id)) {
+      chosen.push_back(card);
+    }
+  }
+  if (chosen.size() != decision->card_ids.size()) {
+    return set_failure("invalid_cards");
+  }
+
+  const auto pattern = core::EvaluatePattern(chosen);
+  if (pattern.type == core::PatternType::kInvalid) {
+    return set_failure("invalid_pattern");
+  }
+  if (!core::CanBeat(pattern, last_pattern_)) {
+    return set_failure("cannot_beat_table");
+  }
+
+  return decision->card_ids;
 }
 
 void Room::AdvanceTurn() {

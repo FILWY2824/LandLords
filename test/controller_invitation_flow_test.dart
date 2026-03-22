@@ -28,7 +28,13 @@ void main() {
     await owner.login(ownerAccount, password);
     await guest.login(guestAccount, password);
 
-    await owner.addFriendByAccount(guestAccount);
+    await owner.sendFriendRequestByAccount(guestAccount);
+    await guest.refreshFriendCenter();
+    final pendingRequest = guest.friendCenterSnapshot.pendingRequests.single;
+    await guest.respondFriendRequest(
+      requestId: pendingRequest.requestId,
+      accept: true,
+    );
     await owner.createRoom();
     await owner.invitePlayerToRoom(
       account: guestAccount,

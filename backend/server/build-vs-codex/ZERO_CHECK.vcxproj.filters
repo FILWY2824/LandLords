@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="F:\CodeXProject\LandLords\backend\server\build-vs-codex\CMakeFiles\5f9183c786dc4023bb90aecd149a989e\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{1C4E52FE-E9FE-3EA8-95B2-4D951D3DF8F0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

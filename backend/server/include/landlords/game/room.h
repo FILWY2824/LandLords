@@ -28,7 +28,6 @@ class Room {
 
   bool HasPlayer(const std::string& player_id) const;
   landlords::protocol::RoomSnapshot BuildSnapshotFor(const std::string& player_id) const;
-  std::optional<core::CardPattern> FindSuggestion(const std::string& player_id) const;
   std::optional<std::vector<std::string>> SuggestCardIds(const std::string& player_id) const;
 
   std::optional<std::string> CallScore(const std::string& player_id, int score);
@@ -49,7 +48,6 @@ class Room {
                     landlords::protocol::ActionType action_type,
                     const std::vector<core::Card>& cards,
                     const std::string& pattern_label);
-  std::optional<core::CardPattern> FindPlayablePattern(const core::PlayerState& player) const;
   int NextPlayerIndex(int current_index) const;
   int FindPlayerIndex(const std::string& player_id) const;
   void AdvanceBidTurn();
@@ -58,6 +56,9 @@ class Room {
   const core::PlayerState* FindPlayer(const std::string& player_id) const;
   std::optional<core::CardPattern> CurrentPattern() const;
   bool IsLeadTurnFor(const std::string& player_id) const;
+  std::optional<std::vector<std::string>> ResolveModelMove(
+      const core::PlayerState& player,
+      std::string* failure_reason = nullptr) const;
   void AdvanceTurn();
   void ScheduleNextDecision(const core::PlayerState* current, const core::RoomAction* last_action = nullptr);
   std::shared_ptr<ai::IBotStrategy> ResolveBotStrategyForPlayer(const std::string& player_id) const;

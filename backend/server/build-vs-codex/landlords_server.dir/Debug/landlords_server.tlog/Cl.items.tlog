@@ -1,0 +1,12 @@
+F:\CodeXProject\LandLords\backend\server\src\bid_strategy.cpp;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\bid_strategy.obj
+F:\CodeXProject\LandLords\backend\server\src\bot_strategy.cpp;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\bot_strategy.obj
+F:\CodeXProject\LandLords\backend\server\src\logging.cpp;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\logging.obj
+F:\CodeXProject\LandLords\backend\server\src\main.cpp;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\main.obj
+F:\CodeXProject\LandLords\backend\server\src\models.cpp;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\models.obj
+F:\CodeXProject\LandLords\backend\server\src\onnx_bot_strategy.cpp;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\onnx_bot_strategy.obj
+F:\CodeXProject\LandLords\backend\server\src\file_friend_request_repository.cpp;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\file_friend_request_repository.obj
+F:\CodeXProject\LandLords\backend\server\src\file_user_repository.cpp;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\file_user_repository.obj
+F:\CodeXProject\LandLords\backend\server\src\room.cpp;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\room.obj
+F:\CodeXProject\LandLords\backend\server\src\game_service.cpp;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\game_service.obj
+F:\CodeXProject\LandLords\backend\server\src\tcp_server.cpp;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\tcp_server.obj
+F:\CodeXProject\LandLords\backend\server\generated\landlords.pb.cc;F:\CodeXProject\LandLords\backend\server\build-vs-codex\landlords_server.dir\Debug\landlords.pb.obj

@@ -7,6 +7,7 @@
 #include <functional>
 #include <random>
 #include <sstream>
+#include <stdexcept>
 #include <string_view>
 #include <thread>
 #include <unordered_set>
@@ -61,6 +62,10 @@ const char* PayloadName(const landlords::protocol::ClientMessage& message) {
       return "list_friends";
     case landlords::protocol::ClientMessage::kAddFriendRequest:
       return "add_friend";
+    case landlords::protocol::ClientMessage::kRespondFriendRequestRequest:
+      return "respond_friend_request";
+    case landlords::protocol::ClientMessage::kDeleteFriendRequest:
+      return "delete_friend";
     case landlords::protocol::ClientMessage::kInvitePlayerRequest:
       return "invite_player";
     case landlords::protocol::ClientMessage::kRespondRoomInvitationRequest:
@@ -120,16 +125,45 @@ std::string BotDisplayName(landlords::protocol::BotDifficulty difficulty) {
   static_cast<void>(difficulty);
   return "\xE6\x9C\xBA\xE5\x99\xA8\xE4\xBA\xBA";
 }
+
+std::shared_ptr<ai::IBotStrategy> RequireBotStrategy(
+    std::shared_ptr<ai::IBotStrategy> strategy,
+    std::string_view difficulty_name) {
+  if (strategy == nullptr) {
+    throw std::runtime_error(
+        "DouZero ONNX strategy is required but failed to initialize for difficulty " +
+        std::string(difficulty_name));
+  }
+  return strategy;
+}
+
+bool MatchesFriendRequestPair(const core::FriendRequestRecord& request,
+                              const std::string& left_user_id,
+                              const std::string& right_user_id) {
+  return (request.requester_user_id == left_user_id &&
+          request.receiver_user_id == right_user_id) ||
+         (request.requester_user_id == right_user_id &&
+          request.receiver_user_id == left_user_id);
+}
 }  // namespace
 
-GameService::GameService(std::shared_ptr<persistence::IUserRepository> user_repository)
+GameService::GameService(
+    std::shared_ptr<persistence::IUserRepository> user_repository,
+    std::shared_ptr<persistence::IFriendRequestRepository> friend_request_repository)
     : user_repository_(std::move(user_repository)),
-      easy_bot_strategy_(
-          ai::CreateBotStrategyForDifficulty(landlords::protocol::BOT_DIFFICULTY_EASY)),
-      standard_bot_strategy_(
-          ai::CreateBotStrategyForDifficulty(landlords::protocol::BOT_DIFFICULTY_NORMAL)),
-      hard_bot_strategy_(
-          ai::CreateBotStrategyForDifficulty(landlords::protocol::BOT_DIFFICULTY_HARD)),
+      friend_request_repository_(std::move(friend_request_repository)),
+      easy_bot_strategy_(RequireBotStrategy(
+          ai::CreateBotStrategyForDifficulty(
+              landlords::protocol::BOT_DIFFICULTY_EASY),
+          "easy")),
+      standard_bot_strategy_(RequireBotStrategy(
+          ai::CreateBotStrategyForDifficulty(
+              landlords::protocol::BOT_DIFFICULTY_NORMAL),
+          "normal")),
+      hard_bot_strategy_(RequireBotStrategy(
+          ai::CreateBotStrategyForDifficulty(
+              landlords::protocol::BOT_DIFFICULTY_HARD),
+          "hard")),
       tick_thread_([this] { TickRoomsLoop(); }) {}
 
 GameService::~GameService() {
@@ -177,6 +211,12 @@ void GameService::HandleMessage(const std::shared_ptr<network::IConnection>& con
     case landlords::protocol::ClientMessage::kAddFriendRequest:
       HandleAddFriend(connection, message);
       break;
+    case landlords::protocol::ClientMessage::kRespondFriendRequestRequest:
+      HandleRespondFriendRequest(connection, message);
+      break;
+    case landlords::protocol::ClientMessage::kDeleteFriendRequest:
+      HandleDeleteFriend(connection, message);
+      break;
     case landlords::protocol::ClientMessage::kInvitePlayerRequest:
       HandleInvitePlayer(connection, message);
       break;
@@ -219,6 +259,17 @@ std::optional<GameService::SessionState*> GameService::RequireSession(const std:
     return std::nullopt;
   }
   return &iterator->second;
+}
+
+std::optional<GameService::SessionState*> GameService::RequireSessionForConnection(
+    const std::shared_ptr<network::IConnection>& connection,
+    const std::string& session_token) {
+  const auto session = RequireSession(session_token);
+  if (!session.has_value()) {
+    return std::nullopt;
+  }
+  BindSessionConnection(**session, connection);
+  return session;
 }
 
 std::optional<GameService::SessionState*> GameService::FindSessionByUserId(
@@ -278,13 +329,28 @@ bool GameService::EnsureSessionRoomAvailable(const SessionState& session) {
   return active_room->second->finished();
 }
 
+void GameService::ReleaseTransientBotRoom(SessionState& session) {
+  if (session.room_id.empty()) {
+    return;
+  }
+  auto active_room = rooms_by_id_.find(session.room_id);
+  if (active_room == rooms_by_id_.end()) {
+    return;
+  }
+  if (active_room->second->finished() ||
+      active_room->second->mode() == landlords::protocol::MATCH_MODE_VS_BOT) {
+    rooms_by_id_.erase(active_room);
+    session.room_id.clear();
+  }
+}
+
 bool GameService::SessionCanJoinPendingRoom(const SessionState& session,
                                             const std::string& target_room_id) const {
   if (session.room_id.empty() || session.room_id == target_room_id) {
     return true;
   }
   if (pending_rooms_by_id_.contains(session.room_id)) {
-    return false;
+    return true;
   }
   auto active_room = rooms_by_id_.find(session.room_id);
   if (active_room == rooms_by_id_.end()) {
@@ -533,6 +599,10 @@ void GameService::HandleLogin(const std::shared_ptr<network::IConnection>& conne
   payload->set_session_token(session.session_token);
   FillProfile(*user, payload->mutable_profile());
   connection->Send(response);
+
+  std::vector<std::string> affected_users = user->friend_user_ids;
+  affected_users.push_back(user->user_id);
+  PushFriendCenterUpdateToUsers(affected_users);
 }
 
 void GameService::HandleResetPassword(
@@ -595,7 +665,7 @@ void GameService::HandleUpdateNickname(
   }
 
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     payload->set_success(false);
     payload->set_message("login required");
@@ -613,16 +683,15 @@ void GameService::HandleUpdateNickname(
 
   user->nickname = request.nickname();
   user_repository_->UpdateUser(*user);
-  for (auto& [token, current_session] : sessions_by_token_) {
-    if (current_session.user.user_id == user->user_id) {
-      current_session.user = *user;
-    }
-  }
+  RefreshSessionsForUser(*user);
 
   payload->set_success(true);
   payload->set_message("nickname updated");
   FillProfile(*user, payload->mutable_profile());
   connection->Send(response);
+  std::vector<std::string> affected_users = user->friend_user_ids;
+  affected_users.push_back(user->user_id);
+  PushFriendCenterUpdateToUsers(affected_users);
 }
 
 void GameService::HandleMatch(const std::shared_ptr<network::IConnection>& connection,
@@ -632,7 +701,7 @@ void GameService::HandleMatch(const std::shared_ptr<network::IConnection>& conne
   auto* payload = response.mutable_match_response();
 
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     payload->set_accepted(false);
     payload->set_message("please login first");
@@ -640,6 +709,7 @@ void GameService::HandleMatch(const std::shared_ptr<network::IConnection>& conne
     return;
   }
 
+  ReleaseTransientBotRoom(**session);
   if (!(*session)->room_id.empty()) {
     auto existing_pending = pending_rooms_by_id_.find((*session)->room_id);
     auto existing_room = rooms_by_id_.find((*session)->room_id);
@@ -650,9 +720,6 @@ void GameService::HandleMatch(const std::shared_ptr<network::IConnection>& conne
       return;
     }
     if (existing_room != rooms_by_id_.end() && existing_room->second->finished()) {
-      (*session)->room_id.clear();
-    } else if (message.match_request().mode() == landlords::protocol::MATCH_MODE_VS_BOT) {
-      rooms_by_id_.erase((*session)->room_id);
       (*session)->room_id.clear();
     } else {
       payload->set_accepted(false);
@@ -691,12 +758,13 @@ void GameService::HandleMatch(const std::shared_ptr<network::IConnection>& conne
 void GameService::HandleCreateRoom(const std::shared_ptr<network::IConnection>& connection,
                                    const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
     return;
   }
 
+  ReleaseTransientBotRoom(**session);
   if (!EnsureSessionRoomAvailable(**session)) {
     SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_MATCH_STATE_INVALID, "already in room");
     return;
@@ -736,12 +804,13 @@ void GameService::HandleCreateRoom(const std::shared_ptr<network::IConnection>& 
 void GameService::HandleJoinRoom(const std::shared_ptr<network::IConnection>& connection,
                                  const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
     return;
   }
 
+  ReleaseTransientBotRoom(**session);
   if (!EnsureSessionRoomAvailable(**session)) {
     SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_MATCH_STATE_INVALID, "already in room");
     return;
@@ -808,7 +877,7 @@ void GameService::HandleJoinRoom(const std::shared_ptr<network::IConnection>& co
 void GameService::HandleLeaveRoom(const std::shared_ptr<network::IConnection>& connection,
                                   const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(connection,
               message.request_id(),
@@ -825,7 +894,34 @@ void GameService::HandleLeaveRoom(const std::shared_ptr<network::IConnection>& c
               "room_id is required");
     return;
   }
-  if (!pending_rooms_by_id_.contains(room_id)) {
+  if (pending_rooms_by_id_.contains(room_id)) {
+    RemoveSessionFromPendingRoom(**session, room_id);
+
+    landlords::protocol::ServerMessage response;
+    response.set_request_id(message.request_id());
+    auto* operation = response.mutable_operation_response();
+    operation->set_success(true);
+    operation->set_message("room_left");
+    connection->Send(response);
+    return;
+  }
+
+  auto active_room = rooms_by_id_.find(room_id);
+  if (active_room == rooms_by_id_.end()) {
+    SendError(connection,
+              message.request_id(),
+              landlords::protocol::ERROR_CODE_NOT_FOUND,
+              "room not found");
+    return;
+  }
+  if ((*session)->room_id != room_id) {
+    SendError(connection,
+              message.request_id(),
+              landlords::protocol::ERROR_CODE_AUTH_FAILED,
+              "player not in room");
+    return;
+  }
+  if (active_room->second->mode() != landlords::protocol::MATCH_MODE_VS_BOT) {
     SendError(connection,
               message.request_id(),
               landlords::protocol::ERROR_CODE_MATCH_STATE_INVALID,
@@ -833,7 +929,8 @@ void GameService::HandleLeaveRoom(const std::shared_ptr<network::IConnection>& c
     return;
   }
 
-  RemoveSessionFromPendingRoom(**session, room_id);
+  rooms_by_id_.erase(active_room);
+  (*session)->room_id.clear();
 
   landlords::protocol::ServerMessage response;
   response.set_request_id(message.request_id());
@@ -847,46 +944,28 @@ void GameService::HandleListFriends(
     const std::shared_ptr<network::IConnection>& connection,
     const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(
         connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
     return;
   }
 
-  const auto friends = user_repository_->ListUsersByIds((*session)->user.friend_user_ids);
-  std::vector<landlords::protocol::OnlineUser> payload_users;
-  payload_users.reserve(friends.size());
-  for (const auto& user : friends) {
-    payload_users.push_back(BuildOnlineUser(user));
-  }
-
-  std::sort(payload_users.begin(),
-            payload_users.end(),
-            [](const landlords::protocol::OnlineUser& left,
-               const landlords::protocol::OnlineUser& right) {
-              if (left.online() != right.online()) {
-                return left.online() && !right.online();
-              }
-              if (left.nickname() == right.nickname()) {
-                return left.account() < right.account();
-              }
-              return left.nickname() < right.nickname();
-            });
-
   landlords::protocol::ServerMessage response;
   response.set_request_id(message.request_id());
   auto* payload = response.mutable_list_friends_response();
-  for (const auto& user : payload_users) {
+  const auto snapshot = BuildFriendCenterSnapshot(**session);
+  for (const auto& user : snapshot.friends()) {
     *payload->add_users() = user;
   }
+  *payload->mutable_snapshot() = snapshot;
   connection->Send(response);
 }
 
 void GameService::HandleAddFriend(const std::shared_ptr<network::IConnection>& connection,
                                   const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(
         connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
@@ -896,6 +975,7 @@ void GameService::HandleAddFriend(const std::shared_ptr<network::IConnection>& c
   landlords::protocol::ServerMessage response;
   response.set_request_id(message.request_id());
   auto* payload = response.mutable_add_friend_response();
+  RefreshSessionUser(**session);
 
   const auto account = message.add_friend_request().account();
   if (account.empty()) {
@@ -918,43 +998,192 @@ void GameService::HandleAddFriend(const std::shared_ptr<network::IConnection>& c
     connection->Send(response);
     return;
   }
-  if (std::find((*session)->user.friend_user_ids.begin(),
-                (*session)->user.friend_user_ids.end(),
-                target_user->user_id) != (*session)->user.friend_user_ids.end()) {
+  if (AreFriends((*session)->user, target_user->user_id)) {
     payload->set_success(false);
     payload->set_message("friend already exists");
     connection->Send(response);
     return;
   }
 
-  (*session)->user.friend_user_ids.push_back(target_user->user_id);
-  user_repository_->UpdateUser((*session)->user);
-
-  if (std::find(target_user->friend_user_ids.begin(),
-                target_user->friend_user_ids.end(),
-                (*session)->user.user_id) == target_user->friend_user_ids.end()) {
-    target_user->friend_user_ids.push_back((*session)->user.user_id);
-    user_repository_->UpdateUser(*target_user);
+  const auto existing_request = friend_request_repository_->FindPendingBetween(
+      (*session)->user.user_id, target_user->user_id);
+  if (existing_request.has_value()) {
+    payload->set_success(false);
+    payload->set_message(existing_request->requester_user_id == (*session)->user.user_id
+                             ? "friend request already sent"
+                             : "target already sent you a request");
+    *payload->mutable_snapshot() = BuildFriendCenterSnapshot(**session);
+    connection->Send(response);
+    return;
   }
 
-  for (auto& [token, other_session] : sessions_by_token_) {
-    static_cast<void>(token);
-    if (other_session.user.user_id == target_user->user_id) {
-      other_session.user = *target_user;
+  const auto request_record = friend_request_repository_->SaveNewRequest(
+      (*session)->user.user_id, target_user->user_id, core::NowMs());
+  payload->set_success(true);
+  payload->set_message("friend_request_sent");
+  *payload->mutable_request() = BuildFriendRequestEntry(request_record);
+  *payload->mutable_snapshot() = BuildFriendCenterSnapshot(**session);
+  connection->Send(response);
+
+  PushFriendCenterUpdateToUsers(
+      {(*session)->user.user_id, target_user->user_id});
+}
+
+void GameService::HandleRespondFriendRequest(
+    const std::shared_ptr<network::IConnection>& connection,
+    const landlords::protocol::ClientMessage& message) {
+  std::lock_guard lock(mutex_);
+  const auto session = RequireSessionForConnection(connection, message.session_token());
+  if (!session.has_value()) {
+    SendError(
+        connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
+    return;
+  }
+
+  landlords::protocol::ServerMessage response;
+  response.set_request_id(message.request_id());
+  auto* payload = response.mutable_respond_friend_request_response();
+  RefreshSessionUser(**session);
+
+  const auto request_id =
+      message.respond_friend_request_request().request_id();
+  if (request_id.empty()) {
+    payload->set_success(false);
+    payload->set_message("request_id is required");
+    connection->Send(response);
+    return;
+  }
+
+  auto request_record = friend_request_repository_->FindById(request_id);
+  if (!request_record.has_value() ||
+      request_record->receiver_user_id != (*session)->user.user_id) {
+    payload->set_success(false);
+    payload->set_message("friend request not found");
+    connection->Send(response);
+    return;
+  }
+  if (request_record->status != landlords::protocol::FRIEND_REQUEST_STATUS_PENDING) {
+    payload->set_success(false);
+    payload->set_message("friend request already handled");
+    *payload->mutable_snapshot() = BuildFriendCenterSnapshot(**session);
+    connection->Send(response);
+    return;
+  }
+
+  const bool accept = message.respond_friend_request_request().accept();
+  const auto related_requests =
+      friend_request_repository_->ListForUser((*session)->user.user_id);
+  const auto handled_at_ms = core::NowMs();
+  if (accept) {
+    auto requester = user_repository_->FindByUserId(request_record->requester_user_id);
+    auto receiver = user_repository_->FindByUserId(request_record->receiver_user_id);
+    if (!requester.has_value() || !receiver.has_value()) {
+      payload->set_success(false);
+      payload->set_message("player not found");
+      connection->Send(response);
+      return;
     }
+    LinkFriends(*requester, *receiver);
+    user_repository_->UpdateUser(*requester);
+    user_repository_->UpdateUser(*receiver);
+    RefreshSessionsForUser(*requester);
+    RefreshSessionsForUser(*receiver);
+  }
+
+  request_record->status = accept
+                               ? landlords::protocol::FRIEND_REQUEST_STATUS_ACCEPTED
+                               : landlords::protocol::FRIEND_REQUEST_STATUS_REJECTED;
+  request_record->updated_at_ms = handled_at_ms;
+  friend_request_repository_->Update(*request_record);
+  for (auto related_request : related_requests) {
+    if (related_request.request_id == request_record->request_id ||
+        related_request.status != landlords::protocol::FRIEND_REQUEST_STATUS_PENDING ||
+        !MatchesFriendRequestPair(related_request,
+                                  request_record->requester_user_id,
+                                  request_record->receiver_user_id)) {
+      continue;
+    }
+    // Any sibling pending requests between the same two players become
+    // historical "handled" records after one explicit decision.
+    related_request.status = landlords::protocol::FRIEND_REQUEST_STATUS_UNSPECIFIED;
+    related_request.updated_at_ms = handled_at_ms;
+    friend_request_repository_->Update(related_request);
   }
 
   payload->set_success(true);
-  payload->set_message("friend_added");
-  *payload->mutable_user() = BuildOnlineUser(*target_user);
+  payload->set_message(
+      request_record->status ==
+              landlords::protocol::FRIEND_REQUEST_STATUS_ACCEPTED
+          ? "friend request accepted"
+          : "friend request rejected");
+  *payload->mutable_request() = BuildFriendRequestEntry(*request_record);
+  *payload->mutable_snapshot() = BuildFriendCenterSnapshot(**session);
   connection->Send(response);
+
+  PushFriendCenterUpdateToUsers(
+      {request_record->requester_user_id, request_record->receiver_user_id});
+}
+
+void GameService::HandleDeleteFriend(
+    const std::shared_ptr<network::IConnection>& connection,
+    const landlords::protocol::ClientMessage& message) {
+  std::lock_guard lock(mutex_);
+  const auto session = RequireSessionForConnection(connection, message.session_token());
+  if (!session.has_value()) {
+    SendError(
+        connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
+    return;
+  }
+
+  landlords::protocol::ServerMessage response;
+  response.set_request_id(message.request_id());
+  auto* payload = response.mutable_delete_friend_response();
+  RefreshSessionUser(**session);
+
+  const auto friend_user_id = message.delete_friend_request().friend_user_id();
+  if (friend_user_id.empty()) {
+    payload->set_success(false);
+    payload->set_message("friend_user_id is required");
+    connection->Send(response);
+    return;
+  }
+  if (!AreFriends((*session)->user, friend_user_id)) {
+    payload->set_success(false);
+    payload->set_message("friend not found");
+    *payload->mutable_snapshot() = BuildFriendCenterSnapshot(**session);
+    connection->Send(response);
+    return;
+  }
+
+  auto latest_self = user_repository_->FindByUserId((*session)->user.user_id);
+  auto target_user = user_repository_->FindByUserId(friend_user_id);
+  if (!latest_self.has_value() || !target_user.has_value()) {
+    payload->set_success(false);
+    payload->set_message("friend not found");
+    connection->Send(response);
+    return;
+  }
+
+  UnlinkFriends(*latest_self, *target_user);
+  user_repository_->UpdateUser(*latest_self);
+  user_repository_->UpdateUser(*target_user);
+  RefreshSessionsForUser(*latest_self);
+  RefreshSessionsForUser(*target_user);
+
+  payload->set_success(true);
+  payload->set_message("friend deleted");
+  *payload->mutable_snapshot() = BuildFriendCenterSnapshot(**session);
+  connection->Send(response);
+
+  PushFriendCenterUpdateToUsers(
+      {latest_self->user_id, target_user->user_id});
 }
 
 void GameService::HandleInvitePlayer(
     const std::shared_ptr<network::IConnection>& connection,
     const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(
         connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
@@ -1084,7 +1313,7 @@ void GameService::HandleRespondRoomInvitation(
     const std::shared_ptr<network::IConnection>& connection,
     const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(
         connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
@@ -1173,7 +1402,24 @@ void GameService::HandleRespondRoomInvitation(
   }
 
   if (!(*session)->room_id.empty() && (*session)->room_id != invitation.room_id) {
-    (*session)->room_id.clear();
+    const std::string previous_room_id = (*session)->room_id;
+    if (pending_rooms_by_id_.contains(previous_room_id)) {
+      RemoveSessionFromPendingRoom(**session, previous_room_id);
+      pending_room = FindPendingRoom(invitation.room_id);
+      if (!pending_room.has_value()) {
+        payload->set_success(false);
+        payload->set_message("room is no longer available");
+        connection->Send(response);
+        SendInvitationResult(
+            invitation,
+            landlords::protocol::INVITATION_RESULT_EXPIRED,
+            "room is no longer available");
+        ClearInvitation(invitation.invitation_id);
+        return;
+      }
+    } else {
+      (*session)->room_id.clear();
+    }
   }
 
   auto& seat = (*pending_room)->seats[static_cast<std::size_t>(seat_index)];
@@ -1209,7 +1455,7 @@ void GameService::HandleRespondRoomInvitation(
 void GameService::HandleRoomReady(const std::shared_ptr<network::IConnection>& connection,
                                   const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
     return;
@@ -1277,7 +1523,7 @@ void GameService::HandleRoomReady(const std::shared_ptr<network::IConnection>& c
 void GameService::HandleAddBot(const std::shared_ptr<network::IConnection>& connection,
                                const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
     return;
@@ -1365,7 +1611,7 @@ void GameService::HandleAddBot(const std::shared_ptr<network::IConnection>& conn
 void GameService::HandleRemovePlayer(const std::shared_ptr<network::IConnection>& connection,
                                      const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
     return;
@@ -1413,7 +1659,7 @@ void GameService::HandleRemovePlayer(const std::shared_ptr<network::IConnection>
 void GameService::HandlePlay(const std::shared_ptr<network::IConnection>& connection,
                              const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
     return;
@@ -1534,7 +1780,7 @@ void GameService::HandlePlay(const std::shared_ptr<network::IConnection>& connec
 void GameService::HandlePass(const std::shared_ptr<network::IConnection>& connection,
                              const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
     return;
@@ -1581,13 +1827,12 @@ void GameService::HandlePass(const std::shared_ptr<network::IConnection>& connec
 void GameService::HandleReconnect(const std::shared_ptr<network::IConnection>& connection,
                                   const landlords::protocol::ClientMessage& message) {
   std::lock_guard lock(mutex_);
-  const auto session = RequireSession(message.session_token());
+  const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     SendError(connection, message.request_id(), landlords::protocol::ERROR_CODE_AUTH_FAILED, "login required");
     return;
   }
 
-  (*session)->connection = connection;
   const std::string room_id = message.reconnect_request().room_id().empty()
                                   ? (*session)->room_id
                                   : message.reconnect_request().room_id();
@@ -1615,6 +1860,12 @@ void GameService::HandleReconnect(const std::shared_ptr<network::IConnection>& c
 
 void GameService::HandleHeartbeat(const std::shared_ptr<network::IConnection>& connection,
                                   const landlords::protocol::ClientMessage& message) {
+  if (!message.session_token().empty()) {
+    std::lock_guard lock(mutex_);
+    if (const auto session = RequireSession(message.session_token()); session.has_value()) {
+      BindSessionConnection(**session, connection);
+    }
+  }
   landlords::protocol::ServerMessage response;
   response.set_request_id(message.request_id());
   response.mutable_heartbeat_response()->set_server_time_ms(core::NowMs());
@@ -1635,6 +1886,166 @@ void GameService::SendError(const std::shared_ptr<network::IConnection>& connect
   payload->set_code(code);
   payload->set_message(message);
   connection->Send(response);
+}
+
+void GameService::BindSessionConnection(
+    SessionState& session,
+    const std::shared_ptr<network::IConnection>& connection) {
+  if (const auto existing = session.connection.lock();
+      existing != nullptr && existing->connection_id() == connection->connection_id()) {
+    return;
+  }
+  session.connection = connection;
+}
+
+void GameService::RefreshSessionUser(SessionState& session) {
+  const auto latest = user_repository_->FindByUserId(session.user.user_id);
+  if (latest.has_value()) {
+    session.user = *latest;
+  }
+}
+
+void GameService::RefreshSessionsForUser(const core::UserRecord& user) {
+  for (auto& [token, session] : sessions_by_token_) {
+    static_cast<void>(token);
+    if (session.user.user_id == user.user_id) {
+      session.user = user;
+    }
+  }
+}
+
+landlords::protocol::FriendRequestEntry GameService::BuildFriendRequestEntry(
+    const core::FriendRequestRecord& request) const {
+  landlords::protocol::FriendRequestEntry entry;
+  entry.set_request_id(request.request_id);
+  entry.set_requester_user_id(request.requester_user_id);
+  entry.set_receiver_user_id(request.receiver_user_id);
+  entry.set_status(request.status);
+  entry.set_created_at_ms(request.created_at_ms);
+  entry.set_updated_at_ms(request.updated_at_ms);
+
+  if (const auto requester = user_repository_->FindByUserId(request.requester_user_id);
+      requester.has_value()) {
+    entry.set_requester_account(requester->account);
+    entry.set_requester_nickname(requester->nickname);
+  }
+  if (const auto receiver = user_repository_->FindByUserId(request.receiver_user_id);
+      receiver.has_value()) {
+    entry.set_receiver_account(receiver->account);
+    entry.set_receiver_nickname(receiver->nickname);
+  }
+  return entry;
+}
+
+landlords::protocol::FriendCenterSnapshot GameService::BuildFriendCenterSnapshot(
+    SessionState& session) {
+  RefreshSessionUser(session);
+
+  landlords::protocol::FriendCenterSnapshot snapshot;
+  const auto friends = user_repository_->ListUsersByIds(session.user.friend_user_ids);
+  std::vector<landlords::protocol::OnlineUser> payload_users;
+  payload_users.reserve(friends.size());
+  for (const auto& user : friends) {
+    payload_users.push_back(BuildOnlineUser(user));
+  }
+  std::sort(payload_users.begin(),
+            payload_users.end(),
+            [](const landlords::protocol::OnlineUser& left,
+               const landlords::protocol::OnlineUser& right) {
+              if (left.online() != right.online()) {
+                return left.online() && !right.online();
+              }
+              const auto left_name = left.nickname().empty() ? left.account() : left.nickname();
+              const auto right_name = right.nickname().empty() ? right.account() : right.nickname();
+              if (left_name == right_name) {
+                return left.account() < right.account();
+              }
+              return left_name < right_name;
+            });
+  for (const auto& user : payload_users) {
+    *snapshot.add_friends() = user;
+  }
+
+  auto requests = friend_request_repository_->ListForUser(session.user.user_id);
+  std::sort(requests.begin(),
+            requests.end(),
+            [](const core::FriendRequestRecord& left,
+               const core::FriendRequestRecord& right) {
+              if (left.updated_at_ms != right.updated_at_ms) {
+                return left.updated_at_ms > right.updated_at_ms;
+              }
+              return left.created_at_ms > right.created_at_ms;
+            });
+
+  std::int32_t pending_request_count = 0;
+  for (const auto& request : requests) {
+    const bool incoming = request.receiver_user_id == session.user.user_id;
+    const bool pending =
+        request.status == landlords::protocol::FRIEND_REQUEST_STATUS_PENDING;
+    const auto entry = BuildFriendRequestEntry(request);
+    if (incoming && pending) {
+      *snapshot.add_pending_requests() = entry;
+      ++pending_request_count;
+      continue;
+    }
+    *snapshot.add_history_requests() = entry;
+  }
+  snapshot.set_pending_request_count(pending_request_count);
+  return snapshot;
+}
+
+void GameService::PushFriendCenterUpdateToUser(const std::string& user_id) {
+  const auto sessions = FindSessionsByUserId(user_id);
+  for (auto* session : sessions) {
+    if (session == nullptr) {
+      continue;
+    }
+    if (const auto connection = session->connection.lock()) {
+      landlords::protocol::ServerMessage push;
+      *push.mutable_friend_center_push()->mutable_snapshot() =
+          BuildFriendCenterSnapshot(*session);
+      connection->Send(push);
+    }
+  }
+}
+
+void GameService::PushFriendCenterUpdateToUsers(
+    const std::vector<std::string>& user_ids) {
+  std::unordered_set<std::string> dedup(user_ids.begin(), user_ids.end());
+  for (const auto& user_id : dedup) {
+    if (!user_id.empty()) {
+      PushFriendCenterUpdateToUser(user_id);
+    }
+  }
+}
+
+bool GameService::AreFriends(const core::UserRecord& user,
+                             const std::string& friend_user_id) const {
+  return std::find(user.friend_user_ids.begin(),
+                   user.friend_user_ids.end(),
+                   friend_user_id) != user.friend_user_ids.end();
+}
+
+void GameService::LinkFriends(core::UserRecord& left, core::UserRecord& right) {
+  if (!AreFriends(left, right.user_id)) {
+    left.friend_user_ids.push_back(right.user_id);
+  }
+  if (!AreFriends(right, left.user_id)) {
+    right.friend_user_ids.push_back(left.user_id);
+  }
+}
+
+void GameService::UnlinkFriends(core::UserRecord& left, core::UserRecord& right) {
+  left.friend_user_ids.erase(
+      std::remove(left.friend_user_ids.begin(),
+                  left.friend_user_ids.end(),
+                  right.user_id),
+      left.friend_user_ids.end());
+  right.friend_user_ids.erase(
+      std::remove(right.friend_user_ids.begin(),
+                  right.friend_user_ids.end(),
+                  left.user_id),
+      right.friend_user_ids.end());
 }
 
 void GameService::PersistFinishedRoomScores(const game::Room& room) {
