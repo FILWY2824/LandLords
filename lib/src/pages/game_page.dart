@@ -1463,7 +1463,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
               const Spacer(),
               if (canRemoveOccupiedPlayer)
                 IconButton(
-                  tooltip: '移除机器人',
+                  tooltip: '移除玩家',
                   visualDensity: VisualDensity.compact,
                   onPressed: widget.controller.isBusy
                       ? null
@@ -5557,6 +5557,13 @@ String _friendlyGameError(String rawError) => switch (rawError) {
       'invalid_bid_score' => '\u53eb\u5206\u4e0d\u5408\u89c4\u5219',
       'round_finished' => '\u672c\u5c40\u5df2\u7ed3\u675f',
       'round_finishing' => '\u8fd9\u624b\u724c\u5df2\u9501\u5b9a\uff0c\u9a6c\u4e0a\u7ed3\u7b97',
+      'operation in progress' => '\u5f53\u524d\u8fd8\u6709\u5176\u4ed6\u64cd\u4f5c\u6b63\u5728\u5904\u7406\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5\u3002',
+      'room not found' => '\u6ca1\u6709\u627e\u5230\u8fd9\u4e2a\u623f\u95f4\uff0c\u53ef\u80fd\u623f\u95f4\u5df2\u7ecf\u5173\u95ed\u3002',
+      'only bot can be removed' => '\u5f53\u524d\u670d\u52a1\u7aef\u8fd8\u6ca1\u6709\u66f4\u65b0\u5230\u652f\u6301\u79fb\u9664\u771f\u4eba\u73a9\u5bb6\u7684\u7248\u672c\uff0c\u8bf7\u91cd\u542f\u6700\u65b0\u540e\u7aef\u540e\u518d\u8bd5\u3002',
+      'only host can remove bot' => '\u5f53\u524d\u670d\u52a1\u7aef\u8fd8\u6ca1\u6709\u66f4\u65b0\u5230\u652f\u6301\u79fb\u9664\u771f\u4eba\u73a9\u5bb6\u7684\u7248\u672c\uff0c\u8bf7\u91cd\u542f\u6700\u65b0\u540e\u7aef\u540e\u518d\u8bd5\u3002',
+      'only host can remove players' => '\u53ea\u6709\u623f\u4e3b\u53ef\u4ee5\u79fb\u9664\u623f\u95f4\u5185\u7684\u5176\u4ed6\u73a9\u5bb6\u3002',
+      'cannot remove yourself' => '\u4e0d\u80fd\u79fb\u9664\u81ea\u5df1\uff0c\u5982\u9700\u79bb\u5f00\u8bf7\u4f7f\u7528\u9000\u51fa\u623f\u95f4\u3002',
+      'player not found' => '\u6ca1\u6709\u627e\u5230\u8fd9\u4f4d\u73a9\u5bb6\uff0c\u623f\u95f4\u72b6\u6001\u53ef\u80fd\u5df2\u7ecf\u53d8\u5316\u3002',
       _ => '\u8fd9\u6b21\u64cd\u4f5c\u6682\u65f6\u4e0d\u53ef\u7528',
     };
 
@@ -5573,6 +5580,13 @@ String _friendlyGameErrorVoice(String rawError) => switch (rawError) {
       'invalid_bid_score' => '\u53eb\u5206\u4e0d\u5408\u89c4\u5219',
       'round_finished' => '\u672c\u5c40\u5df2\u7ed3\u675f',
       'round_finishing' => '\u9a6c\u4e0a\u7ed3\u7b97',
+      'operation in progress' => '\u8bf7\u7a0d\u540e\u518d\u8bd5',
+      'room not found' => '\u623f\u95f4\u4e0d\u5b58\u5728',
+      'only bot can be removed' => '\u8bf7\u91cd\u542f\u6700\u65b0\u670d\u52a1\u7aef',
+      'only host can remove bot' => '\u8bf7\u91cd\u542f\u6700\u65b0\u670d\u52a1\u7aef',
+      'only host can remove players' => '\u53ea\u6709\u623f\u4e3b\u53ef\u4ee5\u79fb\u9664',
+      'cannot remove yourself' => '\u4e0d\u80fd\u79fb\u9664\u81ea\u5df1',
+      'player not found' => '\u6ca1\u6709\u627e\u5230\u8fd9\u4f4d\u73a9\u5bb6',
       _ => '\u8fd9\u6b21\u64cd\u4f5c\u4e0d\u53ef\u4ee5',
     };
 

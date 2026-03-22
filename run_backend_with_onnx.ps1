@@ -10,10 +10,11 @@ $onnxDirNormal = Join-Path $root "backend\ai_models\onnx\sl"
 $onnxDirHard = Join-Path $root "backend\ai_models\onnx\douzero_WP"
 
 function Resolve-ServerExe {
-  foreach ($candidate in $serverExeCandidates) {
-    if (Test-Path $candidate) {
-      return $candidate
-    }
+  $existing = @($serverExeCandidates | Where-Object { Test-Path $_ })
+  if ($existing.Count -gt 0) {
+    return $existing |
+      Sort-Object { (Get-Item $_).LastWriteTimeUtc } -Descending |
+      Select-Object -First 1
   }
 
   $listed = $serverExeCandidates -join ", "
