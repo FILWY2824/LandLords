@@ -215,6 +215,9 @@ class _ScriptedGateway implements GameGateway {
   }
 
   @override
+  void forgetSession() {}
+
+  @override
   Future<void> register({
     required String account,
     required String nickname,

@@ -448,7 +448,7 @@ class _LandscapeGuard extends StatelessWidget {
 
 }
 
-class _InvitationDialog extends StatelessWidget {
+class _InvitationDialog extends StatefulWidget {
   const _InvitationDialog({
     required this.invitation,
     required this.onAccept,
@@ -460,7 +460,38 @@ class _InvitationDialog extends StatelessWidget {
   final Future<bool> Function() onReject;
 
   @override
+  State<_InvitationDialog> createState() => _InvitationDialogState();
+}
+
+class _InvitationDialogState extends State<_InvitationDialog> {
+  bool _submitting = false;
+
+  Future<void> _handleAction(Future<bool> Function() action) async {
+    if (_submitting) {
+      return;
+    }
+    setState(() {
+      _submitting = true;
+    });
+    try {
+      final handled = await action();
+      if (handled && mounted) {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final invitation = widget.invitation;
+    final onAccept = widget.onAccept;
+    final onReject = widget.onReject;
     return ResponsiveDialogPanel(
       maxWidth: 420,
       maxHeight: 420,
@@ -495,24 +526,14 @@ class _InvitationDialog extends StatelessWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () async {
-                        final handled = await onReject();
-                        if (handled && context.mounted) {
-                          Navigator.of(context).pop();
-                        }
-                      },
+                      onPressed: _submitting ? null : () => _handleAction(onReject),
                       child: const Text('拒绝'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: FilledButton(
-                      onPressed: () async {
-                        final handled = await onAccept();
-                        if (handled && context.mounted) {
-                          Navigator.of(context).pop();
-                        }
-                      },
+                      onPressed: _submitting ? null : () => _handleAction(onAccept),
                       child: const Text('同意'),
                     ),
                   ),

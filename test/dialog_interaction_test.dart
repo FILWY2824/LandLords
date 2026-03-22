@@ -106,7 +106,7 @@ void main() {
     final controller = AppController(gateway: LocalDemoGateway());
     addTearDown(controller.dispose);
 
-    await controller.login('玩家1', 'player1');
+    await controller.login('player1', 'player1');
     await controller.createRoom();
 
     expect(controller.stage, AppStage.game);
@@ -114,22 +114,31 @@ void main() {
     expect(controller.errorText, isNull);
   });
 
-  test('controller can send a room invitation without silent failure', () async {
-    final controller = AppController(gateway: LocalDemoGateway());
-    addTearDown(controller.dispose);
+  test('controller can deliver a room invitation to the guest client', () async {
+    final owner = AppController(gateway: LocalDemoGateway());
+    final guest = AppController(gateway: LocalDemoGateway());
+    addTearDown(owner.dispose);
+    addTearDown(guest.dispose);
 
-    await controller.register('friend1', '好友1', 'pass123');
-    await controller.login('玩家1', 'player1');
-    await controller.createRoom();
-    await controller.invitePlayerToRoom(
-      account: 'friend1',
-      displayName: '好友1',
+    final suffix = DateTime.now().microsecondsSinceEpoch.toString();
+    final guestAccount = 'friend_$suffix';
+    final guestNickname = 'f${suffix.substring(suffix.length - 4)}';
+
+    await guest.register(guestAccount, guestNickname, 'pass123');
+    await owner.login('player1', 'player1');
+    await guest.login(guestAccount, 'pass123');
+
+    await owner.createRoom();
+    await owner.invitePlayerToRoom(
+      account: guestAccount,
+      displayName: guestAccount,
       seatIndex: 1,
     );
     await Future<void>.delayed(Duration.zero);
 
-    expect(controller.errorText, isNull);
-    expect(controller.activeInvitation, isNotNull);
-    expect(controller.activePopupNotice?.title, '邀请已发送');
+    expect(owner.errorText, isNull);
+    expect(guest.errorText, isNull);
+    expect(owner.activePopupNotice, isNotNull);
+    expect(guest.activeInvitation, isNotNull);
   });
 }

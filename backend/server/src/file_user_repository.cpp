@@ -112,7 +112,7 @@ std::optional<core::UserRecord> ParseUserRecordLine(const std::string& line) {
   }
 
   const auto parts = Split(line);
-  if (parts.size() < 11U || parts[0] != "v2") {
+  if (parts.size() < 10U || parts[0] != "v2") {
     return std::nullopt;
   }
   core::UserRecord user{
@@ -125,7 +125,7 @@ std::optional<core::UserRecord> ParseUserRecordLine(const std::string& line) {
       .landlord_games = std::stoi(parts[7]),
       .farmer_wins = std::stoi(parts[8]),
       .farmer_games = std::stoi(parts[9]),
-      .friend_user_ids = SplitCsv(parts[10]),
+      .friend_user_ids = parts.size() >= 11U ? SplitCsv(parts[10]) : std::vector<std::string>{},
   };
 
   if (user.user_id.empty() || user.account.empty()) {
@@ -197,10 +197,44 @@ std::optional<core::UserRecord> FileUserRepository::FindByAccount(
   std::lock_guard lock(mutex_);
   LoadLocked();
   const auto iterator = user_id_by_account_.find(account);
-  if (iterator == user_id_by_account_.end()) {
-    return std::nullopt;
+  if (iterator != user_id_by_account_.end()) {
+    return by_user_id_.at(iterator->second);
   }
-  return by_user_id_.at(iterator->second);
+
+  for (const auto& [user_id, user] : by_user_id_) {
+    static_cast<void>(user_id);
+    if (user.account != account) {
+      continue;
+    }
+    user_id_by_account_[user.account] = user.user_id;
+    FlushAccountIndexLocked();
+    return user;
+  }
+
+  if (std::filesystem::exists(users_root_)) {
+    for (const auto& entry : std::filesystem::directory_iterator(users_root_)) {
+      if (!entry.is_directory()) {
+        continue;
+      }
+      const auto line = ReadFirstNonEmptyLine(
+          UserProfilePath(users_root_, entry.path().filename().string()));
+      if (!line.has_value()) {
+        continue;
+      }
+      const auto user = ParseUserRecordLine(*line);
+      if (!user.has_value()) {
+        continue;
+      }
+      by_user_id_[user->user_id] = *user;
+      user_id_by_account_[user->account] = user->user_id;
+      if (user->account == account) {
+        FlushAccountIndexLocked();
+        return *user;
+      }
+    }
+  }
+
+  return std::nullopt;
 }
 
 std::optional<core::UserRecord> FileUserRepository::FindByUserId(
@@ -208,10 +242,22 @@ std::optional<core::UserRecord> FileUserRepository::FindByUserId(
   std::lock_guard lock(mutex_);
   LoadLocked();
   const auto iterator = by_user_id_.find(user_id);
-  if (iterator == by_user_id_.end()) {
+  if (iterator != by_user_id_.end()) {
+    return iterator->second;
+  }
+
+  const auto line = ReadFirstNonEmptyLine(UserProfilePath(users_root_, user_id));
+  if (!line.has_value()) {
     return std::nullopt;
   }
-  return iterator->second;
+  const auto user = ParseUserRecordLine(*line);
+  if (!user.has_value()) {
+    return std::nullopt;
+  }
+  by_user_id_[user->user_id] = *user;
+  user_id_by_account_[user->account] = user->user_id;
+  FlushAccountIndexLocked();
+  return *user;
 }
 
 std::vector<core::UserRecord> FileUserRepository::ListUsersByIds(
@@ -269,10 +315,6 @@ void FileUserRepository::UpdateUser(const core::UserRecord& user) {
 }
 
 void FileUserRepository::LoadLocked() {
-  if (loaded_) {
-    return;
-  }
-  loaded_ = true;
   RemoveObsoleteLegacyUserDb(data_root_);
   by_user_id_.clear();
   user_id_by_account_.clear();
@@ -381,3 +423,4 @@ void FileUserRepository::FlushAccountIndexLocked() {
 }
 
 }  // namespace landlords::persistence
+

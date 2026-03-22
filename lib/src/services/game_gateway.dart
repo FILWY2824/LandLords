@@ -23,6 +23,12 @@ class FriendCenterNotification extends GatewayNotification {
   final FriendCenterSnapshot snapshot;
 }
 
+class SessionExpiredNotification extends GatewayNotification {
+  const SessionExpiredNotification(this.message);
+
+  final String message;
+}
+
 abstract class GameGateway {
   Stream<RoomSnapshot> get roomSnapshots;
   Stream<GatewayNotification> get notifications;
@@ -172,6 +178,8 @@ abstract class GameGateway {
   RoomSnapshot? currentSnapshot(String roomId);
 
   void clearCurrentRoomCache();
+
+  void forgetSession();
 
   Future<void> close();
 }

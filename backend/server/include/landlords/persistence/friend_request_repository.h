@@ -60,7 +60,6 @@ class FileFriendRequestRepository final : public IFriendRequestRepository {
   std::filesystem::path inbox_root_;
   std::unordered_map<std::string, core::FriendRequestRecord> by_request_id_;
   std::unordered_map<std::string, std::vector<std::string>> request_ids_by_user_;
-  bool loaded_ = false;
   std::mutex mutex_;
 };
 

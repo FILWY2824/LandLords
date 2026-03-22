@@ -1,4 +1,4 @@
-﻿#include "landlords/services/game_service.h"
+#include "landlords/services/game_service.h"
 
 #include <algorithm>
 #include <array>
@@ -20,6 +20,7 @@ namespace {
 
 constexpr std::string_view kCancelMatchCommand = "match:cancel";
 constexpr std::int64_t kInvitationTimeoutMs = 30'000;
+constexpr std::int64_t kResolvedInvitationRetentionMs = 120'000;
 constexpr std::size_t kMaxNicknameCodePoints = 10U;
 
 std::string DisplayNameFor(const core::UserRecord& user) {
@@ -185,6 +186,7 @@ bool MatchesFriendRequestPair(const core::FriendRequestRecord& request,
          (request.requester_user_id == right_user_id &&
           request.receiver_user_id == left_user_id);
 }
+
 }  // namespace
 
 GameService::GameService(
@@ -315,6 +317,12 @@ std::optional<GameService::SessionState*> GameService::RequireSession(const std:
   if (iterator == sessions_by_token_.end()) {
     return std::nullopt;
   }
+  const auto active_iterator =
+      active_session_token_by_user_id_.find(iterator->second.user.user_id);
+  if (active_iterator != active_session_token_by_user_id_.end() &&
+      active_iterator->second != session_token) {
+    return std::nullopt;
+  }
   return &iterator->second;
 }
 
@@ -335,6 +343,10 @@ std::optional<GameService::SessionState*> GameService::FindSessionByUserId(
     if (session.user.user_id != user_id) {
       continue;
     }
+    if (const auto active = active_session_token_by_user_id_.find(user_id);
+        active != active_session_token_by_user_id_.end() && active->second != token) {
+      continue;
+    }
     if (session.connection.expired()) {
       continue;
     }
@@ -343,11 +355,31 @@ std::optional<GameService::SessionState*> GameService::FindSessionByUserId(
   return std::nullopt;
 }
 
+std::vector<std::string> GameService::FindSessionTokensByUserId(
+    const std::string& user_id) const {
+  std::vector<std::string> tokens;
+  for (const auto& [token, session] : sessions_by_token_) {
+    if (session.user.user_id != user_id) {
+      continue;
+    }
+    if (const auto active = active_session_token_by_user_id_.find(user_id);
+        active != active_session_token_by_user_id_.end() && active->second != token) {
+      continue;
+    }
+    tokens.push_back(token);
+  }
+  return tokens;
+}
+
 std::vector<GameService::SessionState*> GameService::FindSessionsByUserId(
     const std::string& user_id) {
   std::vector<SessionState*> sessions;
   for (auto& [token, session] : sessions_by_token_) {
     if (session.user.user_id != user_id || session.connection.expired()) {
+      continue;
+    }
+    if (const auto active = active_session_token_by_user_id_.find(user_id);
+        active != active_session_token_by_user_id_.end() && active->second != token) {
       continue;
     }
     sessions.push_back(&session);
@@ -465,7 +497,7 @@ landlords::protocol::RoomSnapshot GameService::BuildPendingRoomSnapshot(
       target->set_occupied(true);
     } else {
       target->set_player_id("");
-      target->set_display_name("绌轰綅");
+      target->set_display_name("空位");
       target->set_is_bot(false);
       target->set_role(landlords::protocol::PLAYER_ROLE_UNSPECIFIED);
       target->set_ready(false);
@@ -495,6 +527,10 @@ void GameService::SendPendingSnapshotToRoom(const PendingRoom& room) {
     }
     for (auto& [token, session] : sessions_by_token_) {
       if (session.user.user_id != seat.player_id) {
+        continue;
+      }
+      if (const auto active = active_session_token_by_user_id_.find(session.user.user_id);
+          active != active_session_token_by_user_id_.end() && active->second != token) {
         continue;
       }
       if (const auto connection = session.connection.lock()) {
@@ -597,6 +633,7 @@ void GameService::StartPreparedRoom(PendingRoom room) {
 
 void GameService::HandleRegister(const std::shared_ptr<network::IConnection>& connection,
                                  const landlords::protocol::ClientMessage& message) {
+  std::lock_guard lock(mutex_);
   const auto& request = message.register_request();
   landlords::protocol::ServerMessage response;
   response.set_request_id(message.request_id());
@@ -633,6 +670,7 @@ void GameService::HandleRegister(const std::shared_ptr<network::IConnection>& co
 
 void GameService::HandleLogin(const std::shared_ptr<network::IConnection>& connection,
                               const landlords::protocol::ClientMessage& message) {
+  std::lock_guard lock(mutex_);
   const auto& request = message.login_request();
   landlords::protocol::ServerMessage response;
   response.set_request_id(message.request_id());
@@ -646,14 +684,38 @@ void GameService::HandleLogin(const std::shared_ptr<network::IConnection>& conne
     return;
   }
 
-  std::lock_guard lock(mutex_);
+  const std::string superseded_message = "account logged in on another device";
+  const auto existing_tokens = FindSessionTokensByUserId(user->user_id);
+  std::string transferred_room_id;
+  for (const auto& token : existing_tokens) {
+    auto existing = sessions_by_token_.find(token);
+    if (existing == sessions_by_token_.end()) {
+      continue;
+    }
+    const auto candidate_room_id =
+        ResolveReconnectableRoomId(user->user_id, existing->second.room_id);
+    if (transferred_room_id.empty() && !candidate_room_id.empty()) {
+      transferred_room_id = candidate_room_id;
+    }
+    const auto existing_connection = existing->second.connection.lock();
+    const bool same_connection =
+        existing_connection != nullptr &&
+        existing_connection->connection_id() == connection->connection_id();
+    if (!same_connection) {
+      NotifySessionExpired(existing->second, superseded_message);
+    }
+    RemoveWaitingToken(existing->first);
+    sessions_by_token_.erase(existing);
+  }
+
   SessionState session{
       .session_token = core::GenerateId("session"),
       .user = *user,
       .connection = connection,
-      .room_id = "",
+      .room_id = transferred_room_id,
   };
   sessions_by_token_[session.session_token] = session;
+  active_session_token_by_user_id_[session.user.user_id] = session.session_token;
 
   payload->set_success(true);
   payload->set_message("login success");
@@ -669,6 +731,7 @@ void GameService::HandleLogin(const std::shared_ptr<network::IConnection>& conne
 void GameService::HandleResetPassword(
     const std::shared_ptr<network::IConnection>& connection,
     const landlords::protocol::ClientMessage& message) {
+  std::lock_guard lock(mutex_);
   const auto& request = message.reset_password_request();
   landlords::protocol::ServerMessage response;
   response.set_request_id(message.request_id());
@@ -681,7 +744,6 @@ void GameService::HandleResetPassword(
     return;
   }
 
-  std::lock_guard lock(mutex_);
   auto user = user_repository_->FindByAccount(request.account());
   if (!user.has_value()) {
     payload->set_success(false);
@@ -706,6 +768,7 @@ void GameService::HandleResetPassword(
 void GameService::HandleChangePassword(
     const std::shared_ptr<network::IConnection>& connection,
     const landlords::protocol::ClientMessage& message) {
+  std::lock_guard lock(mutex_);
   const auto& request = message.change_password_request();
   landlords::protocol::ServerMessage response;
   response.set_request_id(message.request_id());
@@ -718,7 +781,6 @@ void GameService::HandleChangePassword(
     return;
   }
 
-  std::lock_guard lock(mutex_);
   const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     payload->set_success(false);
@@ -761,6 +823,7 @@ void GameService::HandleChangePassword(
 void GameService::HandleUpdateNickname(
     const std::shared_ptr<network::IConnection>& connection,
     const landlords::protocol::ClientMessage& message) {
+  std::lock_guard lock(mutex_);
   const auto& request = message.update_nickname_request();
   landlords::protocol::ServerMessage response;
   response.set_request_id(message.request_id());
@@ -780,7 +843,6 @@ void GameService::HandleUpdateNickname(
     return;
   }
 
-  std::lock_guard lock(mutex_);
   const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     payload->set_success(false);
@@ -812,11 +874,11 @@ void GameService::HandleUpdateNickname(
 
 void GameService::HandleMatch(const std::shared_ptr<network::IConnection>& connection,
                               const landlords::protocol::ClientMessage& message) {
+  std::lock_guard lock(mutex_);
   landlords::protocol::ServerMessage response;
   response.set_request_id(message.request_id());
   auto* payload = response.mutable_match_response();
 
-  std::lock_guard lock(mutex_);
   const auto session = RequireSessionForConnection(connection, message.session_token());
   if (!session.has_value()) {
     payload->set_accepted(false);
@@ -1442,8 +1504,28 @@ void GameService::HandleRespondRoomInvitation(
 
   auto invitation_iterator =
       invitations_by_id_.find(message.respond_room_invitation_request().invitation_id());
-  if (invitation_iterator == invitations_by_id_.end() ||
-      invitation_iterator->second.invitee_player_id != (*session)->user.user_id) {
+  if (invitation_iterator == invitations_by_id_.end()) {
+    const auto resolved_iterator =
+        resolved_invitations_by_id_.find(message.respond_room_invitation_request().invitation_id());
+    if (resolved_iterator != resolved_invitations_by_id_.end()) {
+      const bool same_invitee =
+          resolved_iterator->second.invitation.invitee_player_id == (*session)->user.user_id ||
+          resolved_iterator->second.invitation.invitee_account == (*session)->user.account;
+      const bool already_joined_resolved_room =
+          resolved_iterator->second.result == landlords::protocol::INVITATION_RESULT_ACCEPTED &&
+          (*session)->room_id == resolved_iterator->second.invitation.room_id;
+      if (same_invitee || already_joined_resolved_room) {
+      SendResolvedInvitationResponse(
+          connection, message.request_id(), **session, resolved_iterator->second);
+      return;
+      }
+    }
+    payload->set_success(false);
+    payload->set_message("invitation expired");
+    connection->Send(response);
+    return;
+  }
+  if (invitation_iterator->second.invitee_player_id != (*session)->user.user_id) {
     payload->set_success(false);
     payload->set_message("invitation expired");
     connection->Send(response);
@@ -1452,6 +1534,10 @@ void GameService::HandleRespondRoomInvitation(
 
   const PendingInvitation invitation = invitation_iterator->second;
   if (!message.respond_room_invitation_request().accept()) {
+    RememberResolvedInvitation(invitation,
+                               true,
+                               "invitation rejected",
+                               landlords::protocol::INVITATION_RESULT_REJECTED);
     payload->set_success(true);
     payload->set_message("invitation rejected");
     connection->Send(response);
@@ -1465,6 +1551,10 @@ void GameService::HandleRespondRoomInvitation(
 
   auto pending_room = FindPendingRoom(invitation.room_id);
   if (!pending_room.has_value()) {
+    RememberResolvedInvitation(invitation,
+                               false,
+                               "room is no longer available",
+                               landlords::protocol::INVITATION_RESULT_EXPIRED);
     payload->set_success(false);
     payload->set_message("room is no longer available");
     connection->Send(response);
@@ -1476,6 +1566,10 @@ void GameService::HandleRespondRoomInvitation(
     return;
   }
   if (!SessionCanJoinPendingRoom(**session, invitation.room_id)) {
+    RememberResolvedInvitation(invitation,
+                               false,
+                               "player is currently in another room",
+                               landlords::protocol::INVITATION_RESULT_FAILED);
     payload->set_success(false);
     payload->set_message("player is currently in another room");
     connection->Send(response);
@@ -1508,6 +1602,8 @@ void GameService::HandleRespondRoomInvitation(
     seat_index = -1;
   }
   if (seat_index == -1) {
+    RememberResolvedInvitation(
+        invitation, false, "room is full", landlords::protocol::INVITATION_RESULT_EXPIRED);
     payload->set_success(false);
     payload->set_message("room is full");
     connection->Send(response);
@@ -1523,6 +1619,10 @@ void GameService::HandleRespondRoomInvitation(
       RemoveSessionFromPendingRoom(**session, previous_room_id);
       pending_room = FindPendingRoom(invitation.room_id);
       if (!pending_room.has_value()) {
+        RememberResolvedInvitation(invitation,
+                                   false,
+                                   "room is no longer available",
+                                   landlords::protocol::INVITATION_RESULT_EXPIRED);
         payload->set_success(false);
         payload->set_message("room is no longer available");
         connection->Send(response);
@@ -1546,6 +1646,8 @@ void GameService::HandleRespondRoomInvitation(
   seat.bot_difficulty = landlords::protocol::BOT_DIFFICULTY_NORMAL;
   (*session)->room_id = invitation.room_id;
 
+  RememberResolvedInvitation(
+      invitation, true, "room_joined", landlords::protocol::INVITATION_RESULT_ACCEPTED);
   payload->set_success(true);
   payload->set_message("room_joined");
   *payload->mutable_snapshot() =
@@ -2021,6 +2123,12 @@ void GameService::HandleHeartbeat(const std::shared_ptr<network::IConnection>& c
     std::lock_guard lock(mutex_);
     if (const auto session = RequireSession(message.session_token()); session.has_value()) {
       BindSessionConnection(**session, connection);
+    } else {
+      SendError(connection,
+                message.request_id(),
+                landlords::protocol::ERROR_CODE_AUTH_FAILED,
+                "account logged in on another device");
+      return;
     }
   }
   landlords::protocol::ServerMessage response;
@@ -2043,6 +2151,16 @@ void GameService::SendError(const std::shared_ptr<network::IConnection>& connect
   payload->set_code(code);
   payload->set_message(message);
   connection->Send(response);
+}
+
+void GameService::NotifySessionExpired(const SessionState& session, const std::string& message) {
+  if (const auto connection = session.connection.lock()) {
+    landlords::protocol::ServerMessage response;
+    auto* payload = response.mutable_error_response();
+    payload->set_code(landlords::protocol::ERROR_CODE_AUTH_FAILED);
+    payload->set_message(message);
+    connection->Send(response);
+  }
 }
 
 void GameService::BindSessionConnection(
@@ -2245,6 +2363,10 @@ void GameService::SendSnapshotToRoom(const game::Room& room) {
       if (session.user.user_id != player.player_id) {
         continue;
       }
+      if (const auto active = active_session_token_by_user_id_.find(session.user.user_id);
+          active != active_session_token_by_user_id_.end() && active->second != token) {
+        continue;
+      }
       if (const auto connection = session.connection.lock()) {
         landlords::protocol::ServerMessage push;
         *push.mutable_room_snapshot() = room.BuildSnapshotFor(player.player_id);
@@ -2303,6 +2425,59 @@ void GameService::SendInvitationResult(const PendingInvitation& invitation,
   }
 }
 
+void GameService::RememberResolvedInvitation(const PendingInvitation& invitation,
+                                             bool success,
+                                             const std::string& response_message,
+                                             landlords::protocol::InvitationResult result) {
+  resolved_invitations_by_id_[invitation.invitation_id] = ResolvedInvitation{
+      .invitation = invitation,
+      .success = success,
+      .response_message = response_message,
+      .result = result,
+      .resolved_at_ms = core::NowMs(),
+  };
+}
+
+void GameService::SendResolvedInvitationResponse(
+    const std::shared_ptr<network::IConnection>& connection,
+    const std::string& request_id,
+    const SessionState& session,
+    const ResolvedInvitation& resolved_invitation) {
+  landlords::protocol::ServerMessage response;
+  response.set_request_id(request_id);
+  auto* payload = response.mutable_respond_room_invitation_response();
+  payload->set_success(resolved_invitation.success);
+  payload->set_message(resolved_invitation.response_message);
+  if (resolved_invitation.result == landlords::protocol::INVITATION_RESULT_ACCEPTED &&
+      session.room_id == resolved_invitation.invitation.room_id) {
+    if (const auto pending_room = FindPendingRoom(resolved_invitation.invitation.room_id);
+        pending_room.has_value()) {
+      *payload->mutable_snapshot() =
+          BuildPendingRoomSnapshot(**pending_room, session.user.user_id);
+    } else {
+      const auto room_iterator = rooms_by_id_.find(resolved_invitation.invitation.room_id);
+      if (room_iterator != rooms_by_id_.end() &&
+          room_iterator->second->HasPlayer(session.user.user_id)) {
+        *payload->mutable_snapshot() = room_iterator->second->BuildSnapshotFor(session.user.user_id);
+      }
+    }
+  }
+  connection->Send(response);
+}
+
+void GameService::PruneResolvedInvitations(std::int64_t now_ms) {
+  std::vector<std::string> expired_invitation_ids;
+  expired_invitation_ids.reserve(resolved_invitations_by_id_.size());
+  for (const auto& [invitation_id, invitation] : resolved_invitations_by_id_) {
+    if (now_ms - invitation.resolved_at_ms >= kResolvedInvitationRetentionMs) {
+      expired_invitation_ids.push_back(invitation_id);
+    }
+  }
+  for (const auto& invitation_id : expired_invitation_ids) {
+    resolved_invitations_by_id_.erase(invitation_id);
+  }
+}
+
 void GameService::ClearInvitation(const std::string& invitation_id) {
   auto iterator = invitations_by_id_.find(invitation_id);
   if (iterator == invitations_by_id_.end()) {
@@ -2327,6 +2502,8 @@ void GameService::ExpireInvitationsForRoom(const std::string& room_id,
     if (iterator == invitations_by_id_.end()) {
       continue;
     }
+    RememberResolvedInvitation(
+        iterator->second, false, detail, landlords::protocol::INVITATION_RESULT_EXPIRED);
     SendInvitationResult(
         iterator->second, landlords::protocol::INVITATION_RESULT_EXPIRED, detail);
     ClearInvitation(invitation_id);
@@ -2347,6 +2524,10 @@ void GameService::ExpireStaleInvitations(std::int64_t now_ms) {
     if (iterator == invitations_by_id_.end()) {
       continue;
     }
+    RememberResolvedInvitation(iterator->second,
+                               false,
+                               "invitation timed out",
+                               landlords::protocol::INVITATION_RESULT_EXPIRED);
     SendInvitationResult(iterator->second,
                          landlords::protocol::INVITATION_RESULT_EXPIRED,
                          "invitation timed out");
@@ -2442,6 +2623,28 @@ void GameService::CreateBotRoom(SessionState& session,
 }
 
 void GameService::MaybeCreatePvpRoom() {
+  std::vector<std::string> filtered_tokens;
+  filtered_tokens.reserve(pvp_waiting_tokens_.size());
+  std::unordered_set<std::string> seen_user_ids;
+  for (const auto& token : pvp_waiting_tokens_) {
+    auto iterator = sessions_by_token_.find(token);
+    if (iterator == sessions_by_token_.end()) {
+      continue;
+    }
+    auto& session = iterator->second;
+    if (session.connection.expired() || !session.room_id.empty()) {
+      continue;
+    }
+    if (const auto active = active_session_token_by_user_id_.find(session.user.user_id);
+        active != active_session_token_by_user_id_.end() && active->second != token) {
+      continue;
+    }
+    if (!seen_user_ids.insert(session.user.user_id).second) {
+      continue;
+    }
+    filtered_tokens.push_back(token);
+  }
+  pvp_waiting_tokens_ = filtered_tokens;
   if (pvp_waiting_tokens_.size() < 3U) {
     return;
   }
@@ -2515,12 +2718,49 @@ bool GameService::RemoveWaitingToken(const std::string& session_token) {
   return pvp_waiting_tokens_.size() != original_size;
 }
 
+bool GameService::ReplaceWaitingToken(const std::string& previous_session_token,
+                                      const std::string& next_session_token) {
+  bool replaced = false;
+  for (auto& token : pvp_waiting_tokens_) {
+    if (token != previous_session_token) {
+      continue;
+    }
+    token = next_session_token;
+    replaced = true;
+  }
+  return replaced;
+}
+
+std::string GameService::ResolveReconnectableRoomId(const std::string& user_id,
+                                                    const std::string& preferred_room_id) const {
+  if (preferred_room_id.empty()) {
+    return {};
+  }
+  if (const auto pending_room = FindPendingRoom(preferred_room_id); pending_room.has_value()) {
+    const bool player_in_pending_room = std::any_of(
+        (*pending_room)->seats.begin(),
+        (*pending_room)->seats.end(),
+        [&](const PendingSeat& seat) { return seat.player_id == user_id; });
+    if (player_in_pending_room) {
+      return preferred_room_id;
+    }
+    return {};
+  }
+  const auto room_iterator = rooms_by_id_.find(preferred_room_id);
+  if (room_iterator == rooms_by_id_.end() || room_iterator->second->finished() ||
+      !room_iterator->second->HasPlayer(user_id)) {
+    return {};
+  }
+  return preferred_room_id;
+}
+
 void GameService::TickRoomsLoop() {
   while (running_) {
     {
       std::lock_guard lock(mutex_);
       const auto now_ms = core::NowMs();
       ExpireStaleInvitations(now_ms);
+      PruneResolvedInvitations(now_ms);
       for (auto& [room_id, room] : rooms_by_id_) {
         if (room->TickManaged(now_ms, 25000)) {
           PersistFinishedRoomScores(*room);
@@ -2533,3 +2773,4 @@ void GameService::TickRoomsLoop() {
 }
 
 }  // namespace landlords::services
+

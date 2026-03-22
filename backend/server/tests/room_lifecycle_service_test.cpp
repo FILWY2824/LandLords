@@ -89,6 +89,15 @@ const ServerMessage& RequireErrorResponse(
   return response;
 }
 
+const ServerMessage& RequireLatestSessionExpiredPush(const FakeConnection& connection) {
+  for (auto it = connection.messages.rbegin(); it != connection.messages.rend(); ++it) {
+    if (it->request_id().empty() && it->has_error_response()) {
+      return *it;
+    }
+  }
+  throw std::runtime_error("missing session expired push");
+}
+
 ClientMessage MakeRegister(
     std::string request_id,
     std::string account,
@@ -243,8 +252,9 @@ void RunRoomLifecycleServiceTest() {
   auto friend_request_repository =
       std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
-  GameService service(user_repository, friend_request_repository);
-  auto connection = std::make_shared<FakeConnection>("owner");
+  {
+    GameService service(user_repository, friend_request_repository);
+    auto connection = std::make_shared<FakeConnection>("owner");
 
   service.HandleMessage(
       connection,
@@ -323,9 +333,12 @@ void RunRoomLifecycleServiceTest() {
       RequireResponse(*connection, "create-after-bot");
   Require(create_after_bot.operation_response().success(),
           "create room should work after leaving a vs bot game");
-  Require(create_after_bot.operation_response().snapshot().phase() ==
-              landlords::protocol::ROOM_PHASE_PREPARING,
-          "recreated room should still be preparing");
+    Require(create_after_bot.operation_response().snapshot().phase() ==
+                landlords::protocol::ROOM_PHASE_PREPARING,
+            "recreated room should still be preparing");
+  }
+
+  std::filesystem::remove_all(runtime_dir);
 }
 
 void RunInvitationRoomSwitchServiceTest() {
@@ -337,10 +350,11 @@ void RunInvitationRoomSwitchServiceTest() {
   auto friend_request_repository =
       std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
-  GameService service(user_repository, friend_request_repository);
-  auto inviter_connection = std::make_shared<FakeConnection>("inviter");
-  auto invitee_connection = std::make_shared<FakeConnection>("invitee");
-  auto roommate_connection = std::make_shared<FakeConnection>("roommate");
+  {
+    GameService service(user_repository, friend_request_repository);
+    auto inviter_connection = std::make_shared<FakeConnection>("inviter");
+    auto invitee_connection = std::make_shared<FakeConnection>("invitee");
+    auto roommate_connection = std::make_shared<FakeConnection>("roommate");
 
   service.HandleMessage(
       inviter_connection,
@@ -443,12 +457,14 @@ void RunInvitationRoomSwitchServiceTest() {
   Require(invite_accept.invite_player_response().accepted(),
           "second invitation should be accepted for delivery");
   const auto& accept_push = RequireLatestInvitationPush(*invitee_connection);
+  const std::string accept_invitation_id =
+      accept_push.room_invitation_push().invitation_id();
 
   service.HandleMessage(
       invitee_connection,
       MakeRespondInvitation("accept-invitation",
                             invitee_token,
-                            accept_push.room_invitation_push().invitation_id(),
+                            accept_invitation_id,
                             true));
   const auto& accept_response =
       RequireResponse(*invitee_connection, "accept-invitation");
@@ -459,6 +475,24 @@ void RunInvitationRoomSwitchServiceTest() {
           "accept should join inviter room");
   Require(OccupiedCount(accept_response.respond_room_invitation_response().snapshot()) == 2,
           "inviter room should contain inviter and invitee after accept");
+
+  service.HandleMessage(
+      invitee_connection,
+      MakeRespondInvitation("accept-invitation-duplicate",
+                            invitee_token,
+                            accept_invitation_id,
+                            true));
+  const auto& accept_response_duplicate =
+      RequireResponse(*invitee_connection, "accept-invitation-duplicate");
+  Require(accept_response_duplicate.has_respond_room_invitation_response() &&
+              accept_response_duplicate.respond_room_invitation_response().success(),
+          "duplicate accept should replay the original success");
+  Require(accept_response_duplicate.respond_room_invitation_response().snapshot().room_id() ==
+              room_b_snapshot.room_id(),
+          "duplicate accept should keep invitee in inviter room");
+  Require(
+      OccupiedCount(accept_response_duplicate.respond_room_invitation_response().snapshot()) == 2,
+      "duplicate accept should keep inviter room occupancy stable");
 
   const auto& accept_feedback =
       RequireLatestInvitationResultPush(*inviter_connection);
@@ -487,8 +521,9 @@ void RunInvitationRoomSwitchServiceTest() {
           "roommate should remain in original room");
   Require(roommate_after_transfer.room_snapshot().owner_player_id() == roommate_user_id,
           "room ownership should transfer to the next seated player");
-  Require(OccupiedCount(roommate_after_transfer.room_snapshot()) == 1,
-          "original room should only contain the roommate after invitee switches rooms");
+    Require(OccupiedCount(roommate_after_transfer.room_snapshot()) == 1,
+            "original room should only contain the roommate after invitee switches rooms");
+  }
 
   std::filesystem::remove_all(runtime_dir);
 }
@@ -502,9 +537,10 @@ void RunHostRemovePlayerServiceTest() {
   auto friend_request_repository =
       std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
-  GameService service(user_repository, friend_request_repository);
-  auto owner_connection = std::make_shared<FakeConnection>("owner");
-  auto guest_connection = std::make_shared<FakeConnection>("guest");
+  {
+    GameService service(user_repository, friend_request_repository);
+    auto owner_connection = std::make_shared<FakeConnection>("owner");
+    auto guest_connection = std::make_shared<FakeConnection>("guest");
 
   service.HandleMessage(
       owner_connection,
@@ -579,8 +615,79 @@ void RunHostRemovePlayerServiceTest() {
       MakeReconnect("guest-reconnect-after-remove", guest_token, created_snapshot.room_id()));
   const auto& reconnect_error =
       RequireErrorResponse(*guest_connection, "guest-reconnect-after-remove");
-  Require(reconnect_error.error_response().message() == "room not found",
-          "removed guest should not be able to reconnect into the old room");
+    Require(reconnect_error.error_response().message() == "room not found",
+            "removed guest should not be able to reconnect into the old room");
+  }
+
+  std::filesystem::remove_all(runtime_dir);
+}
+
+void RunSingleSessionPerAccountServiceTest() {
+  const auto runtime_dir =
+      std::filesystem::path("runtime") / "single-session-per-account-service-test";
+  std::filesystem::remove_all(runtime_dir);
+
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
+  auto friend_request_repository =
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
+
+  {
+    GameService service(user_repository, friend_request_repository);
+    auto first_connection = std::make_shared<FakeConnection>("first");
+    auto second_connection = std::make_shared<FakeConnection>("second");
+
+  service.HandleMessage(
+      first_connection,
+      MakeRegister("register-single-session", "single_acc", "single", "pass123"));
+  service.HandleMessage(
+      first_connection,
+      MakeLogin("login-single-session-first", "single_acc", "pass123"));
+  const auto& first_login =
+      RequireResponse(*first_connection, "login-single-session-first");
+  Require(first_login.login_response().success(), "first login should succeed");
+  const std::string first_token = first_login.login_response().session_token();
+
+  service.HandleMessage(
+      first_connection,
+      MakeCreateRoom("create-room-single-session", first_token));
+  const auto& create_room =
+      RequireResponse(*first_connection, "create-room-single-session");
+  Require(create_room.operation_response().success(), "first session should create room");
+  const auto room_id = create_room.operation_response().snapshot().room_id();
+
+  service.HandleMessage(
+      second_connection,
+      MakeLogin("login-single-session-second", "single_acc", "pass123"));
+  const auto& second_login =
+      RequireResponse(*second_connection, "login-single-session-second");
+  Require(second_login.login_response().success(), "second login should succeed");
+  const std::string second_token = second_login.login_response().session_token();
+  Require(first_token != second_token, "new login should rotate the session token");
+
+  const auto& session_expired_push = RequireLatestSessionExpiredPush(*first_connection);
+  Require(session_expired_push.error_response().code() ==
+              landlords::protocol::ERROR_CODE_AUTH_FAILED,
+          "old connection should receive an auth-failed push");
+
+  service.HandleMessage(
+      first_connection,
+      MakeReconnect("reconnect-single-session-old", first_token, ""));
+  const auto& old_reconnect =
+      RequireErrorResponse(*first_connection, "reconnect-single-session-old");
+  Require(old_reconnect.error_response().code() ==
+              landlords::protocol::ERROR_CODE_AUTH_FAILED,
+          "old session token should be rejected after second login");
+
+  service.HandleMessage(
+      second_connection,
+      MakeReconnect("reconnect-single-session-new", second_token, ""));
+  const auto& new_reconnect =
+      RequireResponse(*second_connection, "reconnect-single-session-new");
+  Require(new_reconnect.has_room_snapshot(),
+          "new session should reconnect into the transferred room");
+    Require(new_reconnect.room_snapshot().room_id() == room_id,
+            "new session should keep the existing room id");
+  }
 
   std::filesystem::remove_all(runtime_dir);
 }
@@ -592,6 +699,7 @@ int main() {
     RunRoomLifecycleServiceTest();
     RunInvitationRoomSwitchServiceTest();
     RunHostRemovePlayerServiceTest();
+    RunSingleSessionPerAccountServiceTest();
     std::cout << "room lifecycle service test passed\n";
     return 0;
   } catch (const std::exception& error) {
@@ -599,3 +707,4 @@ int main() {
     return 1;
   }
 }
+

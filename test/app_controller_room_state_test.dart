@@ -48,7 +48,7 @@ void main() {
     );
     final gateway = _RoomStateGateway(
       startMatchResult: initialSnapshot,
-      refreshCurrentRoomResult: refreshedSnapshot,
+      refreshCurrentRoomResults: [null, refreshedSnapshot],
     );
     final controller = AppController(gateway: gateway);
     addTearDown(controller.dispose);
@@ -64,7 +64,7 @@ void main() {
     controller.resumeRoom();
     await _drainAsyncWork();
 
-    expect(gateway.refreshCurrentRoomCalls, 1);
+    expect(gateway.refreshCurrentRoomCalls, 2);
     expect(controller.stage, AppStage.game);
     expect(controller.roomSnapshot?.turnSerial, 9);
     expect(controller.roomSnapshot?.currentRoundScore, 16);
@@ -206,6 +206,115 @@ void main() {
     expect(gateway.lastCurrentPassword, 'pass123');
     expect(gateway.lastNewPassword, 'pass456');
   });
+
+  test('responding to the same invitation twice shares one gateway request', () async {
+    final gateway = _RoomStateGateway();
+    final controller = AppController(gateway: gateway);
+    addTearDown(controller.dispose);
+
+    await controller.login('player1', 'pass123');
+
+    gateway.emitNotification(
+      const RoomInvitationNotification(
+        RoomInvitation(
+          invitationId: 'invite-1',
+          roomId: 'invited-room',
+          roomCode: '654321',
+          inviterUserId: 'user-player2',
+          inviterAccount: 'player2',
+          inviterNickname: 'owner',
+          seatIndex: 1,
+        ),
+      ),
+    );
+    await _drainAsyncWork();
+
+    final responseCompleter = Completer<RoomSnapshot?>();
+    gateway.respondInvitationCompleter = responseCompleter;
+
+    final first = controller.respondToInvitation(
+      invitationId: 'invite-1',
+      accept: true,
+    );
+    final second = controller.respondToInvitation(
+      invitationId: 'invite-1',
+      accept: true,
+    );
+
+    expect(gateway.respondInvitationCalls, 1);
+
+    responseCompleter.complete(
+      _buildRoomSnapshot(
+        roomId: 'invited-room',
+        mode: MatchMode.online,
+        phase: RoomPhase.preparing,
+        turnSerial: 0,
+      ),
+    );
+
+    expect(await first, isTrue);
+    expect(await second, isTrue);
+    expect(gateway.respondInvitationCalls, 1);
+    expect(controller.stage, AppStage.game);
+    expect(controller.roomSnapshot?.roomId, 'invited-room');
+    expect(controller.activeInvitation, isNull);
+    expect(controller.errorText, isNull);
+  });
+
+  test('room snapshots dismiss the matching invitation once the player is seated', () async {
+    final gateway = _RoomStateGateway();
+    final controller = AppController(gateway: gateway);
+    addTearDown(controller.dispose);
+
+    await controller.login('player1', 'pass123');
+
+    gateway.emitNotification(
+      const RoomInvitationNotification(
+        RoomInvitation(
+          invitationId: 'invite-2',
+          roomId: 'joined-room',
+          roomCode: '112233',
+          inviterUserId: 'user-player2',
+          inviterAccount: 'player2',
+          inviterNickname: 'owner',
+          seatIndex: 1,
+        ),
+      ),
+    );
+    await _drainAsyncWork();
+    expect(controller.activeInvitation?.invitationId, 'invite-2');
+
+    gateway.emitRoomSnapshot(
+      _buildRoomSnapshot(
+        roomId: 'joined-room',
+        mode: MatchMode.online,
+        phase: RoomPhase.preparing,
+        turnSerial: 0,
+      ),
+    );
+    await _drainAsyncWork();
+
+    expect(controller.activeInvitation, isNull);
+    expect(controller.stage, AppStage.game);
+    expect(controller.roomSnapshot?.roomId, 'joined-room');
+  });
+
+  test('session expired notifications log the player out safely', () async {
+    final gateway = _RoomStateGateway();
+    final controller = AppController(gateway: gateway);
+    addTearDown(controller.dispose);
+
+    await controller.login('player1', 'pass123');
+    gateway.emitNotification(
+      const SessionExpiredNotification('account logged in on another device'),
+    );
+    await _drainAsyncWork();
+
+    expect(controller.stage, AppStage.login);
+    expect(controller.profile, isNull);
+    expect(gateway.sessionForgotten, isTrue);
+    expect(controller.activePopupNotice?.message, contains('其他设备'));
+  });
 }
 
 Future<void> _drainAsyncWork() async {
@@ -281,12 +390,12 @@ class _RoomStateGateway implements GameGateway {
   _RoomStateGateway({
     this.startMatchResult,
     this.createRoomResult,
-    this.refreshCurrentRoomResult,
-  });
+    List<RoomSnapshot?>? refreshCurrentRoomResults,
+  }) : refreshCurrentRoomResults = refreshCurrentRoomResults ?? <RoomSnapshot?>[];
 
   final RoomSnapshot? startMatchResult;
   final RoomSnapshot? createRoomResult;
-  final RoomSnapshot? refreshCurrentRoomResult;
+  final List<RoomSnapshot?> refreshCurrentRoomResults;
 
   final StreamController<RoomSnapshot> _roomController =
       StreamController<RoomSnapshot>.broadcast();
@@ -296,11 +405,17 @@ class _RoomStateGateway implements GameGateway {
   int leaveRoomCalls = 0;
   int refreshCurrentRoomCalls = 0;
   int changePasswordCalls = 0;
+  int respondInvitationCalls = 0;
   String? lastLeftRoomId;
   String? lastChangePasswordSessionToken;
   String? lastCurrentPassword;
   String? lastNewPassword;
+  String? lastRespondInvitationId;
+  bool? lastRespondInvitationAccept;
   bool cacheCleared = false;
+  bool sessionForgotten = false;
+  Completer<RoomSnapshot?>? respondInvitationCompleter;
+  RoomSnapshot? respondInvitationResult;
 
   @override
   Stream<RoomSnapshot> get roomSnapshots => _roomController.stream;
@@ -407,7 +522,10 @@ class _RoomStateGateway implements GameGateway {
   @override
   Future<RoomSnapshot?> refreshCurrentRoom() async {
     refreshCurrentRoomCalls += 1;
-    return refreshCurrentRoomResult;
+    if (refreshCurrentRoomResults.isNotEmpty) {
+      return refreshCurrentRoomResults.removeAt(0);
+    }
+    return null;
   }
 
   @override
@@ -519,7 +637,14 @@ class _RoomStateGateway implements GameGateway {
     required String invitationId,
     required bool accept,
   }) async {
-    throw UnimplementedError();
+    respondInvitationCalls += 1;
+    lastRespondInvitationId = invitationId;
+    lastRespondInvitationAccept = accept;
+    final completer = respondInvitationCompleter;
+    if (completer != null) {
+      return completer.future;
+    }
+    return respondInvitationResult;
   }
 
   @override
@@ -589,6 +714,11 @@ class _RoomStateGateway implements GameGateway {
   }
 
   @override
+  void forgetSession() {
+    sessionForgotten = true;
+  }
+
+  @override
   Future<void> close() async {
     await _roomController.close();
     await _notificationController.close();
@@ -596,6 +726,10 @@ class _RoomStateGateway implements GameGateway {
 
   void emitRoomSnapshot(RoomSnapshot snapshot) {
     _roomController.add(snapshot);
+  }
+
+  void emitNotification(GatewayNotification notification) {
+    _notificationController.add(notification);
   }
 }
 

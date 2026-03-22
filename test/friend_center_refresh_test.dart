@@ -338,6 +338,9 @@ class _PollingGateway implements GameGateway {
   void clearCurrentRoomCache() {}
 
   @override
+  void forgetSession() {}
+
+  @override
   Future<void> register({
     required String account,
     required String nickname,

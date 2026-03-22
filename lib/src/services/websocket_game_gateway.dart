@@ -659,10 +659,7 @@ class WebSocketGameGateway implements GameGateway {
     }
     _handleDisconnect(error: Exception('connection refresh requested'));
     await _ensureConnected();
-    if (_lastRoomId == null) {
-      return;
-    }
-    final response = await reconnect();
+    final response = await reconnect(roomId: _lastRoomId);
     if (response.hasRoomSnapshot()) {
       _publishSnapshot(_mapSnapshot(response.roomSnapshot));
     }
@@ -670,10 +667,16 @@ class WebSocketGameGateway implements GameGateway {
 
   @override
   Future<RoomSnapshot?> refreshCurrentRoom() async {
-    if (_sessionToken == null || _lastRoomId == null) {
+    if (_sessionToken == null) {
       return null;
     }
-    final response = await reconnect();
+    final response = await reconnect(roomId: _lastRoomId);
+    if (response.hasErrorResponse()) {
+      if (response.errorResponse.message.contains('room not found')) {
+        return null;
+      }
+      throw Exception(response.errorResponse.message);
+    }
     if (!response.hasRoomSnapshot()) {
       return null;
     }
@@ -693,20 +696,28 @@ class WebSocketGameGateway implements GameGateway {
   }
 
   @override
+  void forgetSession() {
+    _sessionToken = null;
+    clearCurrentRoomCache();
+    _handleDisconnect(error: Exception('session cleared'));
+  }
+
+  @override
   Future<void> close() async {
     _handleDisconnect();
     await _snapshotController.close();
     await _notificationController.close();
   }
 
-  Future<pb.ServerMessage> reconnect() async {
-    if (_sessionToken == null || _lastRoomId == null) {
+  Future<pb.ServerMessage> reconnect({String? roomId}) async {
+    if (_sessionToken == null) {
       throw Exception('没有可重连的房间');
     }
     await _ensureConnected();
     return _send(
       (message) =>
-          message.reconnectRequest = pb.ReconnectRequest(roomId: _lastRoomId),
+          message.reconnectRequest =
+              pb.ReconnectRequest(roomId: roomId ?? _lastRoomId ?? ''),
       sessionToken: _sessionToken,
     );
   }
@@ -787,6 +798,14 @@ class WebSocketGameGateway implements GameGateway {
     if (message.requestId.isNotEmpty) {
       _pending.remove(message.requestId)?.complete(message);
     }
+    if (message.hasErrorResponse() &&
+        message.errorResponse.code ==
+            pbenum.ErrorCode.ERROR_CODE_AUTH_FAILED) {
+      _handleAuthFailure(
+        message.errorResponse.message,
+        skipRequestId: message.requestId,
+      );
+    }
   }
 
   Future<void> _openConnection() async {
@@ -836,6 +855,26 @@ class WebSocketGameGateway implements GameGateway {
       if (!completer.isCompleted) {
         completer.completeError(failure);
       }
+    }
+  }
+
+  void _handleAuthFailure(String rawMessage, {String? skipRequestId}) {
+    final hadSession =
+        _sessionToken != null || _lastRoomId != null || _latestSnapshot != null;
+    final message = rawMessage.isEmpty ? 'login required' : rawMessage;
+    _sessionToken = null;
+    _lastRoomId = null;
+    _latestSnapshot = null;
+    final pending = Map<String, Completer<pb.ServerMessage>>.from(_pending);
+    _pending.removeWhere((requestId, completer) => requestId != skipRequestId);
+    for (final entry in pending.entries) {
+      if (entry.key == skipRequestId || entry.value.isCompleted) {
+        continue;
+      }
+      entry.value.completeError(Exception(message));
+    }
+    if (hadSession && !_notificationController.isClosed) {
+      _notificationController.add(SessionExpiredNotification(message));
     }
   }
 

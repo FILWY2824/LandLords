@@ -49,7 +49,6 @@ class FileUserRepository final : public IUserRepository {
   std::filesystem::path account_index_path_;
   std::unordered_map<std::string, core::UserRecord> by_user_id_;
   std::unordered_map<std::string, std::string> user_id_by_account_;
-  bool loaded_ = false;
   std::mutex mutex_;
 };
 

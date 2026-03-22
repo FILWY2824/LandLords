@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -66,11 +67,21 @@ class GameService {
     std::int64_t created_at_ms = 0;
   };
 
+  struct ResolvedInvitation {
+    PendingInvitation invitation;
+    bool success = false;
+    std::string response_message;
+    landlords::protocol::InvitationResult result =
+        landlords::protocol::INVITATION_RESULT_UNSPECIFIED;
+    std::int64_t resolved_at_ms = 0;
+  };
+
   std::optional<SessionState*> RequireSession(const std::string& session_token);
   std::optional<SessionState*> RequireSessionForConnection(
       const std::shared_ptr<network::IConnection>& connection,
       const std::string& session_token);
   std::optional<SessionState*> FindSessionByUserId(const std::string& user_id);
+  std::vector<std::string> FindSessionTokensByUserId(const std::string& user_id) const;
   std::vector<SessionState*> FindSessionsByUserId(const std::string& user_id);
   void HandleRegister(const std::shared_ptr<network::IConnection>& connection,
                       const landlords::protocol::ClientMessage& message);
@@ -123,6 +134,7 @@ class GameService {
                  const std::string& request_id,
                  landlords::protocol::ErrorCode code,
                  const std::string& message);
+  void NotifySessionExpired(const SessionState& session, const std::string& message);
   void BindSessionConnection(SessionState& session,
                              const std::shared_ptr<network::IConnection>& connection);
   void RefreshSessionUser(SessionState& session);
@@ -155,6 +167,16 @@ class GameService {
   void SendInvitationResult(const PendingInvitation& invitation,
                             landlords::protocol::InvitationResult result,
                             const std::string& detail);
+  void RememberResolvedInvitation(const PendingInvitation& invitation,
+                                  bool success,
+                                  const std::string& response_message,
+                                  landlords::protocol::InvitationResult result);
+  void SendResolvedInvitationResponse(
+      const std::shared_ptr<network::IConnection>& connection,
+      const std::string& request_id,
+      const SessionState& session,
+      const ResolvedInvitation& resolved_invitation);
+  void PruneResolvedInvitations(std::int64_t now_ms);
   void ClearInvitation(const std::string& invitation_id);
   void ExpireInvitationsForRoom(const std::string& room_id,
                                 const std::string& detail);
@@ -164,6 +186,10 @@ class GameService {
                      landlords::protocol::BotDifficulty difficulty);
   void MaybeCreatePvpRoom();
   bool RemoveWaitingToken(const std::string& session_token);
+  bool ReplaceWaitingToken(const std::string& previous_session_token,
+                           const std::string& next_session_token);
+  std::string ResolveReconnectableRoomId(const std::string& user_id,
+                                         const std::string& preferred_room_id) const;
   std::shared_ptr<ai::IBotStrategy> ResolveBotStrategy(
       landlords::protocol::BotDifficulty difficulty) const;
   landlords::protocol::BotDifficulty NormalizeBotDifficulty(
@@ -172,10 +198,12 @@ class GameService {
   std::shared_ptr<persistence::IUserRepository> user_repository_;
   std::shared_ptr<persistence::IFriendRequestRepository> friend_request_repository_;
   std::unordered_map<std::string, SessionState> sessions_by_token_;
+  std::unordered_map<std::string, std::string> active_session_token_by_user_id_;
   std::unordered_map<std::string, std::shared_ptr<game::Room>> rooms_by_id_;
   std::unordered_map<std::string, PendingRoom> pending_rooms_by_id_;
   std::unordered_map<std::string, std::string> pending_room_id_by_code_;
   std::unordered_map<std::string, PendingInvitation> invitations_by_id_;
+  std::unordered_map<std::string, ResolvedInvitation> resolved_invitations_by_id_;
   std::unordered_map<std::string, std::string> invitation_id_by_invitee_;
   std::vector<std::string> pvp_waiting_tokens_;
   std::mutex mutex_;

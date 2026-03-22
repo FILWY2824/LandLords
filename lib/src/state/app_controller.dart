@@ -25,6 +25,7 @@ class AppController extends ChangeNotifier {
   final Queue<InvitationFeedback> _feedbackQueue =
       Queue<InvitationFeedback>();
   final Queue<AppDialogNotice> _popupNoticeQueue = Queue<AppDialogNotice>();
+  final Map<String, Future<bool>> _pendingInvitationResponses = {};
 
   StreamSubscription<RoomSnapshot>? _roomSubscription;
   StreamSubscription<GatewayNotification>? _notificationSubscription;
@@ -141,6 +142,7 @@ class AppController extends ChangeNotifier {
       _feedbackQueue.clear();
       _activeInvitation = null;
       _activeInvitationFeedback = null;
+      _pendingInvitationResponses.clear();
       _activePopupNotice = null;
       _popupNoticeQueue.clear();
       _friendCenterSnapshot = const FriendCenterSnapshot.empty();
@@ -168,7 +170,10 @@ class AppController extends ChangeNotifier {
         _errorText = null;
         _lobbyNotice = null;
         _syncProfileFromSnapshot(snapshot);
-        if (_stage == AppStage.matching || _stage == AppStage.game) {
+        final joinedInvitedRoom = _consumeInvitationForRoomSnapshot(snapshot);
+        if (joinedInvitedRoom ||
+            _stage == AppStage.matching ||
+            _stage == AppStage.game) {
           _stage = AppStage.game;
         }
         notifyListeners();
@@ -176,6 +181,23 @@ class AppController extends ChangeNotifier {
       _stage = AppStage.lobby;
     });
     if (_sessionToken != null) {
+      try {
+        final snapshot = await _gateway.refreshCurrentRoom();
+        if (snapshot != null) {
+          _roomSnapshot = snapshot;
+          _errorText = null;
+          _lobbyNotice = null;
+          _syncProfileFromSnapshot(snapshot);
+          _stage = AppStage.game;
+          notifyListeners();
+        }
+      } catch (error) {
+        final message = error.toString().replaceFirst('Exception: ', '');
+        if (!message.contains('room not found') && _sessionToken != null) {
+          _errorText = message;
+          notifyListeners();
+        }
+      }
       unawaited(refreshFriendCenter(silent: true));
     }
   }
@@ -490,6 +512,28 @@ class AppController extends ChangeNotifier {
     required String invitationId,
     required bool accept,
   }) async {
+    final inFlight = _pendingInvitationResponses[invitationId];
+    if (inFlight != null) {
+      return inFlight;
+    }
+    final request = _respondToInvitationInternal(
+      invitationId: invitationId,
+      accept: accept,
+    );
+    _pendingInvitationResponses[invitationId] = request;
+    try {
+      return await request;
+    } finally {
+      if (identical(_pendingInvitationResponses[invitationId], request)) {
+        _pendingInvitationResponses.remove(invitationId);
+      }
+    }
+  }
+
+  Future<bool> _respondToInvitationInternal({
+    required String invitationId,
+    required bool accept,
+  }) async {
     if (_sessionToken == null) {
       return false;
     }
@@ -766,6 +810,7 @@ class AppController extends ChangeNotifier {
   }
 
   void logout() {
+    _gateway.forgetSession();
     _matchingTimer?.cancel();
     _matchingTimer = null;
     _matchingElapsedSeconds = 0;
@@ -781,6 +826,7 @@ class AppController extends ChangeNotifier {
     _feedbackQueue.clear();
     _activeInvitation = null;
     _activeInvitationFeedback = null;
+    _pendingInvitationResponses.clear();
     _activePopupNotice = null;
     _popupNoticeQueue.clear();
     _friendCenterSnapshot = const FriendCenterSnapshot.empty();
@@ -844,7 +890,22 @@ class AppController extends ChangeNotifier {
       case FriendCenterNotification():
         _friendCenterSnapshot = notification.snapshot;
         notifyListeners();
+      case SessionExpiredNotification():
+        _handleSessionExpired(notification.message);
     }
+  }
+
+  void _handleSessionExpired(String rawMessage) {
+    if (_profile == null && _sessionToken == null && _stage == AppStage.login) {
+      return;
+    }
+    final message = _friendlySessionMessage(rawMessage);
+    logout();
+    showDialogNotice(
+      title: '账号已下线',
+      message: message,
+      deduplicate: false,
+    );
   }
 
   String _friendlyMatchMessage(String raw) {
@@ -923,7 +984,19 @@ String _friendlyRoomActionMessage(String raw) {
     if (text == _busyOperationError) {
       return '当前还有操作正在处理中，请稍候再试。';
     }
-    return text;
+     return text;
+   }
+
+String _friendlySessionMessage(String raw) {
+    final text = raw.replaceFirst('Exception: ', '');
+    final lower = text.toLowerCase();
+    if (lower.contains('another device') || lower.contains('superseded')) {
+      return '当前账号已在其他设备登录，请重新登录。';
+    }
+    if (lower.contains('login required')) {
+      return '登录状态已失效，请重新登录。';
+    }
+    return _friendlyRoomActionMessage(raw);
   }
 
   void _syncProfileFromSnapshot(RoomSnapshot snapshot) {
@@ -991,6 +1064,34 @@ String _friendlyRoomActionMessage(String raw) {
         text.contains('room seats changed') ||
         text.contains('room started') ||
         text.contains('room closed');
+  }
+
+  bool _consumeInvitationForRoomSnapshot(RoomSnapshot snapshot) {
+    final profile = _profile;
+    if (profile == null || snapshot.mode != MatchMode.online) {
+      return false;
+    }
+    final selfIsSeated = snapshot.players.any(
+      (player) => player.occupied && player.playerId == profile.userId,
+    );
+    if (!selfIsSeated) {
+      return false;
+    }
+
+    var consumed = false;
+    if (_activeInvitation?.roomId == snapshot.roomId) {
+      _activeInvitation = null;
+      consumed = true;
+    }
+    _invitationQueue.removeWhere((invitation) {
+      final matched = invitation.roomId == snapshot.roomId;
+      consumed = consumed || matched;
+      return matched;
+    });
+    if (_activeInvitation == null && _invitationQueue.isNotEmpty) {
+      _activeInvitation = _invitationQueue.removeFirst();
+    }
+    return consumed;
   }
 
   Future<void> _guard(String busyText, Future<void> Function() action) async {

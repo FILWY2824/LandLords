@@ -4,34 +4,19 @@ import 'dart:math';
 import '../models/app_models.dart';
 import '../models/game_models.dart';
 import 'game_gateway.dart';
+part 'local_demo_runtime.dart';
 
 class LocalDemoGateway implements GameGateway {
   LocalDemoGateway() {
-    final demo = _LocalUser(
-      profile: const UserProfile(
-        userId: 'demo-user',
-        account: 'player1',
-        nickname: '玩家1',
-        coins: 1888,
-        landlordWins: 8,
-        landlordGames: 15,
-        farmerWins: 18,
-        farmerGames: 29,
-      ),
-      password: 'player1',
-    );
-    _usersByName[demo.profile.username] = demo;
+    _localDemoRuntime.attachGateway(this);
   }
 
-  final Map<String, _LocalUser> _usersByName = {};
-  final Map<String, _DemoRoom> _roomsById = {};
-  final Map<String, String> _sessionToUserId = {};
-  final Map<String, _LocalFriendRequest> _friendRequestsById = {};
   final StreamController<RoomSnapshot> _snapshotController =
       StreamController<RoomSnapshot>.broadcast();
   final StreamController<GatewayNotification> _notificationController =
       StreamController<GatewayNotification>.broadcast();
-  final Random _random = Random();
+
+  String? _sessionToken;
 
   @override
   Stream<RoomSnapshot> get roomSnapshots => _snapshotController.stream;
@@ -46,22 +31,9 @@ class LocalDemoGateway implements GameGateway {
     required String password,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 280));
-    if (account.trim().isEmpty || nickname.trim().isEmpty || password.isEmpty) {
-      throw Exception('昵称、账号和密码不能为空');
-    }
-    if (nickname.runes.length > 5) {
-      throw Exception('昵称最多 5 个字');
-    }
-    if (_usersByName.containsKey(account)) {
-      throw Exception('账号已存在');
-    }
-    _usersByName[account] = _LocalUser(
-      profile: UserProfile(
-        userId: _id('user'),
-        account: account,
-        nickname: nickname,
-        coins: 0,
-      ),
+    _localDemoRuntime.register(
+      account: account,
+      nickname: nickname,
       password: password,
     );
   }
@@ -72,13 +44,11 @@ class LocalDemoGateway implements GameGateway {
     required String password,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 240));
-    final user = _usersByName[account];
-    if (user == null || user.password != password) {
-      throw Exception('账号或密码错误');
-    }
-    final session = _id('session');
-    _sessionToUserId[session] = user.profile.userId;
-    return LoginResult(profile: user.profile, sessionToken: session);
+    return _localDemoRuntime.login(
+      gateway: this,
+      account: account,
+      password: password,
+    );
   }
 
   @override
@@ -87,16 +57,9 @@ class LocalDemoGateway implements GameGateway {
     required String newPassword,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 220));
-    final user = _usersByName[account];
-    if (user == null) {
-      throw Exception('账号不存在');
-    }
-    if (newPassword.isEmpty) {
-      throw Exception('新密码不能为空');
-    }
-    _usersByName[account] = _LocalUser(
-      profile: user.profile,
-      password: newPassword,
+    _localDemoRuntime.resetPassword(
+      account: account,
+      newPassword: newPassword,
     );
   }
 
@@ -107,20 +70,10 @@ class LocalDemoGateway implements GameGateway {
     required String newPassword,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 220));
-    final userId = _requireUserId(sessionToken);
-    final entry = _usersByName.entries.firstWhere(
-      (candidate) => candidate.value.profile.userId == userId,
-      orElse: () => throw Exception('账号不存在'),
-    );
-    if (entry.value.password != currentPassword) {
-      throw Exception('当前密码错误');
-    }
-    if (newPassword.isEmpty) {
-      throw Exception('新密码不能为空');
-    }
-    _usersByName[entry.key] = _LocalUser(
-      profile: entry.value.profile,
-      password: newPassword,
+    _localDemoRuntime.changePassword(
+      sessionToken: sessionToken,
+      currentPassword: currentPassword,
+      newPassword: newPassword,
     );
   }
 
@@ -130,13 +83,10 @@ class LocalDemoGateway implements GameGateway {
     required String nickname,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 180));
-    final userId = _requireUserId(sessionToken);
-    final entry = _usersByName.entries.firstWhere(
-      (item) => item.value.profile.userId == userId,
+    return _localDemoRuntime.updateNickname(
+      sessionToken: sessionToken,
+      nickname: nickname,
     );
-    final updatedProfile = entry.value.profile.copyWith(nickname: nickname);
-    entry.value.profile = updatedProfile;
-    return updatedProfile;
   }
 
   @override
@@ -146,32 +96,25 @@ class LocalDemoGateway implements GameGateway {
     required MatchMode mode,
     BotDifficulty botDifficulty = BotDifficulty.normal,
   }) async {
-    await Future<void>.delayed(Duration(milliseconds: mode == MatchMode.online ? 1300 : 520));
-    final room = _DemoRoom.create(
-      roomId: _id('room'),
-      random: _random,
-      owner: profile,
-      mode: mode,
+    await Future<void>.delayed(
+      Duration(milliseconds: mode == MatchMode.online ? 1300 : 520),
     );
-    _roomsById[room.roomId] = room;
-    room.driveBotsIfNeeded();
-    final snapshot = room.snapshotFor(profile.userId);
-    _snapshotController.add(snapshot);
-    return snapshot;
+    return _localDemoRuntime.startMatch(
+      gateway: this,
+      sessionToken: sessionToken,
+      mode: mode,
+      botDifficulty: botDifficulty,
+    );
   }
 
   @override
   Future<RoomSnapshot> createRoom({
     required String sessionToken,
-  }) {
-    final userId = _requireUserId(sessionToken);
-    final profile = _usersByName.values
-        .firstWhere((item) => item.profile.userId == userId)
-        .profile;
-    return startMatch(
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    return _localDemoRuntime.createRoom(
+      gateway: this,
       sessionToken: sessionToken,
-      profile: profile,
-      mode: MatchMode.online,
     );
   }
 
@@ -179,8 +122,13 @@ class LocalDemoGateway implements GameGateway {
   Future<RoomSnapshot> joinRoom({
     required String sessionToken,
     required String roomCode,
-  }) {
-    return createRoom(sessionToken: sessionToken);
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    return _localDemoRuntime.joinRoom(
+      gateway: this,
+      sessionToken: sessionToken,
+      roomCode: roomCode,
+    );
   }
 
   @override
@@ -189,6 +137,11 @@ class LocalDemoGateway implements GameGateway {
     required String roomId,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 120));
+    _localDemoRuntime.leaveRoom(
+      gateway: this,
+      sessionToken: sessionToken,
+      roomId: roomId,
+    );
   }
 
   @override
@@ -197,11 +150,12 @@ class LocalDemoGateway implements GameGateway {
     required String roomId,
     required bool ready,
   }) async {
-    final snapshot = currentSnapshot(roomId);
-    if (snapshot == null) {
-      throw Exception('房间不存在');
-    }
-    return snapshot;
+    return _localDemoRuntime.setRoomReady(
+      gateway: this,
+      sessionToken: sessionToken,
+      roomId: roomId,
+      ready: ready,
+    );
   }
 
   @override
@@ -211,11 +165,13 @@ class LocalDemoGateway implements GameGateway {
     required int seatIndex,
     BotDifficulty botDifficulty = BotDifficulty.normal,
   }) async {
-    final snapshot = currentSnapshot(roomId);
-    if (snapshot == null) {
-      throw Exception('房间不存在');
-    }
-    return snapshot;
+    return _localDemoRuntime.addBot(
+      gateway: this,
+      sessionToken: sessionToken,
+      roomId: roomId,
+      seatIndex: seatIndex,
+      botDifficulty: botDifficulty,
+    );
   }
 
   @override
@@ -224,19 +180,19 @@ class LocalDemoGateway implements GameGateway {
     required String roomId,
     required String playerId,
   }) async {
-    final snapshot = currentSnapshot(roomId);
-    if (snapshot == null) {
-      throw Exception('房间不存在');
-    }
-    return snapshot;
+    return _localDemoRuntime.removePlayer(
+      gateway: this,
+      sessionToken: sessionToken,
+      roomId: roomId,
+      playerId: playerId,
+    );
   }
 
   @override
   Future<FriendCenterSnapshot> fetchFriendCenter({
     required String sessionToken,
   }) async {
-    final userId = _requireUserId(sessionToken);
-    return _buildFriendCenterSnapshot(userId);
+    return _localDemoRuntime.fetchFriendCenter(sessionToken);
   }
 
   @override
@@ -245,40 +201,10 @@ class LocalDemoGateway implements GameGateway {
     required String account,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 180));
-    final requesterId = _requireUserId(sessionToken);
-    final requester = _userById(requesterId);
-    final receiver = _usersByName[account];
-    if (receiver == null) {
-      throw Exception('账号不存在');
-    }
-    if (receiver.profile.userId == requesterId) {
-      throw Exception('不能添加自己');
-    }
-    if (requester.friendUserIds.contains(receiver.profile.userId)) {
-      throw Exception('这个账号已经在你的好友列表里了');
-    }
-    final existing = _findPendingFriendRequestBetween(
-      requesterId,
-      receiver.profile.userId,
+    return _localDemoRuntime.sendFriendRequest(
+      sessionToken: sessionToken,
+      account: account,
     );
-    if (existing != null) {
-      throw Exception(
-        existing.requesterUserId == requesterId
-            ? '好友申请已发送'
-            : '对方已经向你发送好友申请，请在请求区处理',
-      );
-    }
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final request = _LocalFriendRequest(
-      requestId: _id('friend-request'),
-      requesterUserId: requesterId,
-      receiverUserId: receiver.profile.userId,
-      status: FriendRequestStatus.pending,
-      createdAtMs: now,
-      updatedAtMs: now,
-    );
-    _friendRequestsById[request.requestId] = request;
-    return _buildFriendCenterSnapshot(requesterId);
   }
 
   @override
@@ -287,24 +213,11 @@ class LocalDemoGateway implements GameGateway {
     required String requestId,
     required bool accept,
   }) async {
-    final userId = _requireUserId(sessionToken);
-    final request = _friendRequestsById[requestId];
-    if (request == null || request.receiverUserId != userId) {
-      throw Exception('好友申请不存在');
-    }
-    if (request.status != FriendRequestStatus.pending) {
-      throw Exception('好友申请已处理');
-    }
-    request.status =
-        accept ? FriendRequestStatus.accepted : FriendRequestStatus.rejected;
-    request.updatedAtMs = DateTime.now().millisecondsSinceEpoch;
-    if (accept) {
-      final requester = _userById(request.requesterUserId);
-      final receiver = _userById(request.receiverUserId);
-      requester.friendUserIds.add(receiver.profile.userId);
-      receiver.friendUserIds.add(requester.profile.userId);
-    }
-    return _buildFriendCenterSnapshot(userId);
+    return _localDemoRuntime.respondFriendRequest(
+      sessionToken: sessionToken,
+      requestId: requestId,
+      accept: accept,
+    );
   }
 
   @override
@@ -312,12 +225,10 @@ class LocalDemoGateway implements GameGateway {
     required String sessionToken,
     required String friendUserId,
   }) async {
-    final userId = _requireUserId(sessionToken);
-    final user = _userById(userId);
-    final friend = _userById(friendUserId);
-    user.friendUserIds.remove(friendUserId);
-    friend.friendUserIds.remove(userId);
-    return _buildFriendCenterSnapshot(userId);
+    return _localDemoRuntime.deleteFriend(
+      sessionToken: sessionToken,
+      friendUserId: friendUserId,
+    );
   }
 
   @override
@@ -327,24 +238,12 @@ class LocalDemoGateway implements GameGateway {
     required String targetAccount,
     required int seatIndex,
   }) async {
-    final inviterId = _requireUserId(sessionToken);
-    final inviter = _usersByName.values.firstWhere((item) => item.profile.userId == inviterId);
-    final target = _usersByName[targetAccount];
-    if (target == null) {
-      throw Exception('目标玩家不在线');
-    }
-    _notificationController.add(
-      RoomInvitationNotification(
-        RoomInvitation(
-          invitationId: _id('invite'),
-          roomId: roomId,
-          roomCode: roomId.substring(0, roomId.length > 6 ? 6 : roomId.length),
-          inviterUserId: inviter.profile.userId,
-          inviterAccount: inviter.profile.account,
-          inviterNickname: inviter.profile.nickname,
-          seatIndex: seatIndex,
-        ),
-      ),
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    _localDemoRuntime.invitePlayer(
+      sessionToken: sessionToken,
+      roomId: roomId,
+      targetAccount: targetAccount,
+      seatIndex: seatIndex,
     );
   }
 
@@ -354,10 +253,13 @@ class LocalDemoGateway implements GameGateway {
     required String invitationId,
     required bool accept,
   }) async {
-    if (!accept) {
-      return null;
-    }
-    return null;
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    return _localDemoRuntime.respondInvitation(
+      gateway: this,
+      sessionToken: sessionToken,
+      invitationId: invitationId,
+      accept: accept,
+    );
   }
 
   @override
@@ -374,14 +276,11 @@ class LocalDemoGateway implements GameGateway {
     required List<String> cardIds,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 180));
-    final userId = _requireUserId(sessionToken);
-    final room = _requireRoom(roomId);
-    room.play(userId, cardIds);
-    room.driveBotsIfNeeded();
-    _persistRoundScoreIfNeeded(room, userId);
-    final snapshot = room.snapshotFor(userId);
-    _snapshotController.add(snapshot);
-    return snapshot;
+    return _localDemoRuntime.playCards(
+      sessionToken: sessionToken,
+      roomId: roomId,
+      cardIds: cardIds,
+    );
   }
 
   @override
@@ -403,12 +302,11 @@ class LocalDemoGateway implements GameGateway {
     required String roomId,
     required bool managed,
   }) async {
-    final userId = _requireUserId(sessionToken);
-    final room = _requireRoom(roomId);
-    room.statusText = managed ? '已开启托管' : '已取消托管';
-    final snapshot = room.snapshotFor(userId);
-    _snapshotController.add(snapshot);
-    return snapshot;
+    return _localDemoRuntime.setManaged(
+      sessionToken: sessionToken,
+      roomId: roomId,
+      managed: managed,
+    );
   }
 
   @override
@@ -417,14 +315,10 @@ class LocalDemoGateway implements GameGateway {
     required String roomId,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 180));
-    final userId = _requireUserId(sessionToken);
-    final room = _requireRoom(roomId);
-    room.pass(userId);
-    room.driveBotsIfNeeded();
-    _persistRoundScoreIfNeeded(room, userId);
-    final snapshot = room.snapshotFor(userId);
-    _snapshotController.add(snapshot);
-    return snapshot;
+    return _localDemoRuntime.pass(
+      sessionToken: sessionToken,
+      roomId: roomId,
+    );
   }
 
   @override
@@ -432,9 +326,10 @@ class LocalDemoGateway implements GameGateway {
     required String sessionToken,
     required String roomId,
   }) async {
-    final userId = _requireUserId(sessionToken);
-    final room = _requireRoom(roomId);
-    return room.suggest(userId);
+    return _localDemoRuntime.requestSuggestion(
+      sessionToken: sessionToken,
+      roomId: roomId,
+    );
   }
 
   @override
@@ -445,162 +340,63 @@ class LocalDemoGateway implements GameGateway {
   }) async {}
 
   @override
-  Future<void> recoverConnection() async {}
-
-  @override
-  Future<RoomSnapshot?> refreshCurrentRoom() async {
-    final roomId = _roomsById.keys.isEmpty ? null : _roomsById.keys.last;
-    if (roomId == null) {
-      return null;
+  Future<void> recoverConnection() async {
+    if (_sessionToken == null) {
+      return;
     }
-    return currentSnapshot(roomId);
+    _localDemoRuntime.rebindGateway(this);
+    final snapshot = _localDemoRuntime.refreshCurrentRoom(_sessionToken!);
+    if (snapshot != null) {
+      _emitSnapshot(snapshot);
+    }
   }
 
   @override
-  RoomSnapshot? currentSnapshot(String roomId) => _roomsById[roomId]?.snapshotFor(
-        _roomsById[roomId]!.ownerId,
-      );
+  Future<RoomSnapshot?> refreshCurrentRoom() async {
+    if (_sessionToken == null) {
+      return null;
+    }
+    return _localDemoRuntime.refreshCurrentRoom(_sessionToken!);
+  }
+
+  @override
+  RoomSnapshot? currentSnapshot(String roomId) {
+    if (_sessionToken == null) {
+      return null;
+    }
+    return _localDemoRuntime.currentSnapshot(
+      sessionToken: _sessionToken!,
+      roomId: roomId,
+    );
+  }
 
   @override
   void clearCurrentRoomCache() {}
 
   @override
+  void forgetSession() {
+    _localDemoRuntime.forgetSession(this);
+  }
+
+  @override
   Future<void> close() async {
+    forgetSession();
+    _localDemoRuntime.detachGateway(this);
     await _snapshotController.close();
     await _notificationController.close();
   }
 
-  void _persistRoundScoreIfNeeded(_DemoRoom room, String userId) {
-    if (room.phase != RoomPhase.finished) {
-      return;
+  void _emitSnapshot(RoomSnapshot snapshot) {
+    if (!_snapshotController.isClosed) {
+      _snapshotController.add(snapshot);
     }
-    final player = room.players.firstWhere((item) => item.playerId == userId);
-    final user = _usersByName.values.firstWhere((item) => item.profile.userId == userId);
-    user.profile = UserProfile(
-      userId: user.profile.userId,
-      account: user.profile.account,
-      nickname: user.profile.nickname,
-      coins: user.profile.coins + player.roundScore,
-      landlordWins: user.profile.landlordWins +
-          (player.isLandlord && player.roundScore > 0 ? 1 : 0),
-      landlordGames: user.profile.landlordGames + (player.isLandlord ? 1 : 0),
-      farmerWins:
-          user.profile.farmerWins + (!player.isLandlord && player.roundScore > 0 ? 1 : 0),
-      farmerGames: user.profile.farmerGames + (!player.isLandlord ? 1 : 0),
-    );
   }
 
-  FriendCenterSnapshot _buildFriendCenterSnapshot(String userId) {
-    final user = _userById(userId);
-    final friends = user.friendUserIds
-        .map(_userById)
-        .map((friend) => _toOnlineUser(friend))
-        .toList()
-      ..sort((left, right) {
-        if (left.online != right.online) {
-          return left.online ? -1 : 1;
-        }
-        final byName = left.displayName.compareTo(right.displayName);
-        if (byName != 0) {
-          return byName;
-        }
-        return left.account.compareTo(right.account);
-      });
-
-    final requests = _friendRequestsById.values
-        .where(
-          (request) =>
-              request.requesterUserId == userId || request.receiverUserId == userId,
-        )
-        .toList()
-      ..sort((left, right) => right.updatedAtMs.compareTo(left.updatedAtMs));
-
-    final pendingRequests = <FriendRequestEntry>[];
-    final historyRequests = <FriendRequestEntry>[];
-    for (final request in requests) {
-      final entry = _toFriendRequestEntry(request);
-      final incoming = request.receiverUserId == userId;
-      if (incoming && request.status == FriendRequestStatus.pending) {
-        pendingRequests.add(entry);
-      } else {
-        historyRequests.add(entry);
-      }
+  void _emitNotification(GatewayNotification notification) {
+    if (!_notificationController.isClosed) {
+      _notificationController.add(notification);
     }
-
-    return FriendCenterSnapshot(
-      friends: friends,
-      pendingRequests: pendingRequests,
-      historyRequests: historyRequests,
-      pendingRequestCount: pendingRequests.length,
-    );
   }
-
-  _LocalUser _userById(String userId) {
-    return _usersByName.values.firstWhere(
-      (user) => user.profile.userId == userId,
-      orElse: () => throw Exception('玩家不存在'),
-    );
-  }
-
-  OnlineUser _toOnlineUser(_LocalUser user) => OnlineUser(
-        userId: user.profile.userId,
-        account: user.profile.account,
-        nickname: user.profile.nickname,
-        online: _sessionToUserId.containsValue(user.profile.userId),
-      );
-
-  FriendRequestEntry _toFriendRequestEntry(_LocalFriendRequest request) {
-    final requester = _userById(request.requesterUserId);
-    final receiver = _userById(request.receiverUserId);
-    return FriendRequestEntry(
-      requestId: request.requestId,
-      requesterUserId: request.requesterUserId,
-      requesterAccount: requester.profile.account,
-      requesterNickname: requester.profile.nickname,
-      receiverUserId: request.receiverUserId,
-      receiverAccount: receiver.profile.account,
-      receiverNickname: receiver.profile.nickname,
-      status: request.status,
-      createdAtMs: request.createdAtMs,
-      updatedAtMs: request.updatedAtMs,
-    );
-  }
-
-  _LocalFriendRequest? _findPendingFriendRequestBetween(
-    String leftUserId,
-    String rightUserId,
-  ) {
-    for (final request in _friendRequestsById.values) {
-      final pairMatched =
-          (request.requesterUserId == leftUserId &&
-              request.receiverUserId == rightUserId) ||
-          (request.requesterUserId == rightUserId &&
-              request.receiverUserId == leftUserId);
-      if (pairMatched && request.status == FriendRequestStatus.pending) {
-        return request;
-      }
-    }
-    return null;
-  }
-
-  _DemoRoom _requireRoom(String roomId) {
-    final room = _roomsById[roomId];
-    if (room == null) {
-      throw Exception('牌桌不存在');
-    }
-    return room;
-  }
-
-  String _requireUserId(String sessionToken) {
-    final userId = _sessionToUserId[sessionToken];
-    if (userId == null) {
-      throw Exception('请先登录');
-    }
-    return userId;
-  }
-
-  String _id(String prefix) =>
-      '$prefix-${DateTime.now().microsecondsSinceEpoch}-${_random.nextInt(99999)}';
 }
 
 class _LocalUser {
@@ -689,6 +485,48 @@ class _DemoRoom {
     );
   }
 
+  factory _DemoRoom.fromPreparedSeats({
+    required String roomId,
+    required Random random,
+    required String ownerId,
+    required MatchMode mode,
+    required List<_PendingSeat> seats,
+  }) {
+    final players = seats
+        .where((seat) => seat.playerId.isNotEmpty)
+        .map(
+          (seat) => _MutablePlayer(
+            playerId: seat.playerId,
+            displayName: seat.displayName,
+            isBot: seat.isBot,
+          ),
+        )
+        .toList(growable: false);
+
+    final deck = _buildDeck()..shuffle(random);
+    for (var i = 0; i < 51; i++) {
+      players[i % 3].hand.add(deck[i]);
+    }
+    final landlordCards = deck.sublist(51);
+    final landlordIndex = random.nextInt(players.length);
+    players[landlordIndex].isLandlord = true;
+    players[landlordIndex].hand.addAll(landlordCards);
+    for (final player in players) {
+      player.hand.sort(_compareCards);
+    }
+
+    return _DemoRoom(
+      roomId: roomId,
+      mode: mode,
+      players: players,
+      ownerId: ownerId,
+      landlordCards: landlordCards,
+      phase: RoomPhase.playing,
+      currentTurnPlayerId: players[landlordIndex].playerId,
+      statusText: '${players[landlordIndex].displayName} 成为地主',
+    );
+  }
+
   final String roomId;
   final MatchMode mode;
   final List<_MutablePlayer> players;
@@ -708,6 +546,7 @@ class _DemoRoom {
   bool springTriggered = false;
   int landlordPlayCount = 0;
   int farmerPlayCount = 0;
+  bool scoresPersisted = false;
 
   RoomSnapshot snapshotFor(String selfId) {
     final me = players.firstWhere((item) => item.playerId == selfId);

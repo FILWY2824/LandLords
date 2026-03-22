@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_set>
 
+
 namespace landlords::persistence {
 
 namespace {
@@ -283,10 +284,6 @@ void FileFriendRequestRepository::Update(const core::FriendRequestRecord& reques
 }
 
 void FileFriendRequestRepository::LoadLocked() {
-  if (loaded_) {
-    return;
-  }
-  loaded_ = true;
   RemoveObsoleteLegacyFriendRequestDb(data_root_);
   by_request_id_.clear();
   request_ids_by_user_.clear();
@@ -373,3 +370,4 @@ void FileFriendRequestRepository::FlushInboxLocked(const std::string& user_id) {
 }
 
 }  // namespace landlords::persistence
+
