@@ -79,7 +79,9 @@ WebSocket: ws://127.0.0.1:23002/ws
 用户文件默认写到：
 
 ```text
-runtime/users.db
+runtime/users/<user_id>/profile.v2
+runtime/index/users_by_account.v1
+runtime/social/friend_requests/<request_id>.v1
 ```
 
 ### 2. 启动 Flutter 客户端

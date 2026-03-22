@@ -45,6 +45,43 @@ std::filesystem::path ReadPathEnv(const char* name,
   return std::filesystem::path(raw);
 }
 
+std::filesystem::path FindProjectRoot() {
+  std::error_code error;
+  auto current = std::filesystem::current_path(error);
+  if (error) {
+    return {};
+  }
+  while (!current.empty()) {
+    if (std::filesystem::exists(current / "pubspec.yaml", error) &&
+        std::filesystem::exists(current / "backend" / "server" / "CMakeLists.txt",
+                                error)) {
+      return current;
+    }
+    const auto parent = current.parent_path();
+    if (parent == current) {
+      break;
+    }
+    current = parent;
+  }
+  return {};
+}
+
+std::filesystem::path ResolveProjectRelativePath(
+    const std::filesystem::path& path) {
+  if (path.is_absolute()) {
+    return path.lexically_normal();
+  }
+  if (const auto project_root = FindProjectRoot(); !project_root.empty()) {
+    return (project_root / path).lexically_normal();
+  }
+  std::error_code error;
+  const auto current = std::filesystem::current_path(error);
+  if (error) {
+    return path.lexically_normal();
+  }
+  return (current / path).lexically_normal();
+}
+
 }  // namespace
 
 int main() {
@@ -52,13 +89,15 @@ int main() {
   config.host = ReadStringEnv("LANDLORDS_HOST", "0.0.0.0");
   config.port = ReadPortEnv("LANDLORDS_PORT", 23001);
   config.websocket_port = ReadPortEnv("LANDLORDS_WS_PORT", 23002);
-  config.data_dir = ReadPathEnv("LANDLORDS_DATA_DIR", std::filesystem::path("runtime"));
+  config.data_dir = ResolveProjectRelativePath(
+      ReadPathEnv("LANDLORDS_DATA_DIR", std::filesystem::path("runtime")));
 
-  const auto user_repository = std::make_shared<landlords::persistence::FileUserRepository>(
-      config.data_dir / "users.db");
+  const auto user_repository =
+      std::make_shared<landlords::persistence::FileUserRepository>(
+          config.data_dir);
   const auto friend_request_repository =
       std::make_shared<landlords::persistence::FileFriendRequestRepository>(
-          config.data_dir / "friend_requests.db");
+          config.data_dir);
   auto service = std::make_shared<landlords::services::GameService>(
       user_repository,
       friend_request_repository);

@@ -5,12 +5,18 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+get_filename_component(LANDLORDS_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+
 option(LANDLORDS_USE_LOCAL_WINDOWS_DEPS "Use local Windows libevent/protobuf bundle" ON)
 option(LANDLORDS_ENABLE_ONNXRUNTIME "Enable ONNX Runtime based bot inference" ON)
-set(LANDLORDS_ONNXRUNTIME_ROOT "F:/CodeXProject/LandLords/third_party/onnxruntime/Microsoft.ML.OnnxRuntime.1.24.3" CACHE PATH "ONNX Runtime SDK root")
+set(LANDLORDS_ONNXRUNTIME_ROOT
+    "${LANDLORDS_REPO_ROOT}/third_party/onnxruntime/Microsoft.ML.OnnxRuntime.1.24.3"
+    CACHE PATH "ONNX Runtime SDK root")
 
 if(WIN32 AND LANDLORDS_USE_LOCAL_WINDOWS_DEPS)
-  set(LANDLORDS_DEPS_ROOT "F:/PersonalProject/Linux/libevent/out/vs2022_64" CACHE PATH "Windows dependency bundle root")
+  set(LANDLORDS_DEPS_ROOT
+      "${LANDLORDS_REPO_ROOT}/third_party/windows_deps"
+      CACHE PATH "Windows dependency bundle root")
   set(Protobuf_PROTOC_EXECUTABLE "${LANDLORDS_DEPS_ROOT}/protobuf/bin/protoc.exe" CACHE FILEPATH "protoc executable")
   set(Protobuf_INCLUDE_DIR "${LANDLORDS_DEPS_ROOT}/protobuf/include" CACHE PATH "protobuf include")
   set(Protobuf_LIBRARY "${LANDLORDS_DEPS_ROOT}/protobuf/lib/libprotobufd.lib" CACHE FILEPATH "protobuf library")

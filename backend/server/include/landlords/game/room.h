@@ -21,7 +21,13 @@ class Room {
        std::vector<core::PlayerState> players,
        landlords::protocol::BotDifficulty bot_difficulty = landlords::protocol::BOT_DIFFICULTY_NORMAL,
        std::shared_ptr<ai::IBotStrategy> bot_strategy = nullptr,
-       std::unordered_map<std::string, std::shared_ptr<ai::IBotStrategy>> bot_strategies_by_player = {});
+       std::unordered_map<std::string, std::shared_ptr<ai::IBotStrategy>> bot_strategies_by_player = {},
+       std::shared_ptr<ai::IBotStrategy> hint_strategy = nullptr,
+       landlords::protocol::BotDifficulty hint_bot_difficulty =
+           landlords::protocol::BOT_DIFFICULTY_UNSPECIFIED,
+       std::shared_ptr<ai::IBotStrategy> managed_strategy = nullptr,
+       landlords::protocol::BotDifficulty managed_bot_difficulty =
+           landlords::protocol::BOT_DIFFICULTY_UNSPECIFIED);
 
   const std::string& id() const { return room_id_; }
   landlords::protocol::MatchMode mode() const { return mode_; }
@@ -58,10 +64,14 @@ class Room {
   bool IsLeadTurnFor(const std::string& player_id) const;
   std::optional<std::vector<std::string>> ResolveModelMove(
       const core::PlayerState& player,
-      std::string* failure_reason = nullptr) const;
+      std::string* failure_reason = nullptr,
+      std::shared_ptr<ai::IBotStrategy> strategy_override = nullptr) const;
   void AdvanceTurn();
   void ScheduleNextDecision(const core::PlayerState* current, const core::RoomAction* last_action = nullptr);
   std::shared_ptr<ai::IBotStrategy> ResolveBotStrategyForPlayer(const std::string& player_id) const;
+  std::shared_ptr<ai::IBotStrategy> ResolveHintStrategy() const;
+  std::shared_ptr<ai::IBotStrategy> ResolveManagedStrategy(
+      const core::PlayerState& player) const;
   void ArmPresentationGate(const core::RoomAction& action);
   void ClearPresentationGate();
   bool PresentationGateOpen(std::int64_t now_ms) const;
@@ -104,6 +114,12 @@ class Room {
   std::string presentation_wait_player_id_;
   std::shared_ptr<ai::IBotStrategy> bot_strategy_;
   std::unordered_map<std::string, std::shared_ptr<ai::IBotStrategy>> bot_strategies_by_player_;
+  std::shared_ptr<ai::IBotStrategy> hint_strategy_;
+  landlords::protocol::BotDifficulty hint_bot_difficulty_ =
+      landlords::protocol::BOT_DIFFICULTY_UNSPECIFIED;
+  std::shared_ptr<ai::IBotStrategy> managed_strategy_;
+  landlords::protocol::BotDifficulty managed_bot_difficulty_ =
+      landlords::protocol::BOT_DIFFICULTY_UNSPECIFIED;
 };
 
 }  // namespace landlords::game

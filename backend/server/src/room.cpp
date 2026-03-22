@@ -170,13 +170,21 @@ Room::Room(std::string room_id,
            std::vector<core::PlayerState> players,
            landlords::protocol::BotDifficulty bot_difficulty,
            std::shared_ptr<ai::IBotStrategy> bot_strategy,
-           std::unordered_map<std::string, std::shared_ptr<ai::IBotStrategy>> bot_strategies_by_player)
+           std::unordered_map<std::string, std::shared_ptr<ai::IBotStrategy>> bot_strategies_by_player,
+           std::shared_ptr<ai::IBotStrategy> hint_strategy,
+           landlords::protocol::BotDifficulty hint_bot_difficulty,
+           std::shared_ptr<ai::IBotStrategy> managed_strategy,
+           landlords::protocol::BotDifficulty managed_bot_difficulty)
     : room_id_(std::move(room_id)),
       mode_(mode),
       players_(std::move(players)),
       bot_difficulty_(bot_difficulty),
       bot_strategy_(std::move(bot_strategy)),
-      bot_strategies_by_player_(std::move(bot_strategies_by_player)) {
+      bot_strategies_by_player_(std::move(bot_strategies_by_player)),
+      hint_strategy_(std::move(hint_strategy)),
+      hint_bot_difficulty_(hint_bot_difficulty),
+      managed_strategy_(std::move(managed_strategy)),
+      managed_bot_difficulty_(managed_bot_difficulty) {
   StartGame();
 }
 
@@ -262,12 +270,17 @@ std::optional<std::vector<std::string>> Room::SuggestCardIds(const std::string& 
   }
 
   std::string failure_reason;
-  const auto decision = ResolveModelMove(*player, &failure_reason);
+  const auto decision =
+      ResolveModelMove(*player, &failure_reason, ResolveHintStrategy());
   if (!decision.has_value()) {
     LANDLORDS_LOG(landlords::core::LogLevel::kWarn,
                   "room",
                   "room=" << room_id_ << " suggest player=" << player_id
-                          << " difficulty=" << BotDifficultyName(bot_difficulty_)
+                          << " difficulty=" << BotDifficultyName(
+                                 hint_bot_difficulty_ ==
+                                         landlords::protocol::BOT_DIFFICULTY_UNSPECIFIED
+                                     ? bot_difficulty_
+                                     : hint_bot_difficulty_)
                           << " source=model_failure reason=" << failure_reason);
     return std::nullopt;
   }
@@ -275,7 +288,11 @@ std::optional<std::vector<std::string>> Room::SuggestCardIds(const std::string& 
   LANDLORDS_LOG(landlords::core::LogLevel::kInfo,
                 "room",
                 "room=" << room_id_ << " suggest player=" << player_id
-                        << " difficulty=" << BotDifficultyName(bot_difficulty_)
+                        << " difficulty=" << BotDifficultyName(
+                               hint_bot_difficulty_ ==
+                                       landlords::protocol::BOT_DIFFICULTY_UNSPECIFIED
+                                   ? bot_difficulty_
+                                   : hint_bot_difficulty_)
                         << " source=model cards=" << decision->size());
   return decision;
 }
@@ -495,12 +512,18 @@ void Room::DriveBots() {
     error = CallScore(player->player_id, bid);
   } else if (phase_ == landlords::protocol::ROOM_PHASE_PLAYING) {
     std::string failure_reason;
-    const auto decision = ResolveModelMove(*player, &failure_reason);
+    const auto decision =
+        ResolveModelMove(*player, &failure_reason, ResolveManagedStrategy(*player));
     if (!decision.has_value()) {
       LANDLORDS_LOG(landlords::core::LogLevel::kError,
                     "room",
                     "room=" << room_id_ << " auto play player=" << player->player_id
-                            << " difficulty=" << BotDifficultyName(bot_difficulty_)
+                            << " difficulty=" << BotDifficultyName(
+                                   (!player->is_bot &&
+                                    managed_bot_difficulty_ !=
+                                        landlords::protocol::BOT_DIFFICULTY_UNSPECIFIED)
+                                       ? managed_bot_difficulty_
+                                       : bot_difficulty_)
                             << " source=model_failure reason=" << failure_reason);
       status_text_ = ModelFailureStatus(failure_reason);
       turn_started_ms_ = now_ms;
@@ -512,7 +535,12 @@ void Room::DriveBots() {
         LANDLORDS_LOG(landlords::core::LogLevel::kError,
                       "room",
                       "room=" << room_id_ << " auto play player=" << player->player_id
-                              << " difficulty=" << BotDifficultyName(bot_difficulty_)
+                              << " difficulty=" << BotDifficultyName(
+                                     (!player->is_bot &&
+                                      managed_bot_difficulty_ !=
+                                          landlords::protocol::BOT_DIFFICULTY_UNSPECIFIED)
+                                         ? managed_bot_difficulty_
+                                         : bot_difficulty_)
                               << " source=model_apply_failure error=" << *error);
         status_text_ = "bot_strategy_apply_failed";
         turn_started_ms_ = now_ms;
@@ -736,7 +764,8 @@ bool Room::IsLeadTurnFor(const std::string& player_id) const {
 
 std::optional<std::vector<std::string>> Room::ResolveModelMove(
     const core::PlayerState& player,
-    std::string* failure_reason) const {
+    std::string* failure_reason,
+    std::shared_ptr<ai::IBotStrategy> strategy_override) const {
   auto set_failure = [&](std::string reason) -> std::optional<std::vector<std::string>> {
     if (failure_reason != nullptr) {
       *failure_reason = std::move(reason);
@@ -744,7 +773,9 @@ std::optional<std::vector<std::string>> Room::ResolveModelMove(
     return std::nullopt;
   };
 
-  const auto strategy = ResolveBotStrategyForPlayer(player.player_id);
+  const auto strategy =
+      strategy_override != nullptr ? std::move(strategy_override)
+                                   : ResolveBotStrategyForPlayer(player.player_id);
   if (strategy == nullptr) {
     return set_failure("model_unavailable");
   }
@@ -822,6 +853,21 @@ std::shared_ptr<ai::IBotStrategy> Room::ResolveBotStrategyForPlayer(
     return found->second;
   }
   return bot_strategy_;
+}
+
+std::shared_ptr<ai::IBotStrategy> Room::ResolveHintStrategy() const {
+  if (hint_strategy_ != nullptr) {
+    return hint_strategy_;
+  }
+  return bot_strategy_;
+}
+
+std::shared_ptr<ai::IBotStrategy> Room::ResolveManagedStrategy(
+    const core::PlayerState& player) const {
+  if (!player.is_bot && managed_strategy_ != nullptr) {
+    return managed_strategy_;
+  }
+  return ResolveBotStrategyForPlayer(player.player_id);
 }
 
 void Room::ArmPresentationGate(const core::RoomAction& action) {

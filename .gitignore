@@ -52,6 +52,7 @@ app.*.map.json
 **/.git.bak/
 /runtime/
 /runtime_logs/
+/landlords.env
 /.codex-server-smoke.err
 /.codex-server-smoke.out
 /tmp_*.err.log

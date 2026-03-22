@@ -492,28 +492,69 @@ const char* DifficultySuffix(landlords::protocol::BotDifficulty difficulty) {
   return "NORMAL";
 }
 
+std::filesystem::path FindProjectRoot() {
+  std::error_code error;
+  auto current = std::filesystem::current_path(error);
+  if (error) {
+    return {};
+  }
+  while (!current.empty()) {
+    if (std::filesystem::exists(current / "pubspec.yaml", error) &&
+        std::filesystem::exists(current / "backend" / "server" / "CMakeLists.txt",
+                                error)) {
+      return current;
+    }
+    const auto parent = current.parent_path();
+    if (parent == current) {
+      break;
+    }
+    current = parent;
+  }
+  return {};
+}
+
+std::filesystem::path ResolveProjectRelativePath(
+    const std::filesystem::path& path) {
+  if (path.is_absolute()) {
+    return path.lexically_normal();
+  }
+  if (const auto project_root = FindProjectRoot(); !project_root.empty()) {
+    return (project_root / path).lexically_normal();
+  }
+  std::error_code error;
+  const auto current = std::filesystem::current_path(error);
+  if (error) {
+    return path.lexically_normal();
+  }
+  return (current / path).lexically_normal();
+}
+
 std::filesystem::path LoadOnnxDirForDifficulty(
     landlords::protocol::BotDifficulty difficulty) {
   const std::string env_name =
       "LANDLORDS_DOUZERO_ONNX_DIR_" + std::string(DifficultySuffix(difficulty));
   if (const char* scoped = std::getenv(env_name.c_str());
       scoped != nullptr && *scoped != '\0') {
-    return std::filesystem::path(scoped);
+    return ResolveProjectRelativePath(std::filesystem::path(scoped));
   }
   const char* raw = std::getenv("LANDLORDS_DOUZERO_ONNX_DIR");
   if (raw != nullptr && *raw != '\0') {
-    return std::filesystem::path(raw);
+    return ResolveProjectRelativePath(std::filesystem::path(raw));
   }
   switch (difficulty) {
     case landlords::protocol::BOT_DIFFICULTY_EASY:
-      return std::filesystem::path("backend/ai_models/onnx/douzero_ADP");
+      return ResolveProjectRelativePath(
+          std::filesystem::path("backend/ai_models/onnx/douzero_ADP"));
     case landlords::protocol::BOT_DIFFICULTY_HARD:
-      return std::filesystem::path("backend/ai_models/onnx/douzero_WP");
+      return ResolveProjectRelativePath(
+          std::filesystem::path("backend/ai_models/onnx/douzero_WP"));
     case landlords::protocol::BOT_DIFFICULTY_NORMAL:
     case landlords::protocol::BOT_DIFFICULTY_UNSPECIFIED:
-      return std::filesystem::path("backend/ai_models/onnx/sl");
+      return ResolveProjectRelativePath(
+          std::filesystem::path("backend/ai_models/onnx/sl"));
   }
-  return std::filesystem::path("backend/ai_models/onnx/sl");
+  return ResolveProjectRelativePath(
+      std::filesystem::path("backend/ai_models/onnx/sl"));
 }
 
 Ort::Env& OrtEnvironment() {

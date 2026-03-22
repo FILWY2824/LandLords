@@ -183,6 +183,12 @@ class GameService {
   std::shared_ptr<ai::IBotStrategy> easy_bot_strategy_;
   std::shared_ptr<ai::IBotStrategy> standard_bot_strategy_;
   std::shared_ptr<ai::IBotStrategy> hard_bot_strategy_;
+  landlords::protocol::BotDifficulty hint_bot_difficulty_ =
+      landlords::protocol::BOT_DIFFICULTY_HARD;
+  landlords::protocol::BotDifficulty managed_bot_difficulty_ =
+      landlords::protocol::BOT_DIFFICULTY_HARD;
+  std::shared_ptr<ai::IBotStrategy> hint_bot_strategy_;
+  std::shared_ptr<ai::IBotStrategy> managed_bot_strategy_;
   std::thread tick_thread_;
 };
 

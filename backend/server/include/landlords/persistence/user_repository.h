@@ -24,7 +24,7 @@ class IUserRepository {
 
 class FileUserRepository final : public IUserRepository {
  public:
-  explicit FileUserRepository(std::filesystem::path file_path);
+  explicit FileUserRepository(std::filesystem::path data_root);
 
   std::optional<core::UserRecord> FindByAccount(const std::string& account) override;
   std::optional<core::UserRecord> FindByUserId(const std::string& user_id) override;
@@ -37,9 +37,16 @@ class FileUserRepository final : public IUserRepository {
 
  private:
   void LoadLocked();
-  void FlushLocked();
+  void LoadStructuredLocked();
+  void EnsureDefaultUsersLocked();
+  void FlushAllLocked();
+  void FlushUserLocked(const core::UserRecord& user);
+  void FlushAccountIndexLocked();
 
-  std::filesystem::path file_path_;
+  std::filesystem::path data_root_;
+  std::filesystem::path users_root_;
+  std::filesystem::path index_root_;
+  std::filesystem::path account_index_path_;
   std::unordered_map<std::string, core::UserRecord> by_user_id_;
   std::unordered_map<std::string, std::string> user_id_by_account_;
   bool loaded_ = false;

@@ -173,10 +173,9 @@ void RunFriendCenterServiceTest() {
       std::filesystem::path("runtime") / "friend-center-service-test";
   std::filesystem::remove_all(runtime_dir);
 
-  auto user_repository =
-      std::make_shared<FileUserRepository>(runtime_dir / "users.db");
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
   auto friend_request_repository =
-      std::make_shared<FileFriendRequestRepository>(runtime_dir / "friend_requests.db");
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
   GameService service(user_repository, friend_request_repository);
   auto owner_connection = std::make_shared<FakeConnection>("owner");
@@ -295,10 +294,9 @@ void RunFriendCenterReconnectServiceTest() {
       std::filesystem::path("runtime") / "friend-center-reconnect-service-test";
   std::filesystem::remove_all(runtime_dir);
 
-  auto user_repository =
-      std::make_shared<FileUserRepository>(runtime_dir / "users.db");
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
   auto friend_request_repository =
-      std::make_shared<FileFriendRequestRepository>(runtime_dir / "friend_requests.db");
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
   GameService service(user_repository, friend_request_repository);
   auto owner_connection = std::make_shared<FakeConnection>("owner");
@@ -403,10 +401,9 @@ void RunFriendRequestBatchHandlingServiceTest() {
       std::filesystem::path("runtime") / "friend-request-batch-service-test";
   std::filesystem::remove_all(runtime_dir);
 
-  auto user_repository =
-      std::make_shared<FileUserRepository>(runtime_dir / "users.db");
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
   auto friend_request_repository =
-      std::make_shared<FileFriendRequestRepository>(runtime_dir / "friend_requests.db");
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
   GameService service(user_repository, friend_request_repository);
   auto owner_connection = std::make_shared<FakeConnection>("owner-batch");
@@ -499,10 +496,9 @@ void RunFriendRequestBatchRejectServiceTest() {
       std::filesystem::path("runtime") / "friend-request-batch-reject-service-test";
   std::filesystem::remove_all(runtime_dir);
 
-  auto user_repository =
-      std::make_shared<FileUserRepository>(runtime_dir / "users.db");
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
   auto friend_request_repository =
-      std::make_shared<FileFriendRequestRepository>(runtime_dir / "friend_requests.db");
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
   GameService service(user_repository, friend_request_repository);
   auto owner_connection = std::make_shared<FakeConnection>("owner-batch-reject");
@@ -595,10 +591,9 @@ void RunFriendRequestBatchRejectServiceTest() {
 
 void RunExistingRuntimeFriendCenterRegressionTest() {
   const auto runtime_dir = std::filesystem::path("runtime");
-  auto user_repository =
-      std::make_shared<FileUserRepository>(runtime_dir / "users.db");
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
   auto friend_request_repository =
-      std::make_shared<FileFriendRequestRepository>(runtime_dir / "friend_requests.db");
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
   GameService service(user_repository, friend_request_repository);
   auto connection = std::make_shared<FakeConnection>("runtime-regression");
@@ -636,10 +631,9 @@ void RunChangePasswordServiceTest() {
       std::filesystem::path("runtime") / "change-password-service-test";
   std::filesystem::remove_all(runtime_dir);
 
-  auto user_repository =
-      std::make_shared<FileUserRepository>(runtime_dir / "users.db");
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
   auto friend_request_repository =
-      std::make_shared<FileFriendRequestRepository>(runtime_dir / "friend_requests.db");
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
   GameService service(user_repository, friend_request_repository);
   auto connection = std::make_shared<FakeConnection>("change-password");
@@ -702,6 +696,54 @@ void RunChangePasswordServiceTest() {
   std::filesystem::remove_all(runtime_dir);
 }
 
+void RunStructuredPersistenceLayoutTest() {
+  const auto runtime_dir =
+      std::filesystem::path("runtime") / "structured-persistence-layout-test";
+  std::filesystem::remove_all(runtime_dir);
+
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
+  auto friend_request_repository =
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
+
+  auto owner = user_repository->SaveNewUser("owner_struct", "owner", "hash1");
+  auto guest = user_repository->SaveNewUser("guest_struct", "guest", "hash2");
+  owner.friend_user_ids.push_back(guest.user_id);
+  user_repository->UpdateUser(owner);
+
+  const auto request = friend_request_repository->SaveNewRequest(
+      owner.user_id, guest.user_id, 123456);
+
+  Require(std::filesystem::exists(runtime_dir / "users" / owner.user_id / "profile.v2"),
+          "owner profile file should exist under per-user directory");
+  Require(std::filesystem::exists(runtime_dir / "users" / guest.user_id / "profile.v2"),
+          "guest profile file should exist under per-user directory");
+  Require(std::filesystem::exists(runtime_dir / "index" / "users_by_account.v1"),
+          "account index should exist");
+  Require(std::filesystem::exists(runtime_dir / "social" / "friend_requests" /
+                                  (request.request_id + ".v1")),
+          "friend request record should exist under social table");
+  Require(std::filesystem::exists(runtime_dir / "social" / "inboxes" /
+                                  (owner.user_id + ".v1")),
+          "owner social inbox index should exist");
+  Require(std::filesystem::exists(runtime_dir / "social" / "inboxes" /
+                                  (guest.user_id + ".v1")),
+          "guest social inbox index should exist");
+
+  auto reloaded_users = std::make_shared<FileUserRepository>(runtime_dir);
+  auto reloaded_requests =
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
+  const auto owner_after_reload = reloaded_users->FindByAccount("owner_struct");
+  const auto request_after_reload = reloaded_requests->FindById(request.request_id);
+  Require(owner_after_reload.has_value(), "reloaded user should be found by account");
+  Require(owner_after_reload->friend_user_ids.size() == 1 &&
+              owner_after_reload->friend_user_ids.front() == guest.user_id,
+          "reloaded user should preserve friend ids");
+  Require(request_after_reload.has_value(),
+          "reloaded friend request should be found by id");
+
+  std::filesystem::remove_all(runtime_dir);
+}
+
 }  // namespace
 
 int main() {
@@ -712,6 +754,7 @@ int main() {
     RunFriendRequestBatchRejectServiceTest();
     RunExistingRuntimeFriendCenterRegressionTest();
     RunChangePasswordServiceTest();
+    RunStructuredPersistenceLayoutTest();
     std::cout << "friend center service tests passed" << std::endl;
     return 0;
   } catch (const std::exception& exception) {

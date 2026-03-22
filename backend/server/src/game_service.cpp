@@ -128,6 +128,44 @@ std::string BotDisplayName(landlords::protocol::BotDifficulty difficulty) {
   return "\xE6\x9C\xBA\xE5\x99\xA8\xE4\xBA\xBA";
 }
 
+const char* BotDifficultyName(landlords::protocol::BotDifficulty difficulty) {
+  switch (difficulty) {
+    case landlords::protocol::BOT_DIFFICULTY_EASY:
+      return "easy";
+    case landlords::protocol::BOT_DIFFICULTY_HARD:
+      return "hard";
+    case landlords::protocol::BOT_DIFFICULTY_NORMAL:
+    case landlords::protocol::BOT_DIFFICULTY_UNSPECIFIED:
+      return "normal";
+  }
+  return "normal";
+}
+
+landlords::protocol::BotDifficulty ParseConfiguredBotDifficulty(
+    const char* env_name,
+    landlords::protocol::BotDifficulty fallback) {
+  const char* raw = std::getenv(env_name);
+  if (raw == nullptr || *raw == '\0') {
+    return fallback;
+  }
+
+  std::string value(raw);
+  std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+    return static_cast<char>(std::tolower(ch));
+  });
+
+  if (value == "easy" || value == "adp") {
+    return landlords::protocol::BOT_DIFFICULTY_EASY;
+  }
+  if (value == "hard" || value == "wp") {
+    return landlords::protocol::BOT_DIFFICULTY_HARD;
+  }
+  if (value == "normal" || value == "standard" || value == "sl") {
+    return landlords::protocol::BOT_DIFFICULTY_NORMAL;
+  }
+  return fallback;
+}
+
 std::shared_ptr<ai::IBotStrategy> RequireBotStrategy(
     std::shared_ptr<ai::IBotStrategy> strategy,
     std::string_view difficulty_name) {
@@ -166,7 +204,21 @@ GameService::GameService(
           ai::CreateBotStrategyForDifficulty(
               landlords::protocol::BOT_DIFFICULTY_HARD),
           "hard")),
-      tick_thread_([this] { TickRoomsLoop(); }) {}
+      hint_bot_difficulty_(ParseConfiguredBotDifficulty(
+          "LANDLORDS_HINT_BOT_DIFFICULTY",
+          landlords::protocol::BOT_DIFFICULTY_HARD)),
+      managed_bot_difficulty_(ParseConfiguredBotDifficulty(
+          "LANDLORDS_MANAGED_BOT_DIFFICULTY",
+          landlords::protocol::BOT_DIFFICULTY_HARD)),
+      hint_bot_strategy_(ResolveBotStrategy(hint_bot_difficulty_)),
+      managed_bot_strategy_(ResolveBotStrategy(managed_bot_difficulty_)),
+      tick_thread_([this] { TickRoomsLoop(); }) {
+  LANDLORDS_LOG(landlords::core::LogLevel::kInfo,
+                "game_service",
+                "hint difficulty=" << BotDifficultyName(hint_bot_difficulty_)
+                                   << " managed difficulty="
+                                   << BotDifficultyName(managed_bot_difficulty_));
+}
 
 GameService::~GameService() {
   running_ = false;
@@ -532,7 +584,11 @@ void GameService::StartPreparedRoom(PendingRoom room) {
       players,
       landlords::protocol::BOT_DIFFICULTY_NORMAL,
       standard_bot_strategy_,
-      std::move(bot_strategies));
+      std::move(bot_strategies),
+      hint_bot_strategy_,
+      hint_bot_difficulty_,
+      managed_bot_strategy_,
+      managed_bot_difficulty_);
   rooms_by_id_[room.room_id] = room_instance;
   pending_room_id_by_code_.erase(room.room_code);
   pending_rooms_by_id_.erase(room.room_id);
@@ -2351,7 +2407,12 @@ void GameService::CreateBotRoom(SessionState& session,
       landlords::protocol::MATCH_MODE_VS_BOT,
       players,
       difficulty,
-      ResolveBotStrategy(difficulty));
+      ResolveBotStrategy(difficulty),
+      std::unordered_map<std::string, std::shared_ptr<ai::IBotStrategy>>{},
+      hint_bot_strategy_,
+      hint_bot_difficulty_,
+      managed_bot_strategy_,
+      managed_bot_difficulty_);
   session.room_id = room_id;
   rooms_by_id_[room_id] = room;
   LANDLORDS_LOG(landlords::core::LogLevel::kInfo,
@@ -2412,7 +2473,12 @@ void GameService::MaybeCreatePvpRoom() {
       landlords::protocol::MATCH_MODE_PVP,
       players,
       landlords::protocol::BOT_DIFFICULTY_NORMAL,
-      standard_bot_strategy_);
+      standard_bot_strategy_,
+      std::unordered_map<std::string, std::shared_ptr<ai::IBotStrategy>>{},
+      hint_bot_strategy_,
+      hint_bot_difficulty_,
+      managed_bot_strategy_,
+      managed_bot_difficulty_);
   rooms_by_id_[room_id] = room;
 
   for (const auto& token : selected_tokens) {

@@ -31,7 +31,7 @@ class IFriendRequestRepository {
 
 class FileFriendRequestRepository final : public IFriendRequestRepository {
  public:
-  explicit FileFriendRequestRepository(std::filesystem::path file_path);
+  explicit FileFriendRequestRepository(std::filesystem::path data_root);
 
   std::optional<core::FriendRequestRecord> FindById(
       const std::string& request_id) override;
@@ -48,10 +48,18 @@ class FileFriendRequestRepository final : public IFriendRequestRepository {
 
  private:
   void LoadLocked();
-  void FlushLocked();
+  void LoadStructuredLocked();
+  void RebuildUserInboxesLocked();
+  void FlushAllLocked();
+  void FlushRequestLocked(const core::FriendRequestRecord& request);
+  void FlushInboxLocked(const std::string& user_id);
 
-  std::filesystem::path file_path_;
+  std::filesystem::path data_root_;
+  std::filesystem::path social_root_;
+  std::filesystem::path requests_root_;
+  std::filesystem::path inbox_root_;
   std::unordered_map<std::string, core::FriendRequestRecord> by_request_id_;
+  std::unordered_map<std::string, std::vector<std::string>> request_ids_by_user_;
   bool loaded_ = false;
   std::mutex mutex_;
 };

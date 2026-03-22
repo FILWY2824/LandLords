@@ -239,10 +239,9 @@ void RunRoomLifecycleServiceTest() {
       std::filesystem::path("runtime") / "room-lifecycle-service-test";
   std::filesystem::remove_all(runtime_dir);
 
-  auto user_repository =
-      std::make_shared<FileUserRepository>(runtime_dir / "users.db");
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
   auto friend_request_repository =
-      std::make_shared<FileFriendRequestRepository>(runtime_dir / "friend_requests.db");
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
   GameService service(user_repository, friend_request_repository);
   auto connection = std::make_shared<FakeConnection>("owner");
@@ -334,10 +333,9 @@ void RunInvitationRoomSwitchServiceTest() {
       std::filesystem::path("runtime") / "invitation-room-switch-service-test";
   std::filesystem::remove_all(runtime_dir);
 
-  auto user_repository =
-      std::make_shared<FileUserRepository>(runtime_dir / "users.db");
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
   auto friend_request_repository =
-      std::make_shared<FileFriendRequestRepository>(runtime_dir / "friend_requests.db");
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
   GameService service(user_repository, friend_request_repository);
   auto inviter_connection = std::make_shared<FakeConnection>("inviter");
@@ -500,10 +498,9 @@ void RunHostRemovePlayerServiceTest() {
       std::filesystem::path("runtime") / "host-remove-player-service-test";
   std::filesystem::remove_all(runtime_dir);
 
-  auto user_repository =
-      std::make_shared<FileUserRepository>(runtime_dir / "users.db");
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
   auto friend_request_repository =
-      std::make_shared<FileFriendRequestRepository>(runtime_dir / "friend_requests.db");
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
 
   GameService service(user_repository, friend_request_repository);
   auto owner_connection = std::make_shared<FakeConnection>("owner");
