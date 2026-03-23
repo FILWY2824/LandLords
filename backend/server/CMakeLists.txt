@@ -101,64 +101,28 @@ landlords_normalize_repo_path(LANDLORDS_LIBEVENT_CMAKE_DIR)
 landlords_normalize_repo_path(LANDLORDS_ONNXRUNTIME_ROOT)
 
 if(WIN32 AND LANDLORDS_USE_LOCAL_WINDOWS_DEPS)
-  set(_default_bundle_protobuf_root "${LANDLORDS_REPO_DEFAULT_WINDOWS_DEPS_ROOT}/protobuf")
-  set(_default_bundle_libevent_root "${LANDLORDS_REPO_DEFAULT_WINDOWS_DEPS_ROOT}/libevent")
+  set(LANDLORDS_PROTOBUF_ROOT "${LANDLORDS_WINDOWS_DEPS_ROOT}/protobuf" CACHE PATH
+      "Protobuf SDK root" FORCE)
+  set(LANDLORDS_LIBEVENT_ROOT "${LANDLORDS_WINDOWS_DEPS_ROOT}/libevent" CACHE PATH
+      "libevent install root" FORCE)
+  set(LANDLORDS_LIBEVENT_CMAKE_DIR
+      "${LANDLORDS_LIBEVENT_ROOT}/lib/cmake/libevent"
+      CACHE PATH "libevent CMake package directory" FORCE)
+  set(LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE
+      "${LANDLORDS_PROTOBUF_ROOT}/bin/protoc.exe"
+      CACHE FILEPATH "protoc executable" FORCE)
+  set(LANDLORDS_PROTOBUF_INCLUDE_DIR
+      "${LANDLORDS_PROTOBUF_ROOT}/include"
+      CACHE PATH "protobuf include" FORCE)
 
-  if(NOT LANDLORDS_PROTOBUF_ROOT OR
-     LANDLORDS_PROTOBUF_ROOT STREQUAL "${_default_bundle_protobuf_root}")
-    set(LANDLORDS_PROTOBUF_ROOT "${LANDLORDS_WINDOWS_DEPS_ROOT}/protobuf" CACHE PATH
-        "Protobuf SDK root" FORCE)
-  endif()
-  if(NOT LANDLORDS_LIBEVENT_ROOT OR
-     LANDLORDS_LIBEVENT_ROOT STREQUAL "${_default_bundle_libevent_root}")
-    set(LANDLORDS_LIBEVENT_ROOT "${LANDLORDS_WINDOWS_DEPS_ROOT}/libevent" CACHE PATH
-        "libevent install root" FORCE)
-  endif()
-  if(NOT LANDLORDS_LIBEVENT_CMAKE_DIR OR
-     LANDLORDS_LIBEVENT_CMAKE_DIR STREQUAL "${_default_bundle_libevent_root}/lib/cmake/libevent")
-    set(LANDLORDS_LIBEVENT_CMAKE_DIR
-        "${LANDLORDS_LIBEVENT_ROOT}/lib/cmake/libevent"
-        CACHE PATH "libevent CMake package directory" FORCE)
-  endif()
-
-  if(NOT LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE)
-    set(LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE
-        "${LANDLORDS_PROTOBUF_ROOT}/bin/protoc.exe"
-        CACHE FILEPATH "protoc executable" FORCE)
-  elseif(NOT EXISTS "${LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE}")
-    set(LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE
-        "${LANDLORDS_PROTOBUF_ROOT}/bin/protoc.exe"
-        CACHE FILEPATH "protoc executable" FORCE)
-  endif()
-  if(NOT LANDLORDS_PROTOBUF_INCLUDE_DIR)
-    set(LANDLORDS_PROTOBUF_INCLUDE_DIR
-        "${LANDLORDS_PROTOBUF_ROOT}/include"
-        CACHE PATH "protobuf include" FORCE)
-  elseif(NOT EXISTS "${LANDLORDS_PROTOBUF_INCLUDE_DIR}/google/protobuf/stubs/common.h")
-    set(LANDLORDS_PROTOBUF_INCLUDE_DIR
-        "${LANDLORDS_PROTOBUF_ROOT}/include"
-        CACHE PATH "protobuf include" FORCE)
-  endif()
-  if(NOT LANDLORDS_PROTOBUF_LIBRARY)
-    if(EXISTS "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib")
-      set(LANDLORDS_PROTOBUF_LIBRARY
-          "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib"
-          CACHE FILEPATH "protobuf library" FORCE)
-    else()
-      set(LANDLORDS_PROTOBUF_LIBRARY
-          "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobuf.lib"
-          CACHE FILEPATH "protobuf library" FORCE)
-    endif()
-  elseif(NOT EXISTS "${LANDLORDS_PROTOBUF_LIBRARY}")
-    if(EXISTS "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib")
-      set(LANDLORDS_PROTOBUF_LIBRARY
-          "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib"
-          CACHE FILEPATH "protobuf library" FORCE)
-    else()
-      set(LANDLORDS_PROTOBUF_LIBRARY
-          "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobuf.lib"
-          CACHE FILEPATH "protobuf library" FORCE)
-    endif()
+  if(EXISTS "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib")
+    set(LANDLORDS_PROTOBUF_LIBRARY
+        "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib"
+        CACHE FILEPATH "protobuf library" FORCE)
+  else()
+    set(LANDLORDS_PROTOBUF_LIBRARY
+        "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobuf.lib"
+        CACHE FILEPATH "protobuf library" FORCE)
   endif()
 
   set(Protobuf_PROTOC_EXECUTABLE "${LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE}" CACHE FILEPATH "protoc executable" FORCE)

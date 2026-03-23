@@ -4,7 +4,7 @@
 
 - [README.md](../README.md)：项目优势、版本范围、快速部署入口
 - [configuration.md](configuration.md)：`landlords.env` 配置说明
-- [deployment.md](deployment.md)：Windows 与 Linux 部署流程
+- [deployment.md](deployment.md)：Windows 脚本部署与 Linux 后端部署
 - [onnx_deployment.md](onnx_deployment.md)：ONNX 导出、替换与跨平台说明
 - [web_public_access.md](web_public_access.md)：Web 对外访问与反向代理说明
 

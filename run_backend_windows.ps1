@@ -356,36 +356,56 @@ function Configure-Backend {
     $cmakeArgs += "-DCMAKE_BUILD_TYPE=$buildType"
   }
 
-  $cmakeVarMap = @(
-    @{ Env = "LANDLORDS_USE_LOCAL_WINDOWS_DEPS"; CMake = "LANDLORDS_USE_LOCAL_WINDOWS_DEPS" },
-    @{ Env = "LANDLORDS_ENABLE_ONNXRUNTIME"; CMake = "LANDLORDS_ENABLE_ONNXRUNTIME" },
-    @{ Env = "LANDLORDS_WINDOWS_DEPS_ROOT"; CMake = "LANDLORDS_WINDOWS_DEPS_ROOT" },
-    @{ Env = "LANDLORDS_PROTOBUF_ROOT"; CMake = "LANDLORDS_PROTOBUF_ROOT" },
-    @{ Env = "LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE"; CMake = "LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE" },
-    @{ Env = "LANDLORDS_PROTOBUF_INCLUDE_DIR"; CMake = "LANDLORDS_PROTOBUF_INCLUDE_DIR" },
-    @{ Env = "LANDLORDS_PROTOBUF_LIBRARY"; CMake = "LANDLORDS_PROTOBUF_LIBRARY" },
-    @{ Env = "LANDLORDS_LIBEVENT_ROOT"; CMake = "LANDLORDS_LIBEVENT_ROOT" },
-    @{ Env = "LANDLORDS_LIBEVENT_CMAKE_DIR"; CMake = "LANDLORDS_LIBEVENT_CMAKE_DIR" },
-    @{ Env = "LANDLORDS_ONNXRUNTIME_ROOT"; CMake = "LANDLORDS_ONNXRUNTIME_ROOT" },
-    @{ Env = "LANDLORDS_CMAKE_PREFIX_PATH"; CMake = "CMAKE_PREFIX_PATH" }
-  )
+  function Add-CMakeCacheArg {
+    param(
+      [Parameter(Mandatory = $true)]
+      [string]$CMakeName,
 
-  foreach ($item in $cmakeVarMap) {
-    $value = Get-LandlordsEnvValue -Name $item.Env
-    if ([string]::IsNullOrWhiteSpace($value)) {
-      continue
-    }
+      [string]$Value = "",
 
-    $resolvedValue = if ($item.Env -like "*ROOT" -or
-                         $item.Env -like "*DIR" -or
-                         $item.Env -like "*EXECUTABLE" -or
-                         $item.Env -like "*LIBRARY") {
-      Resolve-LandlordsRepoPath -RepoRoot $root -PathValue $value
-    } else {
-      $value
+      [switch]$PathLike
+    )
+
+    $resolvedValue = $Value
+    if ($PathLike -and -not [string]::IsNullOrWhiteSpace($resolvedValue)) {
+      $resolvedValue = Resolve-LandlordsRepoPath -RepoRoot $root -PathValue $resolvedValue
     }
-    $cmakeArgs += "-D$($item.CMake)=$resolvedValue"
+    $cmakeArgs += "-D$CMakeName=$resolvedValue"
   }
+
+  Add-CMakeCacheArg -CMakeName "LANDLORDS_USE_LOCAL_WINDOWS_DEPS" -Value $(if ($useLocalWindowsDeps) { "ON" } else { "OFF" })
+  Add-CMakeCacheArg -CMakeName "LANDLORDS_ENABLE_ONNXRUNTIME" -Value $(if ($enableOnnxRuntime) { "ON" } else { "OFF" })
+
+  if ($useLocalWindowsDeps) {
+    Add-CMakeCacheArg -CMakeName "LANDLORDS_WINDOWS_DEPS_ROOT" -Value (Get-LandlordsEnvValue -Name "LANDLORDS_WINDOWS_DEPS_ROOT") -PathLike
+
+    foreach ($name in @(
+      "LANDLORDS_PROTOBUF_ROOT",
+      "LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE",
+      "LANDLORDS_PROTOBUF_INCLUDE_DIR",
+      "LANDLORDS_PROTOBUF_LIBRARY",
+      "LANDLORDS_LIBEVENT_ROOT",
+      "LANDLORDS_LIBEVENT_CMAKE_DIR"
+    )) {
+      Add-CMakeCacheArg -CMakeName $name
+    }
+  } else {
+    Add-CMakeCacheArg -CMakeName "LANDLORDS_WINDOWS_DEPS_ROOT"
+
+    foreach ($name in @(
+      "LANDLORDS_PROTOBUF_ROOT",
+      "LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE",
+      "LANDLORDS_PROTOBUF_INCLUDE_DIR",
+      "LANDLORDS_PROTOBUF_LIBRARY",
+      "LANDLORDS_LIBEVENT_ROOT",
+      "LANDLORDS_LIBEVENT_CMAKE_DIR"
+    )) {
+      Add-CMakeCacheArg -CMakeName $name -Value (Get-LandlordsEnvValue -Name $name) -PathLike
+    }
+  }
+
+  Add-CMakeCacheArg -CMakeName "LANDLORDS_ONNXRUNTIME_ROOT" -Value (Get-LandlordsEnvValue -Name "LANDLORDS_ONNXRUNTIME_ROOT") -PathLike
+  Add-CMakeCacheArg -CMakeName "CMAKE_PREFIX_PATH" -Value (Get-LandlordsEnvValue -Name "LANDLORDS_CMAKE_PREFIX_PATH")
 
   Push-Location $root
   try {

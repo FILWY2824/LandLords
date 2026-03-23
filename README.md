@@ -1,24 +1,25 @@
 # LandLords
 
-面向 `Web / Windows / Android` 的斗地主联机项目。前端使用 Flutter，后端使用 `C++20 + libevent + protobuf`，机器人默认使用 `DouZero ONNX` 直接在 C++ 服务端进程内推理。
+面向 Web 联机部署的斗地主项目。前端使用 Flutter Web，后端使用 `C++20 + libevent + protobuf`，机器人默认采用 `DouZero ONNX`，直接在 C++ 服务端进程内推理，不再依赖 Python 代理服务。
 
 ## 项目优势
 
-- 开源部署入口已经收敛成一套正式配置文件 [`landlords.env`](landlords.env) 和两个 Windows 主脚本，不再要求用户自己拼命令。
-- 后端依赖路径、前后端地址、端口、Web 代理、ONNX 模型目录都统一进配置文件，适合不同服务器环境直接改值部署。
-- 默认提供 `easy / normal / hard` 三档 ONNX 模型目录，部署时可以直接用仓库内模型，也可以自行重新导出。
-- 测试源码完整保留，方便部署后做联机验证；测试过程中产生的中间产物、日志和调试输出不再作为开源内容保留。
+- 开源部署入口已经收敛成一份正式配置文件 [`landlords.env`](landlords.env) 和两个 Windows 主脚本，用户只需要修改现成配置，不需要自己补模板或重新拼命令。
+- 后端依赖路径、监听地址、端口、Web 代理、ONNX 模型目录都统一进入配置文件，适合不同服务器环境直接替换部署。
+- 出牌决策链路已经收敛为 ONNX 方案，运行时不再保留 Python 代理进程，部署结构更简单、问题定位更直接。
+- 仓库只保留当前维护的内容：Web 前端、C++ 后端、ONNX 导出工具、测试代码和必要文档；旧的 Android / Windows 客户端工程目录和冗余第三方文件已移除。
+- 测试源码保留，构建产物、运行日志、调试缓存和临时目录不作为开源内容保留，方便别人复现又不会把仓库带脏。
 
 ## 当前推荐入口
 
 ```text
 landlords.env                  正式配置文件，用户直接修改
-run_backend_windows.ps1        Windows 后端编译并运行脚本
-run_frontend_windows.ps1       Windows 前端编译并运行脚本
-docs/onnx_deployment.md        ONNX 导出与跨平台部署说明
+run_backend_windows.ps1        Windows 后端配置、编译、运行脚本
+run_frontend_windows.ps1       Windows 前端 Web 构建、运行脚本
+docs/onnx_deployment.md        ONNX 导出、替换、跨平台使用说明
 ```
 
-模块入口：
+模块文档入口：
 
 - [docs/README.md](docs/README.md)
 - [backend/README.md](backend/README.md)
@@ -34,46 +35,38 @@ docs/onnx_deployment.md        ONNX 导出与跨平台部署说明
 
 ## 已核实的版本信息
 
-下面这些信息来自当前仓库配置和本地实际检查，适合作为开源部署的推荐范围：
+下表用于说明本仓库当前推荐的部署版本范围：
 
-| 组件 | 推荐/已核实版本 | 说明 |
+| 组件 | 推荐版本 | 说明 |
 | --- | --- | --- |
-| Flutter SDK | `3.38.9` | 由当前 Flutter SDK 本地仓库标签核实 |
-| Dart SDK | `3.10.8` | 由 `dart --version` 核实 |
-| CMake | `3.29.2` | 已实际用于当前后端配置与编译 |
+| Flutter SDK | `3.38.9` | 当前整理阶段用于 Web 构建验证 |
+| Dart SDK | `3.10.8` | 来自 [`pubspec.yaml`](pubspec.yaml) 的 SDK 约束 |
+| CMake | `3.29.2` | 当前后端配置与编译已实际使用 |
 | Visual Studio | `Visual Studio 2022` + `MSVC v143` | Windows 后端推荐环境 |
 | Protobuf C++ | `3.20.x` 兼容版本 | 当前工程和生成代码按这一代版本兼容 |
 | libevent | `2.1.x` | 需要可被 `find_package(Libevent CONFIG REQUIRED)` 发现 |
-| ONNX Runtime | `1.24.3` | 当前默认配置路径对应此版本 |
-| Python | `3.9.6+` | ONNX 导出与模型工具推荐 |
-| Gradle | `8.14` | 来自 [`android/gradle/wrapper/gradle-wrapper.properties`](android/gradle/wrapper/gradle-wrapper.properties) |
-| Android Gradle Plugin | `8.11.1` | 来自 [`android/settings.gradle.kts`](android/settings.gradle.kts) |
-| Kotlin | `2.2.20` | 来自 [`android/settings.gradle.kts`](android/settings.gradle.kts) |
-| JDK | `17` | Android 构建脚本要求 Java 17；本机若不是 17，请切换后再打 Android 包 |
+| ONNX Runtime | `1.24.3` | 当前文档和配置按此版本整理 |
+| Python | `3.9+` | ONNX 导出和校验工具推荐版本 |
 
 ## 部署前先改什么
 
-直接编辑 [`landlords.env`](landlords.env)。用户不需要新建模板文件，也不需要自己补配置键。
+直接编辑 [`landlords.env`](landlords.env)。仓库已经把所有正式配置键和默认示例值写进去，用户不需要复制模板，只需要把示例值改成自己机器的实际值。
 
-第一次部署最需要确认的是这些键：
+第一次部署最需要优先确认的是这些键：
 
 - `LANDLORDS_WINDOWS_DEPS_ROOT`
-- `LANDLORDS_PROTOBUF_ROOT`
-- `LANDLORDS_LIBEVENT_CMAKE_DIR`
 - `LANDLORDS_ONNXRUNTIME_ROOT`
+- 如果不使用 bundle 模式，还要改 `LANDLORDS_PROTOBUF_*` 和 `LANDLORDS_LIBEVENT_*`
 - `LANDLORDS_HOST`
 - `LANDLORDS_PORT`
 - `LANDLORDS_WS_PORT`
 - `LANDLORDS_WEB_HOST`
 - `LANDLORDS_WEB_PORT`
 - `LANDLORDS_BACKEND_WS_PROXY`
-- `LANDLORDS_TCP_HOST`
-- `LANDLORDS_TCP_PORT`
-- `LANDLORDS_MOBILE_WS_URL`
 
-配置项详细说明见 [docs/configuration.md](docs/configuration.md)。
+详细说明见 [docs/configuration.md](docs/configuration.md)。
 
-## Windows 部署
+## Windows 脚本部署
 
 ### 1. 启动后端
 
@@ -87,7 +80,7 @@ docs/onnx_deployment.md        ONNX 导出与跨平台部署说明
 powershell -NoProfile -ExecutionPolicy Bypass -File .\run_backend_windows.ps1
 ```
 
-如果你只想先验证构建是否通过，不想立刻启动服务端：
+如果你只想先验证构建是否通过，不想立刻启动服务：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\run_backend_windows.ps1 -BuildOnly
@@ -124,9 +117,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\run_frontend_windows.ps1 -
 http://LANDLORDS_WEB_HOST:LANDLORDS_WEB_PORT
 ```
 
-## Linux 部署说明
+## Linux 后端部署说明
 
-仓库保留的自动化主脚本是 Windows 版。Linux 部署请直接使用 CMake 和环境变量。
+仓库保留的自动化主脚本是 Windows 版；Linux 部署请直接使用 CMake 和环境变量。
 
 最低建议准备：
 
@@ -148,7 +141,7 @@ cmake -S backend/server -B backend/server/build \
 cmake --build backend/server/build --target landlords_server
 ```
 
-ONNX 模型本身可以跨平台复用，详细见 [docs/onnx_deployment.md](docs/onnx_deployment.md)。
+ONNX 模型文件本身可以跨平台复用，详细见 [docs/onnx_deployment.md](docs/onnx_deployment.md)。
 
 ## ONNX 模型
 
@@ -158,18 +151,18 @@ ONNX 模型本身可以跨平台复用，详细见 [docs/onnx_deployment.md](doc
 - `backend/ai_models/onnx/sl`
 - `backend/ai_models/onnx/douzero_WP`
 
-如果你要自己从 checkpoint 导出新的 ONNX，请直接看 [docs/onnx_deployment.md](docs/onnx_deployment.md)。
+如果你要自己从 checkpoint 重新导出 ONNX，请直接看 [docs/onnx_deployment.md](docs/onnx_deployment.md)。
 
 ## 部署后验证
 
 推荐按下面顺序做最小验证：
 
-1. 运行 `run_backend_windows.ps1 -BuildOnly`，确认后端编译通过
-2. 运行 `run_frontend_windows.ps1 -BuildOnly`，确认前端编译通过
+1. 运行 `run_backend_windows.ps1 -BuildOnly`
+2. 运行 `run_frontend_windows.ps1 -BuildOnly`
 3. 依次启动后端和前端，确认 Web 首页可以打开并连上 `/ws`
 4. 执行 `flutter test`
 
-后端测试源码保留在 [`backend/server/tests`](backend/server/tests)；Flutter 联机和回归测试保留在 [`test`](test)。
+后端测试源码保留在 [`backend/server/tests`](backend/server/tests)，Flutter 回归和联机测试保留在 [`test`](test)。
 
 ## 文档导航
 

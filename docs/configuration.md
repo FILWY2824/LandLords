@@ -12,7 +12,7 @@
 
 - 仓库内部路径优先写相对路径，例如 `backend/ai_models/onnx/sl`
 - 机器本地 SDK 优先写绝对路径，例如 `D:/sdk/protobuf`
-- 用户只修改已有值，不需要新增配置键
+- 用户只修改已有值，不需要自己新增配置键
 
 ## 一、后端构建与原生依赖
 
@@ -74,17 +74,15 @@ LANDLORDS_ONNXRUNTIME_ROOT=D:/sdk/onnxruntime/Microsoft.ML.OnnxRuntime.1.24.3
 这组键会被前端脚本转成 `--dart-define`：
 
 - `LANDLORDS_WS_URL`
-- `LANDLORDS_TCP_HOST`
-- `LANDLORDS_TCP_PORT`
-- `LANDLORDS_MOBILE_WS_URL`
 - `LANDLORDS_GITHUB_REPO`
 - `LANDLORDS_DOWNLOAD_URL`
 
 推荐规则：
 
 - Web 同域部署时，`LANDLORDS_WS_URL` 留空
-- Windows 桌面端走 TCP 时，设置 `LANDLORDS_TCP_HOST` 和 `LANDLORDS_TCP_PORT`
-- Android 模拟器通常使用 `LANDLORDS_MOBILE_WS_URL=ws://10.0.2.2:23002/ws`
+- Web 反向代理转发到后端时，交给 `LANDLORDS_BACKEND_WS_PROXY`
+- 登录页或发布页需要展示仓库链接时，设置 `LANDLORDS_GITHUB_REPO`
+- 如果你有自己的安装包或发布页链接，再填写 `LANDLORDS_DOWNLOAD_URL`
 
 ## 三、后端运行期配置
 
@@ -175,4 +173,4 @@ LANDLORDS_BACKEND_WS_PROXY=ws://127.0.0.1:23002/ws
 
 - 改了 CMake 或依赖路径后，重新执行 [`run_backend_windows.ps1`](../run_backend_windows.ps1)
 - 改了前端地址或 `--dart-define` 相关键后，重新执行 [`run_frontend_windows.ps1`](../run_frontend_windows.ps1)
-- 改了端口后，同时检查前端代理、测试脚本和客户端地址是否一致
+- 改了端口后，同时检查前端代理、测试脚本和对外访问地址是否一致

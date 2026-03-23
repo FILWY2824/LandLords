@@ -83,5 +83,10 @@ app.*.map.json
 # Android/Kotlin local caches
 **/.kotlin/
 
+# Re-introduced Flutter platform folders are intentionally not part of this repo
+/android/
+/windows/
+/tools/
+
 # Binary SDKs that can be restored separately
 /third_party/onnxruntime/

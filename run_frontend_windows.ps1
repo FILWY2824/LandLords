@@ -145,9 +145,6 @@ $port = [int](Get-LandlordsEnvValue -Name "LANDLORDS_WEB_PORT" -DefaultValue "23
 $backendWs = Get-LandlordsEnvValue -Name "LANDLORDS_BACKEND_WS_PROXY" -DefaultValue "ws://127.0.0.1:23002/ws"
 $dartDefineArgs = Get-LandlordsFlutterDartDefineArgs -Keys @(
   "LANDLORDS_WS_URL",
-  "LANDLORDS_TCP_HOST",
-  "LANDLORDS_TCP_PORT",
-  "LANDLORDS_MOBILE_WS_URL",
   "LANDLORDS_GITHUB_REPO",
   "LANDLORDS_DOWNLOAD_URL"
 )
