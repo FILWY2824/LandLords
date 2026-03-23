@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -11,7 +12,27 @@ from torch import nn
 from adapter import MODEL_DICT, ROLE_FILES, ROLE_X_WIDTH, ROOT_DIR
 from logging_utils import get_logger
 
-LOGGER = get_logger("douzero_proxy.export_onnx")
+LOGGER = get_logger("douzero_onnx.export_onnx")
+
+
+def load_landlords_env() -> None:
+    env_path = ROOT_DIR / "landlords.env"
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        name, value = line.split("=", 1)
+        name = name.strip()
+        value = value.strip()
+        if not name:
+            continue
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+            value = value[1:-1]
+        os.environ[name] = value
 
 
 class ValueHeadWrapper(nn.Module):
@@ -28,14 +49,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--baseline-dir",
         type=Path,
-        default=ROOT_DIR / "third_party" / "baselines" / "douzero_ADP",
+        default=Path(
+            os.environ.get(
+                "LANDLORDS_DOUZERO_BASELINE_DIR",
+                ROOT_DIR / "third_party" / "baselines" / "douzero_ADP",
+            )
+        ),
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=ROOT_DIR / "backend" / "ai_models" / "onnx" / "douzero_ADP",
+        default=Path(
+            os.environ.get(
+                "LANDLORDS_DOUZERO_EXPORT_OUTPUT_DIR",
+                ROOT_DIR / "backend" / "ai_models" / "onnx" / "douzero_ADP",
+            )
+        ),
     )
-    parser.add_argument("--device", default="cpu")
+    parser.add_argument(
+        "--device",
+        default=os.environ.get("LANDLORDS_DOUZERO_EXPORT_DEVICE", "cpu"),
+    )
     parser.add_argument("--opset", type=int, default=14)
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
@@ -94,6 +128,7 @@ def export_role(
 
 
 def main() -> None:
+    load_landlords_env()
     args = parse_args()
     require_onnx()
 
@@ -102,8 +137,14 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device(args.device)
 
+    def to_portable_path(path: Path) -> str:
+        try:
+            return path.resolve().relative_to(ROOT_DIR.resolve()).as_posix()
+        except ValueError:
+            return str(path.resolve())
+
     manifest: dict[str, object] = {
-        "baseline_dir": str(baseline_dir),
+        "baseline_dir": to_portable_path(baseline_dir),
         "device": str(device),
         "opset": args.opset,
         "roles": {},
@@ -120,8 +161,8 @@ def main() -> None:
         else:
             export_role(role, checkpoint_path, output_path, device, args.opset)
         manifest["roles"][role] = {
-            "checkpoint": str(checkpoint_path),
-            "onnx": str(output_path),
+            "checkpoint": to_portable_path(checkpoint_path),
+            "onnx": to_portable_path(output_path),
             "x_width": ROLE_X_WIDTH[role],
             "z_shape": [1, 5, 162],
         }

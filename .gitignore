@@ -47,14 +47,21 @@ app.*.map.json
 # Project-local runtime, logs, and temporary files
 /.codex-appdata/
 /.codex-localappdata/
+/.codex_tmp/
 /.tooling/
 /.dart_appdata/
+/.tmp_appdata/
+/.tmp_localappdata/
+/.home/
 **/.git.bak/
 /runtime/
 /runtime_logs/
-/landlords.env
+/reports/
+/landlords.env.local
 /.codex-server-smoke.err
 /.codex-server-smoke.out
+/room_lifecycle_test_output.log
+/room_lifecycle_test_output_cmd.log
 /tmp_*.err.log
 /tmp_*.log
 /tmp_*.out

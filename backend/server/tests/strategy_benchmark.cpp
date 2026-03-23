@@ -58,24 +58,48 @@ void Require(bool condition, const std::string& message) {
   }
 }
 
+std::filesystem::path FindRepoRoot() {
+  if (const char* configured = std::getenv("LANDLORDS_REPO_ROOT")) {
+    if (*configured != '\0') {
+      return std::filesystem::path(configured);
+    }
+  }
+
+  auto current = std::filesystem::current_path();
+  while (!current.empty()) {
+    if (std::filesystem::exists(current / "pubspec.yaml") &&
+        std::filesystem::exists(current / "backend" / "server" / "CMakeLists.txt")) {
+      return current;
+    }
+    const auto parent = current.parent_path();
+    if (parent == current) {
+      break;
+    }
+    current = parent;
+  }
+
+  throw std::runtime_error("failed to locate repository root; set LANDLORDS_REPO_ROOT");
+}
+
 void ConfigureOnnxDirs() {
+  const auto repo_root = FindRepoRoot();
+  const auto easy_dir = (repo_root / "backend" / "ai_models" / "onnx" / "douzero_ADP")
+                            .lexically_normal()
+                            .string();
+  const auto normal_dir = (repo_root / "backend" / "ai_models" / "onnx" / "sl")
+                              .lexically_normal()
+                              .string();
+  const auto hard_dir = (repo_root / "backend" / "ai_models" / "onnx" / "douzero_WP")
+                            .lexically_normal()
+                            .string();
 #ifdef _WIN32
-  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_EASY",
-            "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_ADP");
-  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_NORMAL",
-            "F:/CodeXProject/LandLords/backend/ai_models/onnx/sl");
-  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_HARD",
-            "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_WP");
+  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_EASY", easy_dir.c_str());
+  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_NORMAL", normal_dir.c_str());
+  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_HARD", hard_dir.c_str());
 #else
-  setenv("LANDLORDS_DOUZERO_ONNX_DIR_EASY",
-         "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_ADP",
-         1);
-  setenv("LANDLORDS_DOUZERO_ONNX_DIR_NORMAL",
-         "F:/CodeXProject/LandLords/backend/ai_models/onnx/sl",
-         1);
-  setenv("LANDLORDS_DOUZERO_ONNX_DIR_HARD",
-         "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_WP",
-         1);
+  setenv("LANDLORDS_DOUZERO_ONNX_DIR_EASY", easy_dir.c_str(), 1);
+  setenv("LANDLORDS_DOUZERO_ONNX_DIR_NORMAL", normal_dir.c_str(), 1);
+  setenv("LANDLORDS_DOUZERO_ONNX_DIR_HARD", hard_dir.c_str(), 1);
 #endif
 }
 
@@ -89,12 +113,17 @@ int LoadGamesPerSeat() {
 
 std::vector<Candidate> BuildCandidates() {
   ConfigureOnnxDirs();
+  const auto repo_root = FindRepoRoot();
   auto sl = landlords::ai::CreateOnnxBotStrategyFromDir(
-      "F:/CodeXProject/LandLords/backend/ai_models/onnx/sl");
+      (repo_root / "backend" / "ai_models" / "onnx" / "sl").lexically_normal().string());
   auto adp = landlords::ai::CreateOnnxBotStrategyFromDir(
-      "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_ADP");
+      (repo_root / "backend" / "ai_models" / "onnx" / "douzero_ADP")
+          .lexically_normal()
+          .string());
   auto wp = landlords::ai::CreateOnnxBotStrategyFromDir(
-      "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_WP");
+      (repo_root / "backend" / "ai_models" / "onnx" / "douzero_WP")
+          .lexically_normal()
+          .string());
   Require(sl != nullptr, "failed to load SL ONNX strategy");
   Require(adp != nullptr, "failed to load ADP ONNX strategy");
   Require(wp != nullptr, "failed to load WP ONNX strategy");
@@ -196,7 +225,7 @@ void WriteReport(const std::filesystem::path& path,
   output << "- Seat-controlled benchmark: one controlled seat uses the primary strategy, the other two seats use the opponent strategy.\n";
   output << "- Games per seat matchup: `" << games_per_seat << "`.\n";
   output << "- Total games per primary/opponent pair: `" << (games_per_seat * 3) << "`.\n";
-  output << "- This is stricter than a simple 1v1 win-rate comparison because 斗地主 has asymmetric 2v1 cooperation.\n\n";
+  output << "- This is stricter than a simple 1v1 win-rate comparison because Dou Dizhu has asymmetric 2v1 cooperation.\n\n";
   output << "## Overall Ranking\n\n";
   output << "| Rank | Candidate | Games | Avg Score | Win Rate | Landlord Win | Farmer Win |\n";
   output << "| --- | --- | ---: | ---: | ---: | ---: | ---: |\n";

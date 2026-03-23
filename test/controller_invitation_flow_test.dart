@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,9 +10,18 @@ import 'package:landlords/src/state/app_controller.dart';
 
 void main() {
   test('mixed transports surface invitation reminders and feedback', () async {
-    final owner = AppController(gateway: SocketGameGateway());
+    final host = Platform.environment['LANDLORDS_TEST_HOST'] ?? '127.0.0.1';
+    final tcpPort =
+        int.tryParse(Platform.environment['LANDLORDS_TEST_TCP_PORT'] ?? '') ??
+            23001;
+    final wsPort =
+        int.tryParse(Platform.environment['LANDLORDS_TEST_WS_PORT'] ?? '') ??
+            23002;
+    final owner = AppController(
+      gateway: SocketGameGateway(host: host, port: tcpPort),
+    );
     final guest = AppController(
-      gateway: WebSocketGameGateway(url: 'ws://127.0.0.1:23002/ws'),
+      gateway: WebSocketGameGateway(url: 'ws://$host:$wsPort/ws'),
     );
     addTearDown(owner.dispose);
     addTearDown(guest.dispose);

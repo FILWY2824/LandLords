@@ -2,6 +2,7 @@
 #include "landlords/game/room.h"
 
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <map>
 #include <stdexcept>
@@ -38,6 +39,29 @@ landlords::core::PlayerState MakePlayer(const std::string& name, bool bot) {
       .display_name = name,
       .is_bot = bot,
   };
+}
+
+std::filesystem::path FindRepoRoot() {
+  if (const char* configured = std::getenv("LANDLORDS_REPO_ROOT")) {
+    if (*configured != '\0') {
+      return std::filesystem::path(configured);
+    }
+  }
+
+  auto current = std::filesystem::current_path();
+  while (!current.empty()) {
+    if (std::filesystem::exists(current / "pubspec.yaml") &&
+        std::filesystem::exists(current / "backend" / "server" / "CMakeLists.txt")) {
+      return current;
+    }
+    const auto parent = current.parent_path();
+    if (parent == current) {
+      break;
+    }
+    current = parent;
+  }
+
+  throw std::runtime_error("failed to locate repository root; set LANDLORDS_REPO_ROOT");
 }
 
 landlords::protocol::RoomSnapshot BuildSmokeSnapshot() {
@@ -93,28 +117,26 @@ landlords::protocol::RoomSnapshot BuildSmokeSnapshot() {
 }
 
 void ConfigureOnnxDir() {
+  const auto repo_root = FindRepoRoot();
+  const auto easy_dir = (repo_root / "backend" / "ai_models" / "onnx" / "douzero_ADP")
+                            .lexically_normal()
+                            .string();
+  const auto normal_dir = (repo_root / "backend" / "ai_models" / "onnx" / "sl")
+                              .lexically_normal()
+                              .string();
+  const auto hard_dir = (repo_root / "backend" / "ai_models" / "onnx" / "douzero_WP")
+                            .lexically_normal()
+                            .string();
 #ifdef _WIN32
-  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_EASY",
-            "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_ADP");
-  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_NORMAL",
-            "F:/CodeXProject/LandLords/backend/ai_models/onnx/sl");
-  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_HARD",
-            "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_WP");
-  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR",
-            "F:/CodeXProject/LandLords/backend/ai_models/onnx/sl");
+  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_EASY", easy_dir.c_str());
+  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_NORMAL", normal_dir.c_str());
+  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR_HARD", hard_dir.c_str());
+  _putenv_s("LANDLORDS_DOUZERO_ONNX_DIR", normal_dir.c_str());
 #else
-  setenv("LANDLORDS_DOUZERO_ONNX_DIR_EASY",
-         "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_ADP",
-         1);
-  setenv("LANDLORDS_DOUZERO_ONNX_DIR_NORMAL",
-         "F:/CodeXProject/LandLords/backend/ai_models/onnx/sl",
-         1);
-  setenv("LANDLORDS_DOUZERO_ONNX_DIR_HARD",
-         "F:/CodeXProject/LandLords/backend/ai_models/onnx/douzero_WP",
-         1);
-  setenv("LANDLORDS_DOUZERO_ONNX_DIR",
-         "F:/CodeXProject/LandLords/backend/ai_models/onnx/sl",
-         1);
+  setenv("LANDLORDS_DOUZERO_ONNX_DIR_EASY", easy_dir.c_str(), 1);
+  setenv("LANDLORDS_DOUZERO_ONNX_DIR_NORMAL", normal_dir.c_str(), 1);
+  setenv("LANDLORDS_DOUZERO_ONNX_DIR_HARD", hard_dir.c_str(), 1);
+  setenv("LANDLORDS_DOUZERO_ONNX_DIR", normal_dir.c_str(), 1);
 #endif
 }
 

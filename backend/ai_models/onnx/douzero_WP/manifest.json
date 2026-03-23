@@ -1,11 +1,11 @@
 {
-  "baseline_dir": "F:\\CodeXProject\\LandLords\\third_party\\baselines\\douzero_WP",
+  "baseline_dir": "third_party/baselines/douzero_WP",
   "device": "cpu",
   "opset": 14,
   "roles": {
     "landlord": {
-      "checkpoint": "F:\\CodeXProject\\LandLords\\third_party\\baselines\\douzero_WP\\landlord.ckpt",
-      "onnx": "F:\\CodeXProject\\LandLords\\backend\\ai_models\\onnx\\douzero_WP\\landlord.onnx",
+      "checkpoint": "third_party/baselines/douzero_WP/landlord.ckpt",
+      "onnx": "backend/ai_models/onnx/douzero_WP/landlord.onnx",
       "x_width": 373,
       "z_shape": [
         1,
@@ -14,8 +14,8 @@
       ]
     },
     "landlord_up": {
-      "checkpoint": "F:\\CodeXProject\\LandLords\\third_party\\baselines\\douzero_WP\\landlord_up.ckpt",
-      "onnx": "F:\\CodeXProject\\LandLords\\backend\\ai_models\\onnx\\douzero_WP\\landlord_up.onnx",
+      "checkpoint": "third_party/baselines/douzero_WP/landlord_up.ckpt",
+      "onnx": "backend/ai_models/onnx/douzero_WP/landlord_up.onnx",
       "x_width": 484,
       "z_shape": [
         1,
@@ -24,8 +24,8 @@
       ]
     },
     "landlord_down": {
-      "checkpoint": "F:\\CodeXProject\\LandLords\\third_party\\baselines\\douzero_WP\\landlord_down.ckpt",
-      "onnx": "F:\\CodeXProject\\LandLords\\backend\\ai_models\\onnx\\douzero_WP\\landlord_down.onnx",
+      "checkpoint": "third_party/baselines/douzero_WP/landlord_down.ckpt",
+      "onnx": "backend/ai_models/onnx/douzero_WP/landlord_down.onnx",
       "x_width": 484,
       "z_shape": [
         1,

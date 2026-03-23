@@ -95,7 +95,7 @@ class PlayerSeat:
 
 class DouZeroAdapter:
     def __init__(self, baseline_dir: Path | None = None) -> None:
-        self._logger = get_logger("douzero_proxy.adapter")
+        self._logger = get_logger("douzero_onnx.adapter")
         self._baseline_dir = (baseline_dir or self._default_baseline_dir()).resolve()
         self._device = _resolve_device()
         self._inference_lock = threading.Lock()

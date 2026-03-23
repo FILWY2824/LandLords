@@ -6,27 +6,190 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 get_filename_component(LANDLORDS_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+set(LANDLORDS_REPO_DEFAULT_WINDOWS_DEPS_ROOT "${LANDLORDS_REPO_ROOT}/third_party/windows_deps")
 
-option(LANDLORDS_USE_LOCAL_WINDOWS_DEPS "Use local Windows libevent/protobuf bundle" ON)
-option(LANDLORDS_ENABLE_ONNXRUNTIME "Enable ONNX Runtime based bot inference" ON)
-set(LANDLORDS_ONNXRUNTIME_ROOT
-    "${LANDLORDS_REPO_ROOT}/third_party/onnxruntime/Microsoft.ML.OnnxRuntime.1.24.3"
-    CACHE PATH "ONNX Runtime SDK root")
+function(landlords_init_cache var type description)
+  cmake_parse_arguments(ARG "" "DEFAULT;ENV" "" ${ARGN})
+  if(DEFINED ${var} AND NOT "${${var}}" STREQUAL "")
+    return()
+  endif()
+
+  set(value "${ARG_DEFAULT}")
+  if(DEFINED ARG_ENV AND
+     NOT "${ARG_ENV}" STREQUAL "" AND
+     DEFINED ENV{${ARG_ENV}} AND
+     NOT "$ENV{${ARG_ENV}}" STREQUAL "")
+    set(value "$ENV{${ARG_ENV}}")
+  endif()
+
+  set(${var} "${value}" CACHE ${type} "${description}")
+endfunction()
+
+function(landlords_normalize_repo_path var)
+  if(NOT DEFINED ${var} OR "${${var}}" STREQUAL "")
+    return()
+  endif()
+  if(IS_ABSOLUTE "${${var}}")
+    return()
+  endif()
+  get_property(_cache_type CACHE ${var} PROPERTY TYPE)
+  if(NOT _cache_type)
+    set(_cache_type PATH)
+  endif()
+  cmake_path(ABSOLUTE_PATH ${var} BASE_DIRECTORY "${LANDLORDS_REPO_ROOT}" NORMALIZE)
+  set(${var} "${${var}}" CACHE ${_cache_type} "Normalized path for ${var}" FORCE)
+endfunction()
+
+landlords_init_cache(
+  LANDLORDS_USE_LOCAL_WINDOWS_DEPS BOOL
+  "Use local Windows libevent/protobuf bundle"
+  DEFAULT ON
+  ENV LANDLORDS_USE_LOCAL_WINDOWS_DEPS)
+landlords_init_cache(
+  LANDLORDS_ENABLE_ONNXRUNTIME BOOL
+  "Enable ONNX Runtime based bot inference"
+  DEFAULT ON
+  ENV LANDLORDS_ENABLE_ONNXRUNTIME)
+landlords_init_cache(
+  LANDLORDS_WINDOWS_DEPS_ROOT PATH
+  "Windows dependency bundle root"
+  DEFAULT "${LANDLORDS_REPO_DEFAULT_WINDOWS_DEPS_ROOT}"
+  ENV LANDLORDS_WINDOWS_DEPS_ROOT)
+landlords_init_cache(
+  LANDLORDS_PROTOBUF_ROOT PATH
+  "Protobuf SDK root"
+  DEFAULT ""
+  ENV LANDLORDS_PROTOBUF_ROOT)
+landlords_init_cache(
+  LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE FILEPATH
+  "protoc executable"
+  DEFAULT ""
+  ENV LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE)
+landlords_init_cache(
+  LANDLORDS_PROTOBUF_INCLUDE_DIR PATH
+  "protobuf include"
+  DEFAULT ""
+  ENV LANDLORDS_PROTOBUF_INCLUDE_DIR)
+landlords_init_cache(
+  LANDLORDS_PROTOBUF_LIBRARY FILEPATH
+  "protobuf library"
+  DEFAULT ""
+  ENV LANDLORDS_PROTOBUF_LIBRARY)
+landlords_init_cache(
+  LANDLORDS_LIBEVENT_ROOT PATH
+  "libevent install root"
+  DEFAULT ""
+  ENV LANDLORDS_LIBEVENT_ROOT)
+landlords_init_cache(
+  LANDLORDS_LIBEVENT_CMAKE_DIR PATH
+  "libevent CMake package directory"
+  DEFAULT ""
+  ENV LANDLORDS_LIBEVENT_CMAKE_DIR)
+landlords_init_cache(
+  LANDLORDS_ONNXRUNTIME_ROOT PATH
+  "ONNX Runtime SDK root"
+  DEFAULT "${LANDLORDS_REPO_ROOT}/third_party/onnxruntime/Microsoft.ML.OnnxRuntime.1.24.3"
+  ENV LANDLORDS_ONNXRUNTIME_ROOT)
+
+landlords_normalize_repo_path(LANDLORDS_WINDOWS_DEPS_ROOT)
+landlords_normalize_repo_path(LANDLORDS_PROTOBUF_ROOT)
+landlords_normalize_repo_path(LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE)
+landlords_normalize_repo_path(LANDLORDS_PROTOBUF_INCLUDE_DIR)
+landlords_normalize_repo_path(LANDLORDS_PROTOBUF_LIBRARY)
+landlords_normalize_repo_path(LANDLORDS_LIBEVENT_ROOT)
+landlords_normalize_repo_path(LANDLORDS_LIBEVENT_CMAKE_DIR)
+landlords_normalize_repo_path(LANDLORDS_ONNXRUNTIME_ROOT)
 
 if(WIN32 AND LANDLORDS_USE_LOCAL_WINDOWS_DEPS)
-  set(LANDLORDS_DEPS_ROOT
-      "${LANDLORDS_REPO_ROOT}/third_party/windows_deps"
-      CACHE PATH "Windows dependency bundle root")
-  set(Protobuf_PROTOC_EXECUTABLE "${LANDLORDS_DEPS_ROOT}/protobuf/bin/protoc.exe" CACHE FILEPATH "protoc executable")
-  set(Protobuf_INCLUDE_DIR "${LANDLORDS_DEPS_ROOT}/protobuf/include" CACHE PATH "protobuf include")
-  set(Protobuf_LIBRARY "${LANDLORDS_DEPS_ROOT}/protobuf/lib/libprotobufd.lib" CACHE FILEPATH "protobuf library")
+  set(_default_bundle_protobuf_root "${LANDLORDS_REPO_DEFAULT_WINDOWS_DEPS_ROOT}/protobuf")
+  set(_default_bundle_libevent_root "${LANDLORDS_REPO_DEFAULT_WINDOWS_DEPS_ROOT}/libevent")
+
+  if(NOT LANDLORDS_PROTOBUF_ROOT OR
+     LANDLORDS_PROTOBUF_ROOT STREQUAL "${_default_bundle_protobuf_root}")
+    set(LANDLORDS_PROTOBUF_ROOT "${LANDLORDS_WINDOWS_DEPS_ROOT}/protobuf" CACHE PATH
+        "Protobuf SDK root" FORCE)
+  endif()
+  if(NOT LANDLORDS_LIBEVENT_ROOT OR
+     LANDLORDS_LIBEVENT_ROOT STREQUAL "${_default_bundle_libevent_root}")
+    set(LANDLORDS_LIBEVENT_ROOT "${LANDLORDS_WINDOWS_DEPS_ROOT}/libevent" CACHE PATH
+        "libevent install root" FORCE)
+  endif()
+  if(NOT LANDLORDS_LIBEVENT_CMAKE_DIR OR
+     LANDLORDS_LIBEVENT_CMAKE_DIR STREQUAL "${_default_bundle_libevent_root}/lib/cmake/libevent")
+    set(LANDLORDS_LIBEVENT_CMAKE_DIR
+        "${LANDLORDS_LIBEVENT_ROOT}/lib/cmake/libevent"
+        CACHE PATH "libevent CMake package directory" FORCE)
+  endif()
+
+  if(NOT LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE)
+    set(LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE
+        "${LANDLORDS_PROTOBUF_ROOT}/bin/protoc.exe"
+        CACHE FILEPATH "protoc executable" FORCE)
+  elseif(NOT EXISTS "${LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE}")
+    set(LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE
+        "${LANDLORDS_PROTOBUF_ROOT}/bin/protoc.exe"
+        CACHE FILEPATH "protoc executable" FORCE)
+  endif()
+  if(NOT LANDLORDS_PROTOBUF_INCLUDE_DIR)
+    set(LANDLORDS_PROTOBUF_INCLUDE_DIR
+        "${LANDLORDS_PROTOBUF_ROOT}/include"
+        CACHE PATH "protobuf include" FORCE)
+  elseif(NOT EXISTS "${LANDLORDS_PROTOBUF_INCLUDE_DIR}/google/protobuf/stubs/common.h")
+    set(LANDLORDS_PROTOBUF_INCLUDE_DIR
+        "${LANDLORDS_PROTOBUF_ROOT}/include"
+        CACHE PATH "protobuf include" FORCE)
+  endif()
+  if(NOT LANDLORDS_PROTOBUF_LIBRARY)
+    if(EXISTS "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib")
+      set(LANDLORDS_PROTOBUF_LIBRARY
+          "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib"
+          CACHE FILEPATH "protobuf library" FORCE)
+    else()
+      set(LANDLORDS_PROTOBUF_LIBRARY
+          "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobuf.lib"
+          CACHE FILEPATH "protobuf library" FORCE)
+    endif()
+  elseif(NOT EXISTS "${LANDLORDS_PROTOBUF_LIBRARY}")
+    if(EXISTS "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib")
+      set(LANDLORDS_PROTOBUF_LIBRARY
+          "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib"
+          CACHE FILEPATH "protobuf library" FORCE)
+    else()
+      set(LANDLORDS_PROTOBUF_LIBRARY
+          "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobuf.lib"
+          CACHE FILEPATH "protobuf library" FORCE)
+    endif()
+  endif()
+
+  set(Protobuf_PROTOC_EXECUTABLE "${LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE}" CACHE FILEPATH "protoc executable" FORCE)
+  set(Protobuf_INCLUDE_DIR "${LANDLORDS_PROTOBUF_INCLUDE_DIR}" CACHE PATH "protobuf include" FORCE)
+  set(Protobuf_LIBRARY "${LANDLORDS_PROTOBUF_LIBRARY}" CACHE FILEPATH "protobuf library" FORCE)
+  if(EXISTS "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib")
+    set(Protobuf_LIBRARY_DEBUG "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobufd.lib" CACHE FILEPATH
+        "protobuf debug library" FORCE)
+  endif()
+  if(EXISTS "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobuf.lib")
+    set(Protobuf_LIBRARY_RELEASE "${LANDLORDS_PROTOBUF_ROOT}/lib/libprotobuf.lib" CACHE FILEPATH
+        "protobuf release library" FORCE)
+  endif()
+
+  set(_protobuf_runtime_dll "")
+  if(EXISTS "${LANDLORDS_PROTOBUF_ROOT}/bin/libprotobufd.dll")
+    set(_protobuf_runtime_dll "${LANDLORDS_PROTOBUF_ROOT}/bin/libprotobufd.dll")
+  elseif(EXISTS "${LANDLORDS_PROTOBUF_ROOT}/bin/libprotobuf.dll")
+    set(_protobuf_runtime_dll "${LANDLORDS_PROTOBUF_ROOT}/bin/libprotobuf.dll")
+  endif()
+
   set(LANDLORDS_RUNTIME_DLLS
-      "${LANDLORDS_DEPS_ROOT}/libevent/lib/event_core.dll"
-      "${LANDLORDS_DEPS_ROOT}/libevent/lib/event_extra.dll"
-      "${LANDLORDS_DEPS_ROOT}/protobuf/bin/libprotobufd.dll")
-  set(CMAKE_PREFIX_PATH
-      "${LANDLORDS_DEPS_ROOT}/libevent/lib/cmake/libevent"
-      ${CMAKE_PREFIX_PATH})
+      "${LANDLORDS_LIBEVENT_ROOT}/lib/event_core.dll"
+      "${LANDLORDS_LIBEVENT_ROOT}/lib/event_extra.dll")
+  if(_protobuf_runtime_dll)
+    list(APPEND LANDLORDS_RUNTIME_DLLS "${_protobuf_runtime_dll}")
+  endif()
+endif()
+
+if(LANDLORDS_LIBEVENT_CMAKE_DIR)
+  list(PREPEND CMAKE_PREFIX_PATH "${LANDLORDS_LIBEVENT_CMAKE_DIR}")
 endif()
 
 if(LANDLORDS_ENABLE_ONNXRUNTIME)

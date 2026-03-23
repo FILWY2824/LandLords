@@ -130,12 +130,19 @@ Future<void> runInviteSmoke(String transport) async {
 }
 
 GameGateway _createGateway(String transport) {
+  final host = Platform.environment['LANDLORDS_TEST_HOST'] ?? '127.0.0.1';
+  final tcpPort =
+      int.tryParse(Platform.environment['LANDLORDS_TEST_TCP_PORT'] ?? '') ??
+          23001;
+  final wsPort =
+      int.tryParse(Platform.environment['LANDLORDS_TEST_WS_PORT'] ?? '') ??
+          23002;
   switch (transport) {
     case 'tcp':
-      return SocketGameGateway();
+      return SocketGameGateway(host: host, port: tcpPort);
     case 'ws':
     case 'websocket':
-      return WebSocketGameGateway(url: 'ws://127.0.0.1:23002/ws');
+      return WebSocketGameGateway(url: 'ws://$host:$wsPort/ws');
     default:
       throw ArgumentError('unsupported transport: $transport');
   }

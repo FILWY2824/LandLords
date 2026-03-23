@@ -10,7 +10,7 @@ _CONFIGURED = False
 
 
 def _parse_level() -> int:
-    raw = os.environ.get("LANDLORDS_PROXY_LOG_LEVEL", "INFO").strip().upper()
+    raw = os.environ.get("LANDLORDS_DOUZERO_LOG_LEVEL", "INFO").strip().upper()
     return {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,
