@@ -46,6 +46,9 @@ class AppController extends ChangeNotifier {
   InvitationFeedback? _activeInvitationFeedback;
   AppDialogNotice? _activePopupNotice;
   FriendCenterSnapshot _friendCenterSnapshot = const FriendCenterSnapshot.empty();
+  SupportStats _supportStats = const SupportStats.empty();
+  SupportRewardOffer? _activeSupportRewardOffer;
+  int _dialogResetEpoch = 0;
 
   AppStage get stage => _stage;
   UserProfile? get profile => _profile;
@@ -58,11 +61,29 @@ class AppController extends ChangeNotifier {
   InvitationFeedback? get activeInvitationFeedback => _activeInvitationFeedback;
   AppDialogNotice? get activePopupNotice => _activePopupNotice;
   FriendCenterSnapshot get friendCenterSnapshot => _friendCenterSnapshot;
+  SupportStats get supportStats => _supportStats;
+  SupportRewardOffer? get activeSupportRewardOffer => _activeSupportRewardOffer;
+  int get dialogResetEpoch => _dialogResetEpoch;
   int get pendingFriendRequestCount => _friendCenterSnapshot.pendingRequestCount;
   bool get isBusy => _busyText != null;
   bool get isMatching => _stage == AppStage.matching;
   int get matchingElapsedSeconds => _matchingElapsedSeconds;
   int get matchingTimeoutSeconds => _matchingTimeoutSeconds;
+  bool get hasLobbyStatusIssue => _errorText != null;
+  String get lobbyStatusText {
+    if (_errorText != null) {
+      return _friendlyRoomActionMessage(_errorText!);
+    }
+    if (isMatching) {
+      return '正在为你匹配真人玩家...';
+    }
+    if (_busyText != null) {
+      return _busyText!;
+    }
+    return '当前状态正常';
+  }
+
+  bool get canResumeFromLobby => hasResumeRoom && _busyText == null;
   bool get hasResumeRoom =>
       _roomSnapshot != null &&
       _roomSnapshot!.mode == MatchMode.online &&
@@ -146,6 +167,7 @@ class AppController extends ChangeNotifier {
       _activePopupNotice = null;
       _popupNoticeQueue.clear();
       _friendCenterSnapshot = const FriendCenterSnapshot.empty();
+      _activeSupportRewardOffer = null;
       _roomSubscription ??= _gateway.roomSnapshots.listen((snapshot) {
         final profile = _profile;
         final wasRemovedFromPendingRoom =
@@ -199,6 +221,7 @@ class AppController extends ChangeNotifier {
         }
       }
       unawaited(refreshFriendCenter(silent: true));
+      unawaited(_refreshSupportStatsAndMaybeOffer());
     }
   }
 
@@ -639,6 +662,91 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void dismissActiveSupportRewardOffer() {
+    if (_activeSupportRewardOffer == null) {
+      return;
+    }
+    _activeSupportRewardOffer = null;
+    notifyListeners();
+  }
+
+  Future<void> refreshSupportStats() async {
+    try {
+      final stats = await _gateway.fetchSupportStats();
+      _applySupportStats(stats);
+      notifyListeners();
+    } catch (error) {
+      appLog(
+        AppLogLevel.warn,
+        'app_controller',
+        'refresh support stats failed error=$error',
+      );
+    }
+  }
+
+  Future<void> _refreshSupportStatsAndMaybeOffer() async {
+    await refreshSupportStats();
+    _maybeOfferSupportReward();
+  }
+
+  Future<SupportStats?> submitSupportLike() async {
+    try {
+      final stats = await _gateway.submitSupportLike();
+      _applySupportStats(stats);
+      notifyListeners();
+      return stats;
+    } catch (error) {
+      appLog(
+        AppLogLevel.warn,
+        'app_controller',
+        'submit support like failed error=$error',
+      );
+      return null;
+    }
+  }
+
+  Future<bool> claimSupportLikeReward() async {
+    if (_sessionToken == null || _profile == null || _busyText != null) {
+      return false;
+    }
+    _errorText = null;
+    _busyText = '正在领取点赞补助...';
+    notifyListeners();
+    try {
+      final result = await _gateway.claimSupportLikeReward(
+        sessionToken: _sessionToken!,
+      );
+      _profile = result.profile;
+      _applySupportStats(result.stats);
+      _activeSupportRewardOffer = result.profile.coins < 0
+          ? SupportRewardOffer(
+              currentCoins: result.profile.coins,
+              rewardCoins: result.rewardCoins,
+              supportLikeCount: result.stats.supportLikeCount,
+            )
+          : null;
+      showDialogNotice(
+        title: '感谢点赞支持',
+        message:
+            '已为你补充 ${result.rewardCoins} 金币，当前金币 ${result.profile.coins}，累计点赞 ${result.stats.supportLikeCount}。',
+        deduplicate: false,
+      );
+      return true;
+    } catch (error) {
+      final message = error.toString().replaceFirst('Exception: ', '');
+      _errorText = message;
+      showDialogNotice(
+        title: '领取未成功',
+        message: _friendlyRoomActionMessage(message),
+        deduplicate: false,
+      );
+      return false;
+    } finally {
+      _busyText = null;
+      notifyListeners();
+    }
+  }
+
   Future<void> playCards(List<String> cardIds) async {
     if (_sessionToken == null || _roomSnapshot == null) {
       return;
@@ -807,9 +915,10 @@ class AppController extends ChangeNotifier {
     }
     _stage = AppStage.lobby;
     notifyListeners();
+    unawaited(_refreshSupportStatsAndMaybeOffer());
   }
 
-  void logout() {
+  void logout({bool dismissDialogs = true}) {
     _gateway.forgetSession();
     _matchingTimer?.cancel();
     _matchingTimer = null;
@@ -830,7 +939,11 @@ class AppController extends ChangeNotifier {
     _activePopupNotice = null;
     _popupNoticeQueue.clear();
     _friendCenterSnapshot = const FriendCenterSnapshot.empty();
+    _activeSupportRewardOffer = null;
     _stage = AppStage.login;
+    if (dismissDialogs) {
+      _dialogResetEpoch += 1;
+    }
     notifyListeners();
   }
 
@@ -860,6 +973,23 @@ class AppController extends ChangeNotifier {
   void _showLobbyNotice(String text) {
     _lobbyNotice = null;
     showDialogNotice(message: text);
+  }
+
+  void _maybeOfferSupportReward() {
+    final profile = _profile;
+    if (_stage != AppStage.lobby ||
+        profile == null ||
+        _sessionToken == null ||
+        profile.coins >= 0 ||
+        _activeSupportRewardOffer != null) {
+      return;
+    }
+    _activeSupportRewardOffer = SupportRewardOffer(
+      currentCoins: profile.coins,
+      rewardCoins: 50,
+      supportLikeCount: _supportStats.supportLikeCount,
+    );
+    notifyListeners();
   }
 
   bool _noticeMatches(AppDialogNotice? left, AppDialogNotice right) {
@@ -1017,6 +1147,7 @@ String _friendlySessionMessage(String raw) {
       return;
     }
     final won = player.roundScore > 0;
+    final isOnline = snapshot.mode == MatchMode.online;
     _lastSettledRoomId = snapshot.roomId;
     _profile = profile.copyWith(
       coins: profile.coins + player.roundScore,
@@ -1024,6 +1155,26 @@ String _friendlySessionMessage(String raw) {
       landlordGames: profile.landlordGames + (player.isLandlord ? 1 : 0),
       farmerWins: profile.farmerWins + (!player.isLandlord && won ? 1 : 0),
       farmerGames: profile.farmerGames + (!player.isLandlord ? 1 : 0),
+      onlineLandlordWins:
+          profile.onlineLandlordWins +
+          (isOnline && player.isLandlord && won ? 1 : 0),
+      onlineLandlordGames:
+          profile.onlineLandlordGames + (isOnline && player.isLandlord ? 1 : 0),
+      onlineFarmerWins:
+          profile.onlineFarmerWins +
+          (isOnline && !player.isLandlord && won ? 1 : 0),
+      onlineFarmerGames:
+          profile.onlineFarmerGames + (isOnline && !player.isLandlord ? 1 : 0),
+      botLandlordWins:
+          profile.botLandlordWins +
+          (!isOnline && player.isLandlord && won ? 1 : 0),
+      botLandlordGames:
+          profile.botLandlordGames + (!isOnline && player.isLandlord ? 1 : 0),
+      botFarmerWins:
+          profile.botFarmerWins +
+          (!isOnline && !player.isLandlord && won ? 1 : 0),
+      botFarmerGames:
+          profile.botFarmerGames + (!isOnline && !player.isLandlord ? 1 : 0),
     );
   }
 
@@ -1173,5 +1324,18 @@ String _friendlySessionMessage(String raw) {
   bool _isPreparingOnlineRoomSnapshot(RoomSnapshot snapshot) {
     return snapshot.mode == MatchMode.online &&
         snapshot.phase == RoomPhase.preparing;
+  }
+
+  void _applySupportStats(SupportStats stats) {
+    final profile = _profile;
+    final activeOffer = _activeSupportRewardOffer;
+    _supportStats = stats;
+    if (profile != null && activeOffer != null) {
+      _activeSupportRewardOffer = SupportRewardOffer(
+        currentCoins: profile.coins,
+        rewardCoins: activeOffer.rewardCoins,
+        supportLikeCount: stats.supportLikeCount,
+      );
+    }
   }
 }

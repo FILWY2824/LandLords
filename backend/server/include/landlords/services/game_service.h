@@ -15,6 +15,7 @@
 #include "landlords/game/room.h"
 #include "landlords/network/tcp_server.h"
 #include "landlords/persistence/friend_request_repository.h"
+#include "landlords/persistence/system_repository.h"
 #include "landlords/persistence/user_repository.h"
 
 namespace landlords::services {
@@ -23,7 +24,8 @@ class GameService {
  public:
   GameService(
       std::shared_ptr<persistence::IUserRepository> user_repository,
-      std::shared_ptr<persistence::IFriendRequestRepository> friend_request_repository);
+      std::shared_ptr<persistence::IFriendRequestRepository> friend_request_repository,
+      std::shared_ptr<persistence::ISystemRepository> system_repository = nullptr);
   ~GameService();
 
   void HandleMessage(const std::shared_ptr<network::IConnection>& connection,
@@ -93,6 +95,15 @@ class GameService {
                             const landlords::protocol::ClientMessage& message);
   void HandleUpdateNickname(const std::shared_ptr<network::IConnection>& connection,
                             const landlords::protocol::ClientMessage& message);
+  void HandleFetchSystemStats(
+      const std::shared_ptr<network::IConnection>& connection,
+      const landlords::protocol::ClientMessage& message);
+  void HandleSubmitSupportLike(
+      const std::shared_ptr<network::IConnection>& connection,
+      const landlords::protocol::ClientMessage& message);
+  void HandleClaimSupportLikeReward(
+      const std::shared_ptr<network::IConnection>& connection,
+      const landlords::protocol::ClientMessage& message);
   void HandleMatch(const std::shared_ptr<network::IConnection>& connection,
                    const landlords::protocol::ClientMessage& message);
   void HandleCreateRoom(const std::shared_ptr<network::IConnection>& connection,
@@ -178,6 +189,8 @@ class GameService {
       const ResolvedInvitation& resolved_invitation);
   void PruneResolvedInvitations(std::int64_t now_ms);
   void ClearInvitation(const std::string& invitation_id);
+  void ExpireInvitationForInvitee(const std::string& invitee_user_id,
+                                  const std::string& detail);
   void ExpireInvitationsForRoom(const std::string& room_id,
                                 const std::string& detail);
   void ExpireStaleInvitations(std::int64_t now_ms);
@@ -197,6 +210,7 @@ class GameService {
 
   std::shared_ptr<persistence::IUserRepository> user_repository_;
   std::shared_ptr<persistence::IFriendRequestRepository> friend_request_repository_;
+  std::shared_ptr<persistence::ISystemRepository> system_repository_;
   std::unordered_map<std::string, SessionState> sessions_by_token_;
   std::unordered_map<std::string, std::string> active_session_token_by_user_id_;
   std::unordered_map<std::string, std::shared_ptr<game::Room>> rooms_by_id_;

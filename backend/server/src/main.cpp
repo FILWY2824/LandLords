@@ -7,6 +7,7 @@
 #include "landlords/core/logging.h"
 #include "landlords/network/tcp_server.h"
 #include "landlords/persistence/friend_request_repository.h"
+#include "landlords/persistence/system_repository.h"
 #include "landlords/persistence/user_repository.h"
 #include "landlords/services/game_service.h"
 
@@ -98,9 +99,13 @@ int main() {
   const auto friend_request_repository =
       std::make_shared<landlords::persistence::FileFriendRequestRepository>(
           config.data_dir);
+  const auto system_repository =
+      std::make_shared<landlords::persistence::FileSystemRepository>(
+          config.data_dir);
   auto service = std::make_shared<landlords::services::GameService>(
       user_repository,
-      friend_request_repository);
+      friend_request_repository,
+      system_repository);
 
   landlords::network::TcpServer server(
       config,

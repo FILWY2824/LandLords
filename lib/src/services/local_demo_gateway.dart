@@ -90,6 +90,26 @@ class LocalDemoGateway implements GameGateway {
   }
 
   @override
+  Future<SupportStats> fetchSupportStats() async {
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    return _localDemoRuntime.fetchSupportStats();
+  }
+
+  @override
+  Future<SupportStats> submitSupportLike() async {
+    await Future<void>.delayed(const Duration(milliseconds: 160));
+    return _localDemoRuntime.submitSupportLike();
+  }
+
+  @override
+  Future<SupportRewardResult> claimSupportLikeReward({
+    required String sessionToken,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    return _localDemoRuntime.claimSupportLikeReward(sessionToken);
+  }
+
+  @override
   Future<RoomSnapshot> startMatch({
     required String sessionToken,
     required UserProfile profile,

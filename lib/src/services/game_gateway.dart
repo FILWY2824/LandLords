@@ -60,6 +60,14 @@ abstract class GameGateway {
     required String nickname,
   });
 
+  Future<SupportStats> fetchSupportStats();
+
+  Future<SupportStats> submitSupportLike();
+
+  Future<SupportRewardResult> claimSupportLikeReward({
+    required String sessionToken,
+  });
+
   Future<RoomSnapshot> startMatch({
     required String sessionToken,
     required UserProfile profile,

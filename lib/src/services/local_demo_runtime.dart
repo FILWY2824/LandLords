@@ -19,6 +19,7 @@ class _LocalDemoRuntime {
   final Map<String, _LocalRoomInvitation> _invitationsById = {};
   final Map<String, _ResolvedRoomInvitation> _resolvedInvitationsById = {};
   final Map<String, String> _invitationIdByInviteeUserId = {};
+  int _supportLikeCount = 0;
 
   void attachGateway(LocalDemoGateway gateway) {}
 
@@ -50,9 +51,33 @@ class _LocalDemoRuntime {
         userId: _id('user'),
         account: account,
         nickname: nickname,
-        coins: 0,
+        coins: 100,
       ),
       password: password,
+    );
+  }
+
+  SupportStats fetchSupportStats() {
+    return SupportStats(supportLikeCount: _supportLikeCount);
+  }
+
+  SupportStats submitSupportLike() {
+    _supportLikeCount += 1;
+    return fetchSupportStats();
+  }
+
+  SupportRewardResult claimSupportLikeReward(String sessionToken) {
+    final session = _requireSession(sessionToken);
+    final user = _userById(session.userId);
+    if (user.profile.coins >= 0) {
+      throw Exception('support reward not available');
+    }
+    user.profile = user.profile.copyWith(coins: user.profile.coins + 50);
+    _supportLikeCount += 1;
+    return SupportRewardResult(
+      profile: user.profile,
+      stats: fetchSupportStats(),
+      rewardCoins: 50,
     );
   }
 
@@ -580,6 +605,22 @@ class _LocalDemoRuntime {
         farmerWins:
             user.profile.farmerWins + (!player.isLandlord && player.roundScore > 0 ? 1 : 0),
         farmerGames: user.profile.farmerGames + (!player.isLandlord ? 1 : 0),
+        onlineLandlordWins: user.profile.onlineLandlordWins +
+            (room.mode == MatchMode.online && player.isLandlord && player.roundScore > 0 ? 1 : 0),
+        onlineLandlordGames: user.profile.onlineLandlordGames +
+            (room.mode == MatchMode.online && player.isLandlord ? 1 : 0),
+        onlineFarmerWins: user.profile.onlineFarmerWins +
+            (room.mode == MatchMode.online && !player.isLandlord && player.roundScore > 0 ? 1 : 0),
+        onlineFarmerGames: user.profile.onlineFarmerGames +
+            (room.mode == MatchMode.online && !player.isLandlord ? 1 : 0),
+        botLandlordWins: user.profile.botLandlordWins +
+            (room.mode == MatchMode.vsBot && player.isLandlord && player.roundScore > 0 ? 1 : 0),
+        botLandlordGames: user.profile.botLandlordGames +
+            (room.mode == MatchMode.vsBot && player.isLandlord ? 1 : 0),
+        botFarmerWins: user.profile.botFarmerWins +
+            (room.mode == MatchMode.vsBot && !player.isLandlord && player.roundScore > 0 ? 1 : 0),
+        botFarmerGames: user.profile.botFarmerGames +
+            (room.mode == MatchMode.vsBot && !player.isLandlord ? 1 : 0),
       );
     }
   }
@@ -1349,6 +1390,14 @@ class _LocalDemoRuntime {
           landlordGames: 15,
           farmerWins: 18,
           farmerGames: 29,
+          onlineLandlordWins: 3,
+          onlineLandlordGames: 7,
+          onlineFarmerWins: 8,
+          onlineFarmerGames: 14,
+          botLandlordWins: 5,
+          botLandlordGames: 8,
+          botFarmerWins: 10,
+          botFarmerGames: 15,
         ),
         password: 'player1',
       );
@@ -1362,6 +1411,7 @@ class _LocalDemoRuntime {
     _invitationsById.clear();
     _resolvedInvitationsById.clear();
     _invitationIdByInviteeUserId.clear();
+    _supportLikeCount = 0;
   }
 
   String _id(String prefix) =>

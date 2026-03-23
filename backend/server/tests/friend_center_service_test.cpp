@@ -744,6 +744,43 @@ void RunStructuredPersistenceLayoutTest() {
   std::filesystem::remove_all(runtime_dir);
 }
 
+void RunSplitStatsPersistenceTest() {
+  const auto runtime_dir =
+      std::filesystem::path("runtime") / "split-stats-persistence-test";
+  std::filesystem::remove_all(runtime_dir);
+
+  {
+    FileUserRepository repository(runtime_dir);
+    auto user = repository.SaveNewUser("split_stats_user", "owner", "hash1");
+    user.online_landlord_wins = 3;
+    user.online_landlord_games = 5;
+    user.online_farmer_wins = 4;
+    user.online_farmer_games = 7;
+    user.bot_landlord_wins = 6;
+    user.bot_landlord_games = 8;
+    user.bot_farmer_wins = 9;
+    user.bot_farmer_games = 12;
+    repository.UpdateUser(user);
+  }
+
+  {
+    FileUserRepository repository(runtime_dir);
+    const auto reloaded = repository.FindByAccount("split_stats_user");
+    Require(reloaded.has_value(), "split stats user should reload by account");
+    Require(reloaded->online_landlord_wins == 3 &&
+                reloaded->online_landlord_games == 5 &&
+                reloaded->online_farmer_wins == 4 &&
+                reloaded->online_farmer_games == 7 &&
+                reloaded->bot_landlord_wins == 6 &&
+                reloaded->bot_landlord_games == 8 &&
+                reloaded->bot_farmer_wins == 9 &&
+                reloaded->bot_farmer_games == 12,
+            "split stats fields should persist across repository reloads");
+  }
+
+  std::filesystem::remove_all(runtime_dir);
+}
+
 }  // namespace
 
 int main() {
@@ -755,6 +792,7 @@ int main() {
     RunExistingRuntimeFriendCenterRegressionTest();
     RunChangePasswordServiceTest();
     RunStructuredPersistenceLayoutTest();
+    RunSplitStatsPersistenceTest();
     std::cout << "friend center service tests passed" << std::endl;
     return 0;
   } catch (const std::exception& exception) {

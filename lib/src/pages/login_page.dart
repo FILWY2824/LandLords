@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/voice_cue_service.dart';
 import '../state/app_controller.dart';
 import '../utils/app_log.dart';
+import '../utils/app_snackbar.dart';
 import '../widgets/fixed_stage.dart';
 import '../widgets/responsive_modal.dart';
 
@@ -37,12 +38,14 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController(text: 'player1');
   final _voice = VoiceCueService();
   bool _registerMode = false;
+  bool _supportLikeBusy = false;
 
   @override
   void initState() {
     super.initState();
     appLog(AppLogLevel.info, 'login_page', 'initState');
     unawaited(_voice.stopBackgroundMusic(force: true));
+    unawaited(widget.controller.refreshSupportStats());
   }
 
   @override
@@ -60,15 +63,11 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passwordController.text;
     if (_registerMode) {
       if (nickname.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('请输入昵称')),
-        );
+        showAppSnackBar(context, '请输入昵称');
         return;
       }
       if (nickname.runes.length > 10) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('昵称请控制在 5 个字以内')),
-        );
+        showAppSnackBar(context, '昵称请控制在 5 个字以内');
         return;
       }
       await widget.controller.register(account, nickname, password);
@@ -89,18 +88,14 @@ class _LoginPageState extends State<LoginPage> {
     final trimmed = url.trim();
     if (trimmed.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(fallbackMessage)),
-        );
+        showAppSnackBar(context, fallbackMessage);
       }
       return;
     }
     final uri = Uri.tryParse(trimmed);
     if (uri == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('链接格式不正确')),
-        );
+        showAppSnackBar(context, '链接格式不正确');
       }
       return;
     }
@@ -110,9 +105,7 @@ class _LoginPageState extends State<LoginPage> {
       webOnlyWindowName: '_blank',
     );
     if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('无法打开链接')),
-      );
+      showAppSnackBar(context, '无法打开链接');
     }
   }
 
@@ -128,9 +121,29 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted || widget.controller.errorText != null) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('密码已更新，请使用新密码登录')),
-    );
+    showAppSnackBar(context, '密码已更新，请使用新密码登录');
+  }
+
+  Future<void> _handleSupportLike() async {
+    if (_supportLikeBusy) {
+      return;
+    }
+    setState(() => _supportLikeBusy = true);
+    try {
+      final stats = await widget.controller.submitSupportLike();
+      if (!mounted) {
+        return;
+      }
+      if (stats == null) {
+        showAppSnackBar(context, '点赞暂时没有提交成功，请稍后再试');
+        return;
+      }
+      showAppSnackBar(context, '感谢支持，当前点赞 ${stats.supportLikeCount}');
+    } finally {
+      if (mounted) {
+        setState(() => _supportLikeBusy = false);
+      }
+    }
   }
 
   @override
@@ -159,7 +172,10 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     downloadEnabled: _downloadUrl.trim().isNotEmpty,
                     githubEnabled: _githubRepoUrl.trim().isNotEmpty,
-                    busy: widget.controller.isBusy,
+                    supportLikeCount: widget.controller.supportStats.supportLikeCount,
+                    supportLikeBusy: _supportLikeBusy,
+                    busy: widget.controller.isBusy || _supportLikeBusy,
+                    onSupportLike: _handleSupportLike,
                   ),
                 ),
                 const SizedBox(width: 18),
@@ -191,15 +207,21 @@ class _LoginHero extends StatelessWidget {
   const _LoginHero({
     required this.onOpenGithub,
     required this.onOpenDownload,
+    required this.onSupportLike,
     required this.downloadEnabled,
     required this.githubEnabled,
+    required this.supportLikeCount,
+    required this.supportLikeBusy,
     required this.busy,
   });
 
   final VoidCallback onOpenGithub;
   final VoidCallback onOpenDownload;
+  final VoidCallback onSupportLike;
   final bool downloadEnabled;
   final bool githubEnabled;
+  final int supportLikeCount;
+  final bool supportLikeBusy;
   final bool busy;
 
   @override
@@ -230,6 +252,47 @@ class _LoginHero extends StatelessWidget {
               Wrap(
                 spacing: 10,
                 children: [
+                  FilledButton.tonalIcon(
+                    onPressed: busy ? null : onSupportLike,
+                    style: FilledButton.styleFrom(
+                      foregroundColor: const Color(0xFF8A5A0A),
+                      backgroundColor: const Color(0xFFFFF5E8),
+                      disabledForegroundColor: const Color(0xFF8A5A0A)
+                          .withValues(alpha: 0.72),
+                      disabledBackgroundColor: const Color(0xFFFFF5E8)
+                          .withValues(alpha: 0.86),
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                        side: const BorderSide(color: Color(0xFFFFD9A6)),
+                      ),
+                    ),
+                    icon: supportLikeBusy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Color(0xFFDA8A16),
+                              ),
+                            ),
+                          )
+                        : const Icon(
+                            Icons.thumb_up_alt_rounded,
+                            size: 18,
+                            color: Color(0xFFDA8A16),
+                          ),
+                    label: Text(
+                      '点赞支持 $supportLikeCount',
+                      style: const TextStyle(
+                        color: Color(0xFF8A5A0A),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
                   OutlinedButton.icon(
                     onPressed: busy ? null : onOpenGithub,
                     style: OutlinedButton.styleFrom(
@@ -831,13 +894,13 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
     );
     return ResponsiveDialogPanel(
       maxWidth: 480,
-      maxHeight: 560,
+      maxHeight: 620,
       widthFactor: 0.88,
-      heightFactor: 0.78,
+      heightFactor: 0.82,
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       radius: 28,
       stageScale: stageScale,
-      scrollable: false,
+      scrollable: true,
       child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,

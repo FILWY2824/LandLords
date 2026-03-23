@@ -1,4 +1,5 @@
 #include "landlords/persistence/friend_request_repository.h"
+#include "landlords/persistence/system_repository.h"
 #include "landlords/persistence/user_repository.h"
 #include "landlords/services/game_service.h"
 
@@ -14,6 +15,7 @@ namespace {
 
 using landlords::network::IConnection;
 using landlords::persistence::FileFriendRequestRepository;
+using landlords::persistence::FileSystemRepository;
 using landlords::persistence::FileUserRepository;
 using landlords::protocol::ClientMessage;
 using landlords::protocol::ServerMessage;
@@ -121,6 +123,30 @@ ClientMessage MakeLogin(
   auto* payload = message.mutable_login_request();
   payload->set_account(std::move(account));
   payload->set_password(std::move(password));
+  return message;
+}
+
+ClientMessage MakeFetchSystemStats(std::string request_id) {
+  ClientMessage message;
+  message.set_request_id(std::move(request_id));
+  message.mutable_fetch_system_stats_request();
+  return message;
+}
+
+ClientMessage MakeSubmitSupportLike(std::string request_id) {
+  ClientMessage message;
+  message.set_request_id(std::move(request_id));
+  message.mutable_submit_support_like_request();
+  return message;
+}
+
+ClientMessage MakeClaimSupportLikeReward(
+    std::string request_id,
+    std::string session_token) {
+  ClientMessage message;
+  message.set_request_id(std::move(request_id));
+  message.set_session_token(std::move(session_token));
+  message.mutable_claim_support_like_reward_request();
   return message;
 }
 
@@ -692,6 +718,236 @@ void RunSingleSessionPerAccountServiceTest() {
   std::filesystem::remove_all(runtime_dir);
 }
 
+void RunInvitationExpiresWhenInviteeSwitchesDevicesServiceTest() {
+  const auto runtime_dir =
+      std::filesystem::path("runtime") / "invitee-device-switch-service-test";
+  std::filesystem::remove_all(runtime_dir);
+
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
+  auto friend_request_repository =
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
+
+  {
+    GameService service(user_repository, friend_request_repository);
+    auto inviter_connection = std::make_shared<FakeConnection>("inviter-switch");
+    auto invitee_first_connection = std::make_shared<FakeConnection>("invitee-switch-first");
+    auto invitee_second_connection = std::make_shared<FakeConnection>("invitee-switch-second");
+
+    service.HandleMessage(
+        inviter_connection,
+        MakeRegister("register-switch-inviter", "switch_inviter", "inviter", "pass123"));
+    service.HandleMessage(
+        invitee_first_connection,
+        MakeRegister("register-switch-invitee", "switch_invitee", "invitee", "pass123"));
+
+    service.HandleMessage(
+        inviter_connection,
+        MakeLogin("login-switch-inviter", "switch_inviter", "pass123"));
+    const auto& inviter_login =
+        RequireResponse(*inviter_connection, "login-switch-inviter");
+    Require(inviter_login.login_response().success(), "inviter login should succeed");
+    const std::string inviter_token = inviter_login.login_response().session_token();
+
+    service.HandleMessage(
+        invitee_first_connection,
+        MakeLogin("login-switch-invitee-first", "switch_invitee", "pass123"));
+    const auto& invitee_first_login =
+        RequireResponse(*invitee_first_connection, "login-switch-invitee-first");
+    Require(invitee_first_login.login_response().success(),
+            "first invitee login should succeed");
+    const std::string invitee_first_token =
+        invitee_first_login.login_response().session_token();
+
+    service.HandleMessage(
+        inviter_connection,
+        MakeCreateRoom("create-room-switch-invitee", inviter_token));
+    const auto& create_room =
+        RequireResponse(*inviter_connection, "create-room-switch-invitee");
+    Require(create_room.operation_response().success(),
+            "inviter should create room before inviting");
+    const auto& room_snapshot = create_room.operation_response().snapshot();
+
+    service.HandleMessage(inviter_connection,
+                          MakeInvitePlayer("invite-before-switch",
+                                           inviter_token,
+                                           room_snapshot.room_id(),
+                                           "switch_invitee",
+                                           1));
+    const auto& first_invite =
+        RequireResponse(*inviter_connection, "invite-before-switch");
+    Require(first_invite.invite_player_response().accepted(),
+            "first invitation should be delivered");
+
+    const auto& first_invitation_push =
+        RequireLatestInvitationPush(*invitee_first_connection);
+    const std::string first_invitation_id =
+        first_invitation_push.room_invitation_push().invitation_id();
+
+    service.HandleMessage(
+        invitee_second_connection,
+        MakeLogin("login-switch-invitee-second", "switch_invitee", "pass123"));
+    const auto& invitee_second_login =
+        RequireResponse(*invitee_second_connection, "login-switch-invitee-second");
+    Require(invitee_second_login.login_response().success(),
+            "second invitee login should succeed");
+    const std::string invitee_second_token =
+        invitee_second_login.login_response().session_token();
+    Require(invitee_second_token != invitee_first_token,
+            "switching devices should rotate the invitee session");
+
+    const auto& expired_session_push =
+        RequireLatestSessionExpiredPush(*invitee_first_connection);
+    Require(expired_session_push.error_response().code() ==
+                landlords::protocol::ERROR_CODE_AUTH_FAILED,
+            "old invitee device should be forced offline");
+
+    const auto& expired_feedback =
+        RequireLatestInvitationResultPush(*inviter_connection);
+    Require(expired_feedback.room_invitation_result_push().invitation_id() ==
+                first_invitation_id,
+            "inviter should receive feedback for the original invitation");
+    Require(expired_feedback.room_invitation_result_push().result() ==
+                landlords::protocol::INVITATION_RESULT_EXPIRED,
+            "device switch should expire the original invitation");
+    Require(expired_feedback.room_invitation_result_push().message() ==
+                "invitee switched devices before responding",
+            "feedback should explain why the invitation expired");
+
+    service.HandleMessage(inviter_connection,
+                          MakeInvitePlayer("invite-after-switch",
+                                           inviter_token,
+                                           room_snapshot.room_id(),
+                                           "switch_invitee",
+                                           1));
+    const auto& second_invite =
+        RequireResponse(*inviter_connection, "invite-after-switch");
+    Require(second_invite.invite_player_response().accepted(),
+            "inviter should be able to re-invite the new active device");
+
+    const auto& second_invitation_push =
+        RequireLatestInvitationPush(*invitee_second_connection);
+    Require(second_invitation_push.room_invitation_push().invitation_id() !=
+                first_invitation_id,
+            "new device should receive a fresh invitation id");
+  }
+
+  std::filesystem::remove_all(runtime_dir);
+}
+
+void RunSupportRewardServiceTest() {
+  const auto runtime_dir =
+      std::filesystem::path("runtime") / "support-reward-service-test";
+  std::filesystem::remove_all(runtime_dir);
+
+  auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
+  auto friend_request_repository =
+      std::make_shared<FileFriendRequestRepository>(runtime_dir);
+  auto system_repository = std::make_shared<FileSystemRepository>(runtime_dir);
+
+  {
+    GameService service(
+        user_repository, friend_request_repository, system_repository);
+    auto connection = std::make_shared<FakeConnection>("support");
+
+    service.HandleMessage(
+        connection,
+        MakeRegister("register-support", "support_acc", "support", "pass123"));
+    const auto& register_response =
+        RequireResponse(*connection, "register-support");
+    Require(register_response.register_response().success(),
+            "support test register should succeed");
+    Require(register_response.register_response().profile().total_score() == 100,
+            "new users should start with 100 coins");
+
+    service.HandleMessage(
+        connection,
+        MakeLogin("login-support", "support_acc", "pass123"));
+    const auto& login_response = RequireResponse(*connection, "login-support");
+    Require(login_response.login_response().success(),
+            "support test login should succeed");
+    Require(login_response.login_response().profile().total_score() == 100,
+            "login profile should expose the starting 100 coins");
+    const std::string session_token =
+        login_response.login_response().session_token();
+
+    service.HandleMessage(
+        connection,
+        MakeFetchSystemStats("fetch-support-stats-before"));
+    const auto& stats_before =
+        RequireResponse(*connection, "fetch-support-stats-before");
+    Require(stats_before.fetch_system_stats_response().success(),
+            "fetch system stats should succeed");
+    Require(stats_before.fetch_system_stats_response().stats().support_like_count() == 0,
+            "support like count should start at zero");
+
+    service.HandleMessage(
+        connection,
+        MakeSubmitSupportLike("submit-support-like"));
+    const auto& submit_like =
+        RequireResponse(*connection, "submit-support-like");
+    Require(submit_like.submit_support_like_response().success(),
+            "public support like should succeed");
+    Require(submit_like.submit_support_like_response().stats().support_like_count() == 1,
+            "manual support like should increment the counter");
+
+    service.HandleMessage(
+        connection,
+        MakeClaimSupportLikeReward("claim-support-positive", session_token));
+    const auto& claim_positive =
+        RequireResponse(*connection, "claim-support-positive");
+    Require(!claim_positive.claim_support_like_reward_response().success(),
+            "support reward should be rejected while coins are non-negative");
+    Require(claim_positive.claim_support_like_reward_response().message() ==
+                "support reward not available",
+            "positive-coin rejection should use a stable message");
+
+    auto user = user_repository->FindByAccount("support_acc");
+    Require(user.has_value(), "support test user should exist");
+    user->total_score = -20;
+    user_repository->UpdateUser(*user);
+
+    service.HandleMessage(
+        connection,
+        MakeClaimSupportLikeReward("claim-support-negative", session_token));
+    const auto& claim_negative =
+        RequireResponse(*connection, "claim-support-negative");
+    Require(claim_negative.claim_support_like_reward_response().success(),
+            "support reward should succeed while coins are negative");
+    Require(claim_negative.claim_support_like_reward_response().reward_coins() == 50,
+            "support reward should grant 50 coins");
+    Require(claim_negative.claim_support_like_reward_response().profile().total_score() == 30,
+            "support reward should increase the user's coins");
+    Require(claim_negative.claim_support_like_reward_response().stats().support_like_count() == 2,
+            "successful support reward should increment the like counter");
+
+    user = user_repository->FindByAccount("support_acc");
+    Require(user.has_value(), "support test user should still exist");
+    user->total_score = -5;
+    user_repository->UpdateUser(*user);
+
+    service.HandleMessage(
+        connection,
+        MakeClaimSupportLikeReward("claim-support-negative-again", session_token));
+    const auto& claim_negative_again =
+        RequireResponse(*connection, "claim-support-negative-again");
+    Require(claim_negative_again.claim_support_like_reward_response().success(),
+            "support reward should allow repeated claims after coins drop again");
+    Require(
+        claim_negative_again.claim_support_like_reward_response().stats().support_like_count() == 3,
+        "support like counter should keep accumulating");
+
+    service.HandleMessage(
+        connection,
+        MakeFetchSystemStats("fetch-support-stats-after"));
+    const auto& stats_after =
+        RequireResponse(*connection, "fetch-support-stats-after");
+    Require(stats_after.fetch_system_stats_response().stats().support_like_count() == 3,
+            "fetching system stats should see the latest persisted like count");
+  }
+
+  std::filesystem::remove_all(runtime_dir);
+}
+
 }  // namespace
 
 int main() {
@@ -700,6 +956,8 @@ int main() {
     RunInvitationRoomSwitchServiceTest();
     RunHostRemovePlayerServiceTest();
     RunSingleSessionPerAccountServiceTest();
+    RunInvitationExpiresWhenInviteeSwitchesDevicesServiceTest();
+    RunSupportRewardServiceTest();
     std::cout << "room lifecycle service test passed\n";
     return 0;
   } catch (const std::exception& error) {

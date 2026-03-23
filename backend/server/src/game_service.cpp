@@ -53,6 +53,12 @@ const char* PayloadName(const landlords::protocol::ClientMessage& message) {
       return "change_password";
     case landlords::protocol::ClientMessage::kUpdateNicknameRequest:
       return "update_nickname";
+    case landlords::protocol::ClientMessage::kFetchSystemStatsRequest:
+      return "fetch_system_stats";
+    case landlords::protocol::ClientMessage::kSubmitSupportLikeRequest:
+      return "submit_support_like";
+    case landlords::protocol::ClientMessage::kClaimSupportLikeRewardRequest:
+      return "claim_support_like_reward";
     case landlords::protocol::ClientMessage::kMatchRequest:
       return "match";
     case landlords::protocol::ClientMessage::kCreateRoomRequest:
@@ -110,6 +116,19 @@ void FillProfile(const core::UserRecord& user, landlords::protocol::UserProfile*
   profile->set_landlord_games(user.landlord_games);
   profile->set_farmer_wins(user.farmer_wins);
   profile->set_farmer_games(user.farmer_games);
+  profile->set_online_landlord_wins(user.online_landlord_wins);
+  profile->set_online_landlord_games(user.online_landlord_games);
+  profile->set_online_farmer_wins(user.online_farmer_wins);
+  profile->set_online_farmer_games(user.online_farmer_games);
+  profile->set_bot_landlord_wins(user.bot_landlord_wins);
+  profile->set_bot_landlord_games(user.bot_landlord_games);
+  profile->set_bot_farmer_wins(user.bot_farmer_wins);
+  profile->set_bot_farmer_games(user.bot_farmer_games);
+}
+
+void FillSystemStats(const core::SystemRecord& record,
+                     landlords::protocol::SystemStatsSnapshot* stats) {
+  stats->set_support_like_count(record.support_like_count);
 }
 
 std::string GenerateRoomCode() {
@@ -191,9 +210,15 @@ bool MatchesFriendRequestPair(const core::FriendRequestRecord& request,
 
 GameService::GameService(
     std::shared_ptr<persistence::IUserRepository> user_repository,
-    std::shared_ptr<persistence::IFriendRequestRepository> friend_request_repository)
+    std::shared_ptr<persistence::IFriendRequestRepository> friend_request_repository,
+    std::shared_ptr<persistence::ISystemRepository> system_repository)
     : user_repository_(std::move(user_repository)),
       friend_request_repository_(std::move(friend_request_repository)),
+      system_repository_(
+          system_repository != nullptr
+              ? std::move(system_repository)
+              : std::make_shared<persistence::FileSystemRepository>(
+                    std::filesystem::path("runtime"))),
       easy_bot_strategy_(RequireBotStrategy(
           ai::CreateBotStrategyForDifficulty(
               landlords::protocol::BOT_DIFFICULTY_EASY),
@@ -251,6 +276,15 @@ void GameService::HandleMessage(const std::shared_ptr<network::IConnection>& con
       break;
     case landlords::protocol::ClientMessage::kUpdateNicknameRequest:
       HandleUpdateNickname(connection, message);
+      break;
+    case landlords::protocol::ClientMessage::kFetchSystemStatsRequest:
+      HandleFetchSystemStats(connection, message);
+      break;
+    case landlords::protocol::ClientMessage::kSubmitSupportLikeRequest:
+      HandleSubmitSupportLike(connection, message);
+      break;
+    case landlords::protocol::ClientMessage::kClaimSupportLikeRewardRequest:
+      HandleClaimSupportLikeReward(connection, message);
       break;
     case landlords::protocol::ClientMessage::kMatchRequest:
       HandleMatch(connection, message);
@@ -685,6 +719,8 @@ void GameService::HandleLogin(const std::shared_ptr<network::IConnection>& conne
   }
 
   const std::string superseded_message = "account logged in on another device";
+  ExpireInvitationForInvitee(
+      user->user_id, "invitee switched devices before responding");
   const auto existing_tokens = FindSessionTokensByUserId(user->user_id);
   std::string transferred_room_id;
   for (const auto& token : existing_tokens) {
@@ -870,6 +906,80 @@ void GameService::HandleUpdateNickname(
   std::vector<std::string> affected_users = user->friend_user_ids;
   affected_users.push_back(user->user_id);
   PushFriendCenterUpdateToUsers(affected_users);
+}
+
+void GameService::HandleFetchSystemStats(
+    const std::shared_ptr<network::IConnection>& connection,
+    const landlords::protocol::ClientMessage& message) {
+  std::lock_guard lock(mutex_);
+  landlords::protocol::ServerMessage response;
+  response.set_request_id(message.request_id());
+  auto* payload = response.mutable_fetch_system_stats_response();
+
+  payload->set_success(true);
+  payload->set_message("ok");
+  FillSystemStats(system_repository_->Get(), payload->mutable_stats());
+  connection->Send(response);
+}
+
+void GameService::HandleSubmitSupportLike(
+    const std::shared_ptr<network::IConnection>& connection,
+    const landlords::protocol::ClientMessage& message) {
+  std::lock_guard lock(mutex_);
+  landlords::protocol::ServerMessage response;
+  response.set_request_id(message.request_id());
+  auto* payload = response.mutable_submit_support_like_response();
+
+  payload->set_success(true);
+  payload->set_message("support like recorded");
+  FillSystemStats(
+      system_repository_->UpdateSupportLikeCount(1), payload->mutable_stats());
+  connection->Send(response);
+}
+
+void GameService::HandleClaimSupportLikeReward(
+    const std::shared_ptr<network::IConnection>& connection,
+    const landlords::protocol::ClientMessage& message) {
+  std::lock_guard lock(mutex_);
+  landlords::protocol::ServerMessage response;
+  response.set_request_id(message.request_id());
+  auto* payload = response.mutable_claim_support_like_reward_response();
+
+  const auto session = RequireSessionForConnection(connection, message.session_token());
+  if (!session.has_value()) {
+    payload->set_success(false);
+    payload->set_message("login required");
+    connection->Send(response);
+    return;
+  }
+
+  auto user = user_repository_->FindByUserId((*session)->user.user_id);
+  if (!user.has_value()) {
+    payload->set_success(false);
+    payload->set_message("user not found");
+    connection->Send(response);
+    return;
+  }
+
+  if (user->total_score >= 0) {
+    payload->set_success(false);
+    payload->set_message("support reward not available");
+    connection->Send(response);
+    return;
+  }
+
+  constexpr int kSupportRewardCoins = 50;
+  user->total_score += kSupportRewardCoins;
+  user_repository_->UpdateUser(*user);
+  RefreshSessionsForUser(*user);
+
+  payload->set_success(true);
+  payload->set_message("support reward granted");
+  payload->set_reward_coins(kSupportRewardCoins);
+  FillProfile(*user, payload->mutable_profile());
+  FillSystemStats(
+      system_repository_->UpdateSupportLikeCount(1), payload->mutable_stats());
+  connection->Send(response);
 }
 
 void GameService::HandleMatch(const std::shared_ptr<network::IConnection>& connection,
@@ -2327,6 +2437,8 @@ void GameService::PersistFinishedRoomScores(const game::Room& room) {
   if (!room.finished()) {
     return;
   }
+  const bool online_room =
+      room.mode() == landlords::protocol::MATCH_MODE_PVP;
   for (const auto& player : room.players()) {
     if (player.is_bot) {
       continue;
@@ -2339,13 +2451,33 @@ void GameService::PersistFinishedRoomScores(const game::Room& room) {
     const bool won = player.round_score > 0;
     if (player.is_landlord) {
       record->landlord_games += 1;
+      if (online_room) {
+        record->online_landlord_games += 1;
+      } else {
+        record->bot_landlord_games += 1;
+      }
       if (won) {
         record->landlord_wins += 1;
+        if (online_room) {
+          record->online_landlord_wins += 1;
+        } else {
+          record->bot_landlord_wins += 1;
+        }
       }
     } else {
       record->farmer_games += 1;
+      if (online_room) {
+        record->online_farmer_games += 1;
+      } else {
+        record->bot_farmer_games += 1;
+      }
       if (won) {
         record->farmer_wins += 1;
+        if (online_room) {
+          record->online_farmer_wins += 1;
+        } else {
+          record->bot_farmer_wins += 1;
+        }
       }
     }
     user_repository_->UpdateUser(*record);
@@ -2485,6 +2617,29 @@ void GameService::ClearInvitation(const std::string& invitation_id) {
   }
   invitation_id_by_invitee_.erase(iterator->second.invitee_player_id);
   invitations_by_id_.erase(iterator);
+}
+
+void GameService::ExpireInvitationForInvitee(const std::string& invitee_user_id,
+                                             const std::string& detail) {
+  const auto invitation_id_iterator = invitation_id_by_invitee_.find(invitee_user_id);
+  if (invitation_id_iterator == invitation_id_by_invitee_.end()) {
+    return;
+  }
+  const auto invitation_iterator = invitations_by_id_.find(invitation_id_iterator->second);
+  if (invitation_iterator == invitations_by_id_.end()) {
+    invitation_id_by_invitee_.erase(invitation_id_iterator);
+    return;
+  }
+  RememberResolvedInvitation(
+      invitation_iterator->second,
+      false,
+      detail,
+      landlords::protocol::INVITATION_RESULT_EXPIRED);
+  SendInvitationResult(
+      invitation_iterator->second,
+      landlords::protocol::INVITATION_RESULT_EXPIRED,
+      detail);
+  ClearInvitation(invitation_iterator->second.invitation_id);
 }
 
 void GameService::ExpireInvitationsForRoom(const std::string& room_id,

@@ -16,14 +16,16 @@ void appLog(
   String tag,
   String message,
 ) {
-  if (!kDebugMode) {
+  if (!kDebugMode && level == AppLogLevel.debug) {
     return;
   }
   final now = DateTime.now();
   final timestamp =
       '${_two(now.hour)}:${_two(now.minute)}:${_two(now.second)}.${_three(now.millisecond)}';
   final line = '[$timestamp][${level.name.toUpperCase()}][$tag] $message';
-  debugPrint(line);
+  if (kDebugMode) {
+    debugPrint(line);
+  }
   unawaited(writeAppLogLine(line));
 }
 

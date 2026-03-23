@@ -3,6 +3,14 @@ import 'dart:io';
 File? _appLogFile;
 Future<void> _pendingWrite = Future<void>.value();
 
+Directory _resolveRuntimeLogDirectory() {
+  final executable = File(Platform.resolvedExecutable);
+  final executableDir = executable.parent;
+  return Directory(
+    '${executableDir.path}${Platform.pathSeparator}runtime_logs',
+  );
+}
+
 Future<void> writePlatformAppLogLine(String line) async {
   _pendingWrite = _pendingWrite.then((_) async {
     try {
@@ -19,9 +27,7 @@ Future<File> _resolveAppLogFile() async {
   if (_appLogFile != null) {
     return _appLogFile!;
   }
-  final directory = Directory(
-    '${Directory.current.path}${Platform.pathSeparator}runtime_logs',
-  );
+  final directory = _resolveRuntimeLogDirectory();
   if (!await directory.exists()) {
     await directory.create(recursive: true);
   }

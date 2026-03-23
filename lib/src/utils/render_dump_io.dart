@@ -3,6 +3,14 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 
+Directory _resolveRuntimeLogDirectory() {
+  final executable = File(Platform.resolvedExecutable);
+  final executableDir = executable.parent;
+  return Directory(
+    '${executableDir.path}${Platform.pathSeparator}runtime_logs',
+  );
+}
+
 Future<void> dumpRenderBoundaryToFile(
   RenderRepaintBoundary boundary,
   String fileName,
@@ -13,9 +21,7 @@ Future<void> dumpRenderBoundaryToFile(
     if (bytes == null) {
       return;
     }
-    final directory = Directory(
-      '${Directory.current.path}${Platform.pathSeparator}runtime_logs',
-    );
+    final directory = _resolveRuntimeLogDirectory();
     if (!await directory.exists()) {
       await directory.create(recursive: true);
     }

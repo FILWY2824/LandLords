@@ -305,6 +305,7 @@ void main() {
     addTearDown(controller.dispose);
 
     await controller.login('player1', 'pass123');
+    final resetEpochBeforeExpire = controller.dialogResetEpoch;
     gateway.emitNotification(
       const SessionExpiredNotification('account logged in on another device'),
     );
@@ -313,7 +314,215 @@ void main() {
     expect(controller.stage, AppStage.login);
     expect(controller.profile, isNull);
     expect(gateway.sessionForgotten, isTrue);
+    expect(controller.dialogResetEpoch, greaterThan(resetEpochBeforeExpire));
+    expect(controller.activeInvitation, isNull);
+    expect(controller.activeInvitationFeedback, isNull);
+    expect(controller.activeSupportRewardOffer, isNull);
     expect(controller.activePopupNotice?.message, contains('其他设备'));
+  });
+
+  test('unfinished online rooms keep the lobby status normal and expose resume', () async {
+    final gateway = _RoomStateGateway(
+      startMatchResult: _buildRoomSnapshot(
+        roomId: 'resume-room',
+        mode: MatchMode.online,
+        phase: RoomPhase.playing,
+        turnSerial: 5,
+      ),
+    );
+    final controller = AppController(gateway: gateway);
+    addTearDown(controller.dispose);
+
+    await controller.login('player1', 'pass123');
+    await controller.startMatch(MatchMode.online);
+    await controller.backToLobby();
+
+    expect(controller.hasResumeRoom, isTrue);
+    expect(controller.canResumeFromLobby, isTrue);
+    expect(controller.lobbyStatusText, '当前状态正常');
+    expect(controller.hasLobbyStatusIssue, isFalse);
+  });
+
+  test('negative coins surface the support offer again when returning to lobby', () async {
+    final gateway = _RoomStateGateway(
+      loginProfile: const UserProfile(
+        userId: 'user-player1',
+        account: 'player1',
+        nickname: '鐜╁1',
+        coins: -30,
+      ),
+      supportStatsResult: const SupportStats(supportLikeCount: 12),
+    );
+    final controller = AppController(gateway: gateway);
+    addTearDown(controller.dispose);
+
+    await controller.login('player1', 'pass123');
+    await _drainAsyncWork();
+
+    expect(controller.activeSupportRewardOffer, isNotNull);
+    expect(controller.activeSupportRewardOffer?.currentCoins, -30);
+    expect(controller.activeSupportRewardOffer?.supportLikeCount, 12);
+
+    controller.dismissActiveSupportRewardOffer();
+    await controller.backToLobby();
+    await _drainAsyncWork();
+
+    expect(controller.stage, AppStage.lobby);
+    expect(controller.activeSupportRewardOffer, isNotNull);
+    expect(controller.activeSupportRewardOffer?.currentCoins, -30);
+  });
+
+  test('submit support like refreshes the visible support count', () async {
+    final gateway = _RoomStateGateway(
+      supportStatsResult: const SupportStats(supportLikeCount: 12),
+    );
+    final controller = AppController(gateway: gateway);
+    addTearDown(controller.dispose);
+
+    await controller.refreshSupportStats();
+    final submitted = await controller.submitSupportLike();
+
+    expect(submitted?.supportLikeCount, 13);
+    expect(controller.supportStats.supportLikeCount, 13);
+  });
+
+  test('support reward can be claimed again later if coins are still negative', () async {
+    final gateway = _RoomStateGateway(
+      loginProfile: const UserProfile(
+        userId: 'user-player1',
+        account: 'player1',
+        nickname: '鐜╁1',
+        coins: -60,
+      ),
+      supportStatsResult: const SupportStats(supportLikeCount: 12),
+      supportRewardResult: const SupportRewardResult(
+        profile: UserProfile(
+          userId: 'user-player1',
+          account: 'player1',
+          nickname: '鐜╁1',
+          coins: -10,
+        ),
+        stats: SupportStats(supportLikeCount: 13),
+        rewardCoins: 50,
+      ),
+    );
+    final controller = AppController(gateway: gateway);
+    addTearDown(controller.dispose);
+
+    await controller.login('player1', 'pass123');
+    await _drainAsyncWork();
+
+    final claimed = await controller.claimSupportLikeReward();
+
+    expect(claimed, isTrue);
+    expect(controller.profile?.coins, -10);
+    expect(controller.supportStats.supportLikeCount, 13);
+    expect(controller.activeSupportRewardOffer, isNotNull);
+    expect(controller.activeSupportRewardOffer?.currentCoins, -10);
+    expect(controller.activeSupportRewardOffer?.supportLikeCount, 13);
+  });
+
+  test('finished snapshots split online and bot profile stats correctly', () async {
+    final gateway = _RoomStateGateway();
+    final controller = AppController(gateway: gateway);
+    addTearDown(controller.dispose);
+
+    await controller.login('player1', 'pass123');
+
+    gateway.emitRoomSnapshot(
+      _buildRoomSnapshot(
+        roomId: 'bot-finish',
+        mode: MatchMode.vsBot,
+        phase: RoomPhase.finished,
+        turnSerial: 12,
+      ).copyWithPlayers(const [
+        RoomPlayer(
+          playerId: 'user-player1',
+          displayName: 'owner',
+          isBot: false,
+          role: PlayerRole.landlord,
+          cardsLeft: 0,
+          roundScore: 6,
+          seatIndex: 0,
+          ready: true,
+          occupied: true,
+        ),
+        RoomPlayer(
+          playerId: 'bot-1',
+          displayName: 'bot-one',
+          isBot: true,
+          role: PlayerRole.farmer,
+          cardsLeft: 4,
+          roundScore: -3,
+          seatIndex: 1,
+          ready: true,
+          occupied: true,
+        ),
+        RoomPlayer(
+          playerId: 'bot-2',
+          displayName: 'bot-two',
+          isBot: true,
+          role: PlayerRole.farmer,
+          cardsLeft: 7,
+          roundScore: -3,
+          seatIndex: 2,
+          ready: true,
+          occupied: true,
+        ),
+      ]),
+    );
+    await _drainAsyncWork();
+
+    gateway.emitRoomSnapshot(
+      _buildRoomSnapshot(
+        roomId: 'online-finish',
+        mode: MatchMode.online,
+        phase: RoomPhase.finished,
+        turnSerial: 18,
+      ).copyWithPlayers(const [
+        RoomPlayer(
+          playerId: 'user-player1',
+          displayName: 'owner',
+          isBot: false,
+          role: PlayerRole.farmer,
+          cardsLeft: 0,
+          roundScore: 4,
+          seatIndex: 0,
+          ready: true,
+          occupied: true,
+        ),
+        RoomPlayer(
+          playerId: 'user-player2',
+          displayName: 'guest-a',
+          isBot: false,
+          role: PlayerRole.landlord,
+          cardsLeft: 3,
+          roundScore: -8,
+          seatIndex: 1,
+          ready: true,
+          occupied: true,
+        ),
+        RoomPlayer(
+          playerId: 'user-player3',
+          displayName: 'guest-b',
+          isBot: false,
+          role: PlayerRole.farmer,
+          cardsLeft: 6,
+          roundScore: 4,
+          seatIndex: 2,
+          ready: true,
+          occupied: true,
+        ),
+      ]),
+    );
+    await _drainAsyncWork();
+
+    expect(controller.profile?.botLandlordWins, 1);
+    expect(controller.profile?.botLandlordGames, 1);
+    expect(controller.profile?.botOverallWinRate, 1);
+    expect(controller.profile?.onlineFarmerWins, 1);
+    expect(controller.profile?.onlineFarmerGames, 1);
+    expect(controller.profile?.onlineOverallWinRate, 1);
   });
 }
 
@@ -390,11 +599,26 @@ class _RoomStateGateway implements GameGateway {
   _RoomStateGateway({
     this.startMatchResult,
     this.createRoomResult,
+    this.loginProfile,
+    this.supportStatsResult = const SupportStats(supportLikeCount: 12),
+    this.supportRewardResult = const SupportRewardResult(
+      profile: UserProfile(
+        userId: 'user-player1',
+        account: 'player1',
+        nickname: '玩家1',
+        coins: 20,
+      ),
+      stats: SupportStats(supportLikeCount: 13),
+      rewardCoins: 50,
+    ),
     List<RoomSnapshot?>? refreshCurrentRoomResults,
   }) : refreshCurrentRoomResults = refreshCurrentRoomResults ?? <RoomSnapshot?>[];
 
   final RoomSnapshot? startMatchResult;
   final RoomSnapshot? createRoomResult;
+  final UserProfile? loginProfile;
+  final SupportStats supportStatsResult;
+  final SupportRewardResult supportRewardResult;
   final List<RoomSnapshot?> refreshCurrentRoomResults;
 
   final StreamController<RoomSnapshot> _roomController =
@@ -428,13 +652,14 @@ class _RoomStateGateway implements GameGateway {
     required String account,
     required String password,
   }) async {
-    return const LoginResult(
-      profile: UserProfile(
-        userId: 'user-player1',
-        account: 'player1',
-        nickname: '玩家1',
-        coins: 120,
-      ),
+    return LoginResult(
+      profile: loginProfile ??
+          const UserProfile(
+            userId: 'user-player1',
+            account: 'player1',
+            nickname: '玩家1',
+            coins: 120,
+          ),
       sessionToken: 'session-1',
     );
   }
@@ -559,6 +784,25 @@ class _RoomStateGateway implements GameGateway {
     required String nickname,
   }) async {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<SupportStats> fetchSupportStats() async {
+    return supportStatsResult;
+  }
+
+  @override
+  Future<SupportStats> submitSupportLike() async {
+    return SupportStats(
+      supportLikeCount: supportStatsResult.supportLikeCount + 1,
+    );
+  }
+
+  @override
+  Future<SupportRewardResult> claimSupportLikeReward({
+    required String sessionToken,
+  }) async {
+    return supportRewardResult;
   }
 
   @override

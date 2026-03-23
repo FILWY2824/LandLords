@@ -69,6 +69,12 @@ extern ChangePasswordRequestDefaultTypeInternal _ChangePasswordRequest_default_i
 class ChangePasswordResponse;
 struct ChangePasswordResponseDefaultTypeInternal;
 extern ChangePasswordResponseDefaultTypeInternal _ChangePasswordResponse_default_instance_;
+class ClaimSupportLikeRewardRequest;
+struct ClaimSupportLikeRewardRequestDefaultTypeInternal;
+extern ClaimSupportLikeRewardRequestDefaultTypeInternal _ClaimSupportLikeRewardRequest_default_instance_;
+class ClaimSupportLikeRewardResponse;
+struct ClaimSupportLikeRewardResponseDefaultTypeInternal;
+extern ClaimSupportLikeRewardResponseDefaultTypeInternal _ClaimSupportLikeRewardResponse_default_instance_;
 class ClientMessage;
 struct ClientMessageDefaultTypeInternal;
 extern ClientMessageDefaultTypeInternal _ClientMessage_default_instance_;
@@ -84,6 +90,12 @@ extern DeleteFriendResponseDefaultTypeInternal _DeleteFriendResponse_default_ins
 class ErrorResponse;
 struct ErrorResponseDefaultTypeInternal;
 extern ErrorResponseDefaultTypeInternal _ErrorResponse_default_instance_;
+class FetchSystemStatsRequest;
+struct FetchSystemStatsRequestDefaultTypeInternal;
+extern FetchSystemStatsRequestDefaultTypeInternal _FetchSystemStatsRequest_default_instance_;
+class FetchSystemStatsResponse;
+struct FetchSystemStatsResponseDefaultTypeInternal;
+extern FetchSystemStatsResponseDefaultTypeInternal _FetchSystemStatsResponse_default_instance_;
 class FriendCenterPush;
 struct FriendCenterPushDefaultTypeInternal;
 extern FriendCenterPushDefaultTypeInternal _FriendCenterPush_default_instance_;
@@ -192,6 +204,15 @@ extern RoomSnapshotDefaultTypeInternal _RoomSnapshot_default_instance_;
 class ServerMessage;
 struct ServerMessageDefaultTypeInternal;
 extern ServerMessageDefaultTypeInternal _ServerMessage_default_instance_;
+class SubmitSupportLikeRequest;
+struct SubmitSupportLikeRequestDefaultTypeInternal;
+extern SubmitSupportLikeRequestDefaultTypeInternal _SubmitSupportLikeRequest_default_instance_;
+class SubmitSupportLikeResponse;
+struct SubmitSupportLikeResponseDefaultTypeInternal;
+extern SubmitSupportLikeResponseDefaultTypeInternal _SubmitSupportLikeResponse_default_instance_;
+class SystemStatsSnapshot;
+struct SystemStatsSnapshotDefaultTypeInternal;
+extern SystemStatsSnapshotDefaultTypeInternal _SystemStatsSnapshot_default_instance_;
 class TableAction;
 struct TableActionDefaultTypeInternal;
 extern TableActionDefaultTypeInternal _TableAction_default_instance_;
@@ -214,11 +235,15 @@ template<> ::landlords::protocol::Card* Arena::CreateMaybeMessage<::landlords::p
 template<> ::landlords::protocol::CardCounterEntry* Arena::CreateMaybeMessage<::landlords::protocol::CardCounterEntry>(Arena*);
 template<> ::landlords::protocol::ChangePasswordRequest* Arena::CreateMaybeMessage<::landlords::protocol::ChangePasswordRequest>(Arena*);
 template<> ::landlords::protocol::ChangePasswordResponse* Arena::CreateMaybeMessage<::landlords::protocol::ChangePasswordResponse>(Arena*);
+template<> ::landlords::protocol::ClaimSupportLikeRewardRequest* Arena::CreateMaybeMessage<::landlords::protocol::ClaimSupportLikeRewardRequest>(Arena*);
+template<> ::landlords::protocol::ClaimSupportLikeRewardResponse* Arena::CreateMaybeMessage<::landlords::protocol::ClaimSupportLikeRewardResponse>(Arena*);
 template<> ::landlords::protocol::ClientMessage* Arena::CreateMaybeMessage<::landlords::protocol::ClientMessage>(Arena*);
 template<> ::landlords::protocol::CreateRoomRequest* Arena::CreateMaybeMessage<::landlords::protocol::CreateRoomRequest>(Arena*);
 template<> ::landlords::protocol::DeleteFriendRequest* Arena::CreateMaybeMessage<::landlords::protocol::DeleteFriendRequest>(Arena*);
 template<> ::landlords::protocol::DeleteFriendResponse* Arena::CreateMaybeMessage<::landlords::protocol::DeleteFriendResponse>(Arena*);
 template<> ::landlords::protocol::ErrorResponse* Arena::CreateMaybeMessage<::landlords::protocol::ErrorResponse>(Arena*);
+template<> ::landlords::protocol::FetchSystemStatsRequest* Arena::CreateMaybeMessage<::landlords::protocol::FetchSystemStatsRequest>(Arena*);
+template<> ::landlords::protocol::FetchSystemStatsResponse* Arena::CreateMaybeMessage<::landlords::protocol::FetchSystemStatsResponse>(Arena*);
 template<> ::landlords::protocol::FriendCenterPush* Arena::CreateMaybeMessage<::landlords::protocol::FriendCenterPush>(Arena*);
 template<> ::landlords::protocol::FriendCenterSnapshot* Arena::CreateMaybeMessage<::landlords::protocol::FriendCenterSnapshot>(Arena*);
 template<> ::landlords::protocol::FriendRequestEntry* Arena::CreateMaybeMessage<::landlords::protocol::FriendRequestEntry>(Arena*);
@@ -255,6 +280,9 @@ template<> ::landlords::protocol::RoomPlayer* Arena::CreateMaybeMessage<::landlo
 template<> ::landlords::protocol::RoomReadyRequest* Arena::CreateMaybeMessage<::landlords::protocol::RoomReadyRequest>(Arena*);
 template<> ::landlords::protocol::RoomSnapshot* Arena::CreateMaybeMessage<::landlords::protocol::RoomSnapshot>(Arena*);
 template<> ::landlords::protocol::ServerMessage* Arena::CreateMaybeMessage<::landlords::protocol::ServerMessage>(Arena*);
+template<> ::landlords::protocol::SubmitSupportLikeRequest* Arena::CreateMaybeMessage<::landlords::protocol::SubmitSupportLikeRequest>(Arena*);
+template<> ::landlords::protocol::SubmitSupportLikeResponse* Arena::CreateMaybeMessage<::landlords::protocol::SubmitSupportLikeResponse>(Arena*);
+template<> ::landlords::protocol::SystemStatsSnapshot* Arena::CreateMaybeMessage<::landlords::protocol::SystemStatsSnapshot>(Arena*);
 template<> ::landlords::protocol::TableAction* Arena::CreateMaybeMessage<::landlords::protocol::TableAction>(Arena*);
 template<> ::landlords::protocol::UpdateNicknameRequest* Arena::CreateMaybeMessage<::landlords::protocol::UpdateNicknameRequest>(Arena*);
 template<> ::landlords::protocol::UpdateNicknameResponse* Arena::CreateMaybeMessage<::landlords::protocol::UpdateNicknameResponse>(Arena*);
@@ -649,6 +677,14 @@ class UserProfile final :
     kLandlordGamesFieldNumber = 6,
     kFarmerWinsFieldNumber = 7,
     kFarmerGamesFieldNumber = 8,
+    kOnlineLandlordWinsFieldNumber = 9,
+    kOnlineLandlordGamesFieldNumber = 10,
+    kOnlineFarmerWinsFieldNumber = 11,
+    kOnlineFarmerGamesFieldNumber = 12,
+    kBotLandlordWinsFieldNumber = 13,
+    kBotLandlordGamesFieldNumber = 14,
+    kBotFarmerWinsFieldNumber = 15,
+    kBotFarmerGamesFieldNumber = 16,
   };
   // string user_id = 1;
   void clear_user_id();
@@ -737,6 +773,78 @@ class UserProfile final :
   void _internal_set_farmer_games(int32_t value);
   public:
 
+  // int32 online_landlord_wins = 9;
+  void clear_online_landlord_wins();
+  int32_t online_landlord_wins() const;
+  void set_online_landlord_wins(int32_t value);
+  private:
+  int32_t _internal_online_landlord_wins() const;
+  void _internal_set_online_landlord_wins(int32_t value);
+  public:
+
+  // int32 online_landlord_games = 10;
+  void clear_online_landlord_games();
+  int32_t online_landlord_games() const;
+  void set_online_landlord_games(int32_t value);
+  private:
+  int32_t _internal_online_landlord_games() const;
+  void _internal_set_online_landlord_games(int32_t value);
+  public:
+
+  // int32 online_farmer_wins = 11;
+  void clear_online_farmer_wins();
+  int32_t online_farmer_wins() const;
+  void set_online_farmer_wins(int32_t value);
+  private:
+  int32_t _internal_online_farmer_wins() const;
+  void _internal_set_online_farmer_wins(int32_t value);
+  public:
+
+  // int32 online_farmer_games = 12;
+  void clear_online_farmer_games();
+  int32_t online_farmer_games() const;
+  void set_online_farmer_games(int32_t value);
+  private:
+  int32_t _internal_online_farmer_games() const;
+  void _internal_set_online_farmer_games(int32_t value);
+  public:
+
+  // int32 bot_landlord_wins = 13;
+  void clear_bot_landlord_wins();
+  int32_t bot_landlord_wins() const;
+  void set_bot_landlord_wins(int32_t value);
+  private:
+  int32_t _internal_bot_landlord_wins() const;
+  void _internal_set_bot_landlord_wins(int32_t value);
+  public:
+
+  // int32 bot_landlord_games = 14;
+  void clear_bot_landlord_games();
+  int32_t bot_landlord_games() const;
+  void set_bot_landlord_games(int32_t value);
+  private:
+  int32_t _internal_bot_landlord_games() const;
+  void _internal_set_bot_landlord_games(int32_t value);
+  public:
+
+  // int32 bot_farmer_wins = 15;
+  void clear_bot_farmer_wins();
+  int32_t bot_farmer_wins() const;
+  void set_bot_farmer_wins(int32_t value);
+  private:
+  int32_t _internal_bot_farmer_wins() const;
+  void _internal_set_bot_farmer_wins(int32_t value);
+  public:
+
+  // int32 bot_farmer_games = 16;
+  void clear_bot_farmer_games();
+  int32_t bot_farmer_games() const;
+  void set_bot_farmer_games(int32_t value);
+  private:
+  int32_t _internal_bot_farmer_games() const;
+  void _internal_set_bot_farmer_games(int32_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:landlords.protocol.UserProfile)
  private:
   class _Internal;
@@ -752,6 +860,14 @@ class UserProfile final :
   int32_t landlord_games_;
   int32_t farmer_wins_;
   int32_t farmer_games_;
+  int32_t online_landlord_wins_;
+  int32_t online_landlord_games_;
+  int32_t online_farmer_wins_;
+  int32_t online_farmer_games_;
+  int32_t bot_landlord_wins_;
+  int32_t bot_landlord_games_;
+  int32_t bot_farmer_wins_;
+  int32_t bot_farmer_games_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_landlords_2eproto;
 };
@@ -1428,6 +1544,149 @@ class FriendCenterSnapshot final :
 };
 // -------------------------------------------------------------------
 
+class SystemStatsSnapshot final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:landlords.protocol.SystemStatsSnapshot) */ {
+ public:
+  inline SystemStatsSnapshot() : SystemStatsSnapshot(nullptr) {}
+  ~SystemStatsSnapshot() override;
+  explicit PROTOBUF_CONSTEXPR SystemStatsSnapshot(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  SystemStatsSnapshot(const SystemStatsSnapshot& from);
+  SystemStatsSnapshot(SystemStatsSnapshot&& from) noexcept
+    : SystemStatsSnapshot() {
+    *this = ::std::move(from);
+  }
+
+  inline SystemStatsSnapshot& operator=(const SystemStatsSnapshot& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SystemStatsSnapshot& operator=(SystemStatsSnapshot&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SystemStatsSnapshot& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const SystemStatsSnapshot* internal_default_instance() {
+    return reinterpret_cast<const SystemStatsSnapshot*>(
+               &_SystemStatsSnapshot_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    4;
+
+  friend void swap(SystemStatsSnapshot& a, SystemStatsSnapshot& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(SystemStatsSnapshot* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SystemStatsSnapshot* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SystemStatsSnapshot* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<SystemStatsSnapshot>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const SystemStatsSnapshot& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const SystemStatsSnapshot& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(SystemStatsSnapshot* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "landlords.protocol.SystemStatsSnapshot";
+  }
+  protected:
+  explicit SystemStatsSnapshot(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kSupportLikeCountFieldNumber = 1,
+  };
+  // int32 support_like_count = 1;
+  void clear_support_like_count();
+  int32_t support_like_count() const;
+  void set_support_like_count(int32_t value);
+  private:
+  int32_t _internal_support_like_count() const;
+  void _internal_set_support_like_count(int32_t value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:landlords.protocol.SystemStatsSnapshot)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  int32_t support_like_count_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_landlords_2eproto;
+};
+// -------------------------------------------------------------------
+
 class RegisterRequest final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:landlords.protocol.RegisterRequest) */ {
  public:
@@ -1476,7 +1735,7 @@ class RegisterRequest final :
                &_RegisterRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    4;
+    5;
 
   friend void swap(RegisterRequest& a, RegisterRequest& b) {
     a.Swap(&b);
@@ -1656,7 +1915,7 @@ class RegisterResponse final :
                &_RegisterResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    5;
+    6;
 
   friend void swap(RegisterResponse& a, RegisterResponse& b) {
     a.Swap(&b);
@@ -1835,7 +2094,7 @@ class LoginRequest final :
                &_LoginRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    6;
+    7;
 
   friend void swap(LoginRequest& a, LoginRequest& b) {
     a.Swap(&b);
@@ -1999,7 +2258,7 @@ class LoginResponse final :
                &_LoginResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    7;
+    8;
 
   friend void swap(LoginResponse& a, LoginResponse& b) {
     a.Swap(&b);
@@ -2194,7 +2453,7 @@ class ResetPasswordRequest final :
                &_ResetPasswordRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    8;
+    9;
 
   friend void swap(ResetPasswordRequest& a, ResetPasswordRequest& b) {
     a.Swap(&b);
@@ -2358,7 +2617,7 @@ class ResetPasswordResponse final :
                &_ResetPasswordResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    9;
+    10;
 
   friend void swap(ResetPasswordResponse& a, ResetPasswordResponse& b) {
     a.Swap(&b);
@@ -2517,7 +2776,7 @@ class ChangePasswordRequest final :
                &_ChangePasswordRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    10;
+    11;
 
   friend void swap(ChangePasswordRequest& a, ChangePasswordRequest& b) {
     a.Swap(&b);
@@ -2681,7 +2940,7 @@ class ChangePasswordResponse final :
                &_ChangePasswordResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    11;
+    12;
 
   friend void swap(ChangePasswordResponse& a, ChangePasswordResponse& b) {
     a.Swap(&b);
@@ -2840,7 +3099,7 @@ class UpdateNicknameRequest final :
                &_UpdateNicknameRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    12;
+    13;
 
   friend void swap(UpdateNicknameRequest& a, UpdateNicknameRequest& b) {
     a.Swap(&b);
@@ -2988,7 +3247,7 @@ class UpdateNicknameResponse final :
                &_UpdateNicknameResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    14;
 
   friend void swap(UpdateNicknameResponse& a, UpdateNicknameResponse& b) {
     a.Swap(&b);
@@ -3119,6 +3378,922 @@ class UpdateNicknameResponse final :
 };
 // -------------------------------------------------------------------
 
+class FetchSystemStatsRequest final :
+    public ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase /* @@protoc_insertion_point(class_definition:landlords.protocol.FetchSystemStatsRequest) */ {
+ public:
+  inline FetchSystemStatsRequest() : FetchSystemStatsRequest(nullptr) {}
+  explicit PROTOBUF_CONSTEXPR FetchSystemStatsRequest(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  FetchSystemStatsRequest(const FetchSystemStatsRequest& from);
+  FetchSystemStatsRequest(FetchSystemStatsRequest&& from) noexcept
+    : FetchSystemStatsRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline FetchSystemStatsRequest& operator=(const FetchSystemStatsRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline FetchSystemStatsRequest& operator=(FetchSystemStatsRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const FetchSystemStatsRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const FetchSystemStatsRequest* internal_default_instance() {
+    return reinterpret_cast<const FetchSystemStatsRequest*>(
+               &_FetchSystemStatsRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    15;
+
+  friend void swap(FetchSystemStatsRequest& a, FetchSystemStatsRequest& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(FetchSystemStatsRequest* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(FetchSystemStatsRequest* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  FetchSystemStatsRequest* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<FetchSystemStatsRequest>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const FetchSystemStatsRequest& from) {
+    ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::CopyImpl(this, from);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const FetchSystemStatsRequest& from) {
+    ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::MergeImpl(this, from);
+  }
+  public:
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "landlords.protocol.FetchSystemStatsRequest";
+  }
+  protected:
+  explicit FetchSystemStatsRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // @@protoc_insertion_point(class_scope:landlords.protocol.FetchSystemStatsRequest)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  friend struct ::TableStruct_landlords_2eproto;
+};
+// -------------------------------------------------------------------
+
+class FetchSystemStatsResponse final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:landlords.protocol.FetchSystemStatsResponse) */ {
+ public:
+  inline FetchSystemStatsResponse() : FetchSystemStatsResponse(nullptr) {}
+  ~FetchSystemStatsResponse() override;
+  explicit PROTOBUF_CONSTEXPR FetchSystemStatsResponse(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  FetchSystemStatsResponse(const FetchSystemStatsResponse& from);
+  FetchSystemStatsResponse(FetchSystemStatsResponse&& from) noexcept
+    : FetchSystemStatsResponse() {
+    *this = ::std::move(from);
+  }
+
+  inline FetchSystemStatsResponse& operator=(const FetchSystemStatsResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline FetchSystemStatsResponse& operator=(FetchSystemStatsResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const FetchSystemStatsResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const FetchSystemStatsResponse* internal_default_instance() {
+    return reinterpret_cast<const FetchSystemStatsResponse*>(
+               &_FetchSystemStatsResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    16;
+
+  friend void swap(FetchSystemStatsResponse& a, FetchSystemStatsResponse& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(FetchSystemStatsResponse* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(FetchSystemStatsResponse* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  FetchSystemStatsResponse* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<FetchSystemStatsResponse>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const FetchSystemStatsResponse& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const FetchSystemStatsResponse& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(FetchSystemStatsResponse* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "landlords.protocol.FetchSystemStatsResponse";
+  }
+  protected:
+  explicit FetchSystemStatsResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kMessageFieldNumber = 2,
+    kStatsFieldNumber = 3,
+    kSuccessFieldNumber = 1,
+  };
+  // string message = 2;
+  void clear_message();
+  const std::string& message() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_message(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_message();
+  PROTOBUF_NODISCARD std::string* release_message();
+  void set_allocated_message(std::string* message);
+  private:
+  const std::string& _internal_message() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_message(const std::string& value);
+  std::string* _internal_mutable_message();
+  public:
+
+  // .landlords.protocol.SystemStatsSnapshot stats = 3;
+  bool has_stats() const;
+  private:
+  bool _internal_has_stats() const;
+  public:
+  void clear_stats();
+  const ::landlords::protocol::SystemStatsSnapshot& stats() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::SystemStatsSnapshot* release_stats();
+  ::landlords::protocol::SystemStatsSnapshot* mutable_stats();
+  void set_allocated_stats(::landlords::protocol::SystemStatsSnapshot* stats);
+  private:
+  const ::landlords::protocol::SystemStatsSnapshot& _internal_stats() const;
+  ::landlords::protocol::SystemStatsSnapshot* _internal_mutable_stats();
+  public:
+  void unsafe_arena_set_allocated_stats(
+      ::landlords::protocol::SystemStatsSnapshot* stats);
+  ::landlords::protocol::SystemStatsSnapshot* unsafe_arena_release_stats();
+
+  // bool success = 1;
+  void clear_success();
+  bool success() const;
+  void set_success(bool value);
+  private:
+  bool _internal_success() const;
+  void _internal_set_success(bool value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:landlords.protocol.FetchSystemStatsResponse)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr message_;
+  ::landlords::protocol::SystemStatsSnapshot* stats_;
+  bool success_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_landlords_2eproto;
+};
+// -------------------------------------------------------------------
+
+class SubmitSupportLikeRequest final :
+    public ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase /* @@protoc_insertion_point(class_definition:landlords.protocol.SubmitSupportLikeRequest) */ {
+ public:
+  inline SubmitSupportLikeRequest() : SubmitSupportLikeRequest(nullptr) {}
+  explicit PROTOBUF_CONSTEXPR SubmitSupportLikeRequest(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  SubmitSupportLikeRequest(const SubmitSupportLikeRequest& from);
+  SubmitSupportLikeRequest(SubmitSupportLikeRequest&& from) noexcept
+    : SubmitSupportLikeRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline SubmitSupportLikeRequest& operator=(const SubmitSupportLikeRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SubmitSupportLikeRequest& operator=(SubmitSupportLikeRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SubmitSupportLikeRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const SubmitSupportLikeRequest* internal_default_instance() {
+    return reinterpret_cast<const SubmitSupportLikeRequest*>(
+               &_SubmitSupportLikeRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    17;
+
+  friend void swap(SubmitSupportLikeRequest& a, SubmitSupportLikeRequest& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(SubmitSupportLikeRequest* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SubmitSupportLikeRequest* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SubmitSupportLikeRequest* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<SubmitSupportLikeRequest>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const SubmitSupportLikeRequest& from) {
+    ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::CopyImpl(this, from);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const SubmitSupportLikeRequest& from) {
+    ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::MergeImpl(this, from);
+  }
+  public:
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "landlords.protocol.SubmitSupportLikeRequest";
+  }
+  protected:
+  explicit SubmitSupportLikeRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // @@protoc_insertion_point(class_scope:landlords.protocol.SubmitSupportLikeRequest)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  friend struct ::TableStruct_landlords_2eproto;
+};
+// -------------------------------------------------------------------
+
+class SubmitSupportLikeResponse final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:landlords.protocol.SubmitSupportLikeResponse) */ {
+ public:
+  inline SubmitSupportLikeResponse() : SubmitSupportLikeResponse(nullptr) {}
+  ~SubmitSupportLikeResponse() override;
+  explicit PROTOBUF_CONSTEXPR SubmitSupportLikeResponse(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  SubmitSupportLikeResponse(const SubmitSupportLikeResponse& from);
+  SubmitSupportLikeResponse(SubmitSupportLikeResponse&& from) noexcept
+    : SubmitSupportLikeResponse() {
+    *this = ::std::move(from);
+  }
+
+  inline SubmitSupportLikeResponse& operator=(const SubmitSupportLikeResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SubmitSupportLikeResponse& operator=(SubmitSupportLikeResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SubmitSupportLikeResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const SubmitSupportLikeResponse* internal_default_instance() {
+    return reinterpret_cast<const SubmitSupportLikeResponse*>(
+               &_SubmitSupportLikeResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    18;
+
+  friend void swap(SubmitSupportLikeResponse& a, SubmitSupportLikeResponse& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(SubmitSupportLikeResponse* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SubmitSupportLikeResponse* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SubmitSupportLikeResponse* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<SubmitSupportLikeResponse>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const SubmitSupportLikeResponse& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const SubmitSupportLikeResponse& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(SubmitSupportLikeResponse* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "landlords.protocol.SubmitSupportLikeResponse";
+  }
+  protected:
+  explicit SubmitSupportLikeResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kMessageFieldNumber = 2,
+    kStatsFieldNumber = 3,
+    kSuccessFieldNumber = 1,
+  };
+  // string message = 2;
+  void clear_message();
+  const std::string& message() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_message(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_message();
+  PROTOBUF_NODISCARD std::string* release_message();
+  void set_allocated_message(std::string* message);
+  private:
+  const std::string& _internal_message() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_message(const std::string& value);
+  std::string* _internal_mutable_message();
+  public:
+
+  // .landlords.protocol.SystemStatsSnapshot stats = 3;
+  bool has_stats() const;
+  private:
+  bool _internal_has_stats() const;
+  public:
+  void clear_stats();
+  const ::landlords::protocol::SystemStatsSnapshot& stats() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::SystemStatsSnapshot* release_stats();
+  ::landlords::protocol::SystemStatsSnapshot* mutable_stats();
+  void set_allocated_stats(::landlords::protocol::SystemStatsSnapshot* stats);
+  private:
+  const ::landlords::protocol::SystemStatsSnapshot& _internal_stats() const;
+  ::landlords::protocol::SystemStatsSnapshot* _internal_mutable_stats();
+  public:
+  void unsafe_arena_set_allocated_stats(
+      ::landlords::protocol::SystemStatsSnapshot* stats);
+  ::landlords::protocol::SystemStatsSnapshot* unsafe_arena_release_stats();
+
+  // bool success = 1;
+  void clear_success();
+  bool success() const;
+  void set_success(bool value);
+  private:
+  bool _internal_success() const;
+  void _internal_set_success(bool value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:landlords.protocol.SubmitSupportLikeResponse)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr message_;
+  ::landlords::protocol::SystemStatsSnapshot* stats_;
+  bool success_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_landlords_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ClaimSupportLikeRewardRequest final :
+    public ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase /* @@protoc_insertion_point(class_definition:landlords.protocol.ClaimSupportLikeRewardRequest) */ {
+ public:
+  inline ClaimSupportLikeRewardRequest() : ClaimSupportLikeRewardRequest(nullptr) {}
+  explicit PROTOBUF_CONSTEXPR ClaimSupportLikeRewardRequest(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ClaimSupportLikeRewardRequest(const ClaimSupportLikeRewardRequest& from);
+  ClaimSupportLikeRewardRequest(ClaimSupportLikeRewardRequest&& from) noexcept
+    : ClaimSupportLikeRewardRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline ClaimSupportLikeRewardRequest& operator=(const ClaimSupportLikeRewardRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ClaimSupportLikeRewardRequest& operator=(ClaimSupportLikeRewardRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ClaimSupportLikeRewardRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ClaimSupportLikeRewardRequest* internal_default_instance() {
+    return reinterpret_cast<const ClaimSupportLikeRewardRequest*>(
+               &_ClaimSupportLikeRewardRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    19;
+
+  friend void swap(ClaimSupportLikeRewardRequest& a, ClaimSupportLikeRewardRequest& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ClaimSupportLikeRewardRequest* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ClaimSupportLikeRewardRequest* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ClaimSupportLikeRewardRequest* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ClaimSupportLikeRewardRequest>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const ClaimSupportLikeRewardRequest& from) {
+    ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::CopyImpl(this, from);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const ClaimSupportLikeRewardRequest& from) {
+    ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::MergeImpl(this, from);
+  }
+  public:
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "landlords.protocol.ClaimSupportLikeRewardRequest";
+  }
+  protected:
+  explicit ClaimSupportLikeRewardRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // @@protoc_insertion_point(class_scope:landlords.protocol.ClaimSupportLikeRewardRequest)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  friend struct ::TableStruct_landlords_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ClaimSupportLikeRewardResponse final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:landlords.protocol.ClaimSupportLikeRewardResponse) */ {
+ public:
+  inline ClaimSupportLikeRewardResponse() : ClaimSupportLikeRewardResponse(nullptr) {}
+  ~ClaimSupportLikeRewardResponse() override;
+  explicit PROTOBUF_CONSTEXPR ClaimSupportLikeRewardResponse(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ClaimSupportLikeRewardResponse(const ClaimSupportLikeRewardResponse& from);
+  ClaimSupportLikeRewardResponse(ClaimSupportLikeRewardResponse&& from) noexcept
+    : ClaimSupportLikeRewardResponse() {
+    *this = ::std::move(from);
+  }
+
+  inline ClaimSupportLikeRewardResponse& operator=(const ClaimSupportLikeRewardResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ClaimSupportLikeRewardResponse& operator=(ClaimSupportLikeRewardResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ClaimSupportLikeRewardResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ClaimSupportLikeRewardResponse* internal_default_instance() {
+    return reinterpret_cast<const ClaimSupportLikeRewardResponse*>(
+               &_ClaimSupportLikeRewardResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    20;
+
+  friend void swap(ClaimSupportLikeRewardResponse& a, ClaimSupportLikeRewardResponse& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ClaimSupportLikeRewardResponse* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ClaimSupportLikeRewardResponse* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ClaimSupportLikeRewardResponse* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ClaimSupportLikeRewardResponse>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ClaimSupportLikeRewardResponse& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ClaimSupportLikeRewardResponse& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ClaimSupportLikeRewardResponse* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "landlords.protocol.ClaimSupportLikeRewardResponse";
+  }
+  protected:
+  explicit ClaimSupportLikeRewardResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kMessageFieldNumber = 2,
+    kProfileFieldNumber = 3,
+    kStatsFieldNumber = 4,
+    kSuccessFieldNumber = 1,
+    kRewardCoinsFieldNumber = 5,
+  };
+  // string message = 2;
+  void clear_message();
+  const std::string& message() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_message(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_message();
+  PROTOBUF_NODISCARD std::string* release_message();
+  void set_allocated_message(std::string* message);
+  private:
+  const std::string& _internal_message() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_message(const std::string& value);
+  std::string* _internal_mutable_message();
+  public:
+
+  // .landlords.protocol.UserProfile profile = 3;
+  bool has_profile() const;
+  private:
+  bool _internal_has_profile() const;
+  public:
+  void clear_profile();
+  const ::landlords::protocol::UserProfile& profile() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::UserProfile* release_profile();
+  ::landlords::protocol::UserProfile* mutable_profile();
+  void set_allocated_profile(::landlords::protocol::UserProfile* profile);
+  private:
+  const ::landlords::protocol::UserProfile& _internal_profile() const;
+  ::landlords::protocol::UserProfile* _internal_mutable_profile();
+  public:
+  void unsafe_arena_set_allocated_profile(
+      ::landlords::protocol::UserProfile* profile);
+  ::landlords::protocol::UserProfile* unsafe_arena_release_profile();
+
+  // .landlords.protocol.SystemStatsSnapshot stats = 4;
+  bool has_stats() const;
+  private:
+  bool _internal_has_stats() const;
+  public:
+  void clear_stats();
+  const ::landlords::protocol::SystemStatsSnapshot& stats() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::SystemStatsSnapshot* release_stats();
+  ::landlords::protocol::SystemStatsSnapshot* mutable_stats();
+  void set_allocated_stats(::landlords::protocol::SystemStatsSnapshot* stats);
+  private:
+  const ::landlords::protocol::SystemStatsSnapshot& _internal_stats() const;
+  ::landlords::protocol::SystemStatsSnapshot* _internal_mutable_stats();
+  public:
+  void unsafe_arena_set_allocated_stats(
+      ::landlords::protocol::SystemStatsSnapshot* stats);
+  ::landlords::protocol::SystemStatsSnapshot* unsafe_arena_release_stats();
+
+  // bool success = 1;
+  void clear_success();
+  bool success() const;
+  void set_success(bool value);
+  private:
+  bool _internal_success() const;
+  void _internal_set_success(bool value);
+  public:
+
+  // int32 reward_coins = 5;
+  void clear_reward_coins();
+  int32_t reward_coins() const;
+  void set_reward_coins(int32_t value);
+  private:
+  int32_t _internal_reward_coins() const;
+  void _internal_set_reward_coins(int32_t value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:landlords.protocol.ClaimSupportLikeRewardResponse)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr message_;
+  ::landlords::protocol::UserProfile* profile_;
+  ::landlords::protocol::SystemStatsSnapshot* stats_;
+  bool success_;
+  int32_t reward_coins_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_landlords_2eproto;
+};
+// -------------------------------------------------------------------
+
 class MatchRequest final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:landlords.protocol.MatchRequest) */ {
  public:
@@ -3167,7 +4342,7 @@ class MatchRequest final :
                &_MatchRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    21;
 
   friend void swap(MatchRequest& a, MatchRequest& b) {
     a.Swap(&b);
@@ -3320,7 +4495,7 @@ class CreateRoomRequest final :
                &_CreateRoomRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    22;
 
   friend void swap(CreateRoomRequest& a, CreateRoomRequest& b) {
     a.Swap(&b);
@@ -3437,7 +4612,7 @@ class JoinRoomRequest final :
                &_JoinRoomRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    16;
+    23;
 
   friend void swap(JoinRoomRequest& a, JoinRoomRequest& b) {
     a.Swap(&b);
@@ -3585,7 +4760,7 @@ class LeaveRoomRequest final :
                &_LeaveRoomRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    17;
+    24;
 
   friend void swap(LeaveRoomRequest& a, LeaveRoomRequest& b) {
     a.Swap(&b);
@@ -3733,7 +4908,7 @@ class RoomReadyRequest final :
                &_RoomReadyRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    18;
+    25;
 
   friend void swap(RoomReadyRequest& a, RoomReadyRequest& b) {
     a.Swap(&b);
@@ -3892,7 +5067,7 @@ class AddBotRequest final :
                &_AddBotRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    19;
+    26;
 
   friend void swap(AddBotRequest& a, AddBotRequest& b) {
     a.Swap(&b);
@@ -4062,7 +5237,7 @@ class RemovePlayerRequest final :
                &_RemovePlayerRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    20;
+    27;
 
   friend void swap(RemovePlayerRequest& a, RemovePlayerRequest& b) {
     a.Swap(&b);
@@ -4225,7 +5400,7 @@ class ListFriendsRequest final :
                &_ListFriendsRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    21;
+    28;
 
   friend void swap(ListFriendsRequest& a, ListFriendsRequest& b) {
     a.Swap(&b);
@@ -4342,7 +5517,7 @@ class ListFriendsResponse final :
                &_ListFriendsResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    22;
+    29;
 
   friend void swap(ListFriendsResponse& a, ListFriendsResponse& b) {
     a.Swap(&b);
@@ -4514,7 +5689,7 @@ class AddFriendRequest final :
                &_AddFriendRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    23;
+    30;
 
   friend void swap(AddFriendRequest& a, AddFriendRequest& b) {
     a.Swap(&b);
@@ -4662,7 +5837,7 @@ class AddFriendResponse final :
                &_AddFriendResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    24;
+    31;
 
   friend void swap(AddFriendResponse& a, AddFriendResponse& b) {
     a.Swap(&b);
@@ -4861,7 +6036,7 @@ class RespondFriendRequestRequest final :
                &_RespondFriendRequestRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    25;
+    32;
 
   friend void swap(RespondFriendRequestRequest& a, RespondFriendRequestRequest& b) {
     a.Swap(&b);
@@ -5020,7 +6195,7 @@ class RespondFriendRequestResponse final :
                &_RespondFriendRequestResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    26;
+    33;
 
   friend void swap(RespondFriendRequestResponse& a, RespondFriendRequestResponse& b) {
     a.Swap(&b);
@@ -5219,7 +6394,7 @@ class DeleteFriendRequest final :
                &_DeleteFriendRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    27;
+    34;
 
   friend void swap(DeleteFriendRequest& a, DeleteFriendRequest& b) {
     a.Swap(&b);
@@ -5367,7 +6542,7 @@ class DeleteFriendResponse final :
                &_DeleteFriendResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    28;
+    35;
 
   friend void swap(DeleteFriendResponse& a, DeleteFriendResponse& b) {
     a.Swap(&b);
@@ -5546,7 +6721,7 @@ class InvitePlayerRequest final :
                &_InvitePlayerRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    29;
+    36;
 
   friend void swap(InvitePlayerRequest& a, InvitePlayerRequest& b) {
     a.Swap(&b);
@@ -5721,7 +6896,7 @@ class InvitePlayerResponse final :
                &_InvitePlayerResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    30;
+    37;
 
   friend void swap(InvitePlayerResponse& a, InvitePlayerResponse& b) {
     a.Swap(&b);
@@ -5880,7 +7055,7 @@ class RoomInvitationPush final :
                &_RoomInvitationPush_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    31;
+    38;
 
   friend void swap(RoomInvitationPush& a, RoomInvitationPush& b) {
     a.Swap(&b);
@@ -6119,7 +7294,7 @@ class RespondRoomInvitationRequest final :
                &_RespondRoomInvitationRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    32;
+    39;
 
   friend void swap(RespondRoomInvitationRequest& a, RespondRoomInvitationRequest& b) {
     a.Swap(&b);
@@ -6278,7 +7453,7 @@ class RespondRoomInvitationResponse final :
                &_RespondRoomInvitationResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    33;
+    40;
 
   friend void swap(RespondRoomInvitationResponse& a, RespondRoomInvitationResponse& b) {
     a.Swap(&b);
@@ -6457,7 +7632,7 @@ class RoomInvitationResultPush final :
                &_RoomInvitationResultPush_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    34;
+    41;
 
   friend void swap(RoomInvitationResultPush& a, RoomInvitationResultPush& b) {
     a.Swap(&b);
@@ -6680,7 +7855,7 @@ class FriendCenterPush final :
                &_FriendCenterPush_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    35;
+    42;
 
   friend void swap(FriendCenterPush& a, FriendCenterPush& b) {
     a.Swap(&b);
@@ -6832,7 +8007,7 @@ class MatchResponse final :
                &_MatchResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    36;
+    43;
 
   friend void swap(MatchResponse& a, MatchResponse& b) {
     a.Swap(&b);
@@ -6991,7 +8166,7 @@ class MatchFoundPush final :
                &_MatchFoundPush_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    37;
+    44;
 
   friend void swap(MatchFoundPush& a, MatchFoundPush& b) {
     a.Swap(&b);
@@ -7170,7 +8345,7 @@ class RoomPlayer final :
                &_RoomPlayer_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    38;
+    45;
 
   friend void swap(RoomPlayer& a, RoomPlayer& b) {
     a.Swap(&b);
@@ -7411,7 +8586,7 @@ class Card final :
                &_Card_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    39;
+    46;
 
   friend void swap(Card& a, Card& b) {
     a.Swap(&b);
@@ -7602,7 +8777,7 @@ class CardCounterEntry final :
                &_CardCounterEntry_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    40;
+    47;
 
   friend void swap(CardCounterEntry& a, CardCounterEntry& b) {
     a.Swap(&b);
@@ -7761,7 +8936,7 @@ class TableAction final :
                &_TableAction_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    41;
+    48;
 
   friend void swap(TableAction& a, TableAction& b) {
     a.Swap(&b);
@@ -7994,7 +9169,7 @@ class RoomSnapshot final :
                &_RoomSnapshot_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    42;
+    49;
 
   friend void swap(RoomSnapshot& a, RoomSnapshot& b) {
     a.Swap(&b);
@@ -8383,7 +9558,7 @@ class PlayCardsRequest final :
                &_PlayCardsRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    43;
+    50;
 
   friend void swap(PlayCardsRequest& a, PlayCardsRequest& b) {
     a.Swap(&b);
@@ -8557,7 +9732,7 @@ class PassRequest final :
                &_PassRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    44;
+    51;
 
   friend void swap(PassRequest& a, PassRequest& b) {
     a.Swap(&b);
@@ -8705,7 +9880,7 @@ class ReconnectRequest final :
                &_ReconnectRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    45;
+    52;
 
   friend void swap(ReconnectRequest& a, ReconnectRequest& b) {
     a.Swap(&b);
@@ -8853,7 +10028,7 @@ class HeartbeatRequest final :
                &_HeartbeatRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    46;
+    53;
 
   friend void swap(HeartbeatRequest& a, HeartbeatRequest& b) {
     a.Swap(&b);
@@ -8996,7 +10171,7 @@ class HeartbeatResponse final :
                &_HeartbeatResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    47;
+    54;
 
   friend void swap(HeartbeatResponse& a, HeartbeatResponse& b) {
     a.Swap(&b);
@@ -9139,7 +10314,7 @@ class OperationResponse final :
                &_OperationResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    48;
+    55;
 
   friend void swap(OperationResponse& a, OperationResponse& b) {
     a.Swap(&b);
@@ -9318,7 +10493,7 @@ class ErrorResponse final :
                &_ErrorResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    49;
+    56;
 
   friend void swap(ErrorResponse& a, ErrorResponse& b) {
     a.Swap(&b);
@@ -9495,6 +10670,9 @@ class ClientMessage final :
     kRespondFriendRequestRequest = 29,
     kDeleteFriendRequest = 30,
     kChangePasswordRequest = 31,
+    kFetchSystemStatsRequest = 32,
+    kClaimSupportLikeRewardRequest = 33,
+    kSubmitSupportLikeRequest = 34,
     PAYLOAD_NOT_SET = 0,
   };
 
@@ -9503,7 +10681,7 @@ class ClientMessage final :
                &_ClientMessage_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    50;
+    57;
 
   friend void swap(ClientMessage& a, ClientMessage& b) {
     a.Swap(&b);
@@ -9598,6 +10776,9 @@ class ClientMessage final :
     kRespondFriendRequestRequestFieldNumber = 29,
     kDeleteFriendRequestFieldNumber = 30,
     kChangePasswordRequestFieldNumber = 31,
+    kFetchSystemStatsRequestFieldNumber = 32,
+    kClaimSupportLikeRewardRequestFieldNumber = 33,
+    kSubmitSupportLikeRequestFieldNumber = 34,
   };
   // string request_id = 1;
   void clear_request_id();
@@ -10023,6 +11204,60 @@ class ClientMessage final :
       ::landlords::protocol::ChangePasswordRequest* change_password_request);
   ::landlords::protocol::ChangePasswordRequest* unsafe_arena_release_change_password_request();
 
+  // .landlords.protocol.FetchSystemStatsRequest fetch_system_stats_request = 32;
+  bool has_fetch_system_stats_request() const;
+  private:
+  bool _internal_has_fetch_system_stats_request() const;
+  public:
+  void clear_fetch_system_stats_request();
+  const ::landlords::protocol::FetchSystemStatsRequest& fetch_system_stats_request() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::FetchSystemStatsRequest* release_fetch_system_stats_request();
+  ::landlords::protocol::FetchSystemStatsRequest* mutable_fetch_system_stats_request();
+  void set_allocated_fetch_system_stats_request(::landlords::protocol::FetchSystemStatsRequest* fetch_system_stats_request);
+  private:
+  const ::landlords::protocol::FetchSystemStatsRequest& _internal_fetch_system_stats_request() const;
+  ::landlords::protocol::FetchSystemStatsRequest* _internal_mutable_fetch_system_stats_request();
+  public:
+  void unsafe_arena_set_allocated_fetch_system_stats_request(
+      ::landlords::protocol::FetchSystemStatsRequest* fetch_system_stats_request);
+  ::landlords::protocol::FetchSystemStatsRequest* unsafe_arena_release_fetch_system_stats_request();
+
+  // .landlords.protocol.ClaimSupportLikeRewardRequest claim_support_like_reward_request = 33;
+  bool has_claim_support_like_reward_request() const;
+  private:
+  bool _internal_has_claim_support_like_reward_request() const;
+  public:
+  void clear_claim_support_like_reward_request();
+  const ::landlords::protocol::ClaimSupportLikeRewardRequest& claim_support_like_reward_request() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::ClaimSupportLikeRewardRequest* release_claim_support_like_reward_request();
+  ::landlords::protocol::ClaimSupportLikeRewardRequest* mutable_claim_support_like_reward_request();
+  void set_allocated_claim_support_like_reward_request(::landlords::protocol::ClaimSupportLikeRewardRequest* claim_support_like_reward_request);
+  private:
+  const ::landlords::protocol::ClaimSupportLikeRewardRequest& _internal_claim_support_like_reward_request() const;
+  ::landlords::protocol::ClaimSupportLikeRewardRequest* _internal_mutable_claim_support_like_reward_request();
+  public:
+  void unsafe_arena_set_allocated_claim_support_like_reward_request(
+      ::landlords::protocol::ClaimSupportLikeRewardRequest* claim_support_like_reward_request);
+  ::landlords::protocol::ClaimSupportLikeRewardRequest* unsafe_arena_release_claim_support_like_reward_request();
+
+  // .landlords.protocol.SubmitSupportLikeRequest submit_support_like_request = 34;
+  bool has_submit_support_like_request() const;
+  private:
+  bool _internal_has_submit_support_like_request() const;
+  public:
+  void clear_submit_support_like_request();
+  const ::landlords::protocol::SubmitSupportLikeRequest& submit_support_like_request() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::SubmitSupportLikeRequest* release_submit_support_like_request();
+  ::landlords::protocol::SubmitSupportLikeRequest* mutable_submit_support_like_request();
+  void set_allocated_submit_support_like_request(::landlords::protocol::SubmitSupportLikeRequest* submit_support_like_request);
+  private:
+  const ::landlords::protocol::SubmitSupportLikeRequest& _internal_submit_support_like_request() const;
+  ::landlords::protocol::SubmitSupportLikeRequest* _internal_mutable_submit_support_like_request();
+  public:
+  void unsafe_arena_set_allocated_submit_support_like_request(
+      ::landlords::protocol::SubmitSupportLikeRequest* submit_support_like_request);
+  ::landlords::protocol::SubmitSupportLikeRequest* unsafe_arena_release_submit_support_like_request();
+
   void clear_payload();
   PayloadCase payload_case() const;
   // @@protoc_insertion_point(class_scope:landlords.protocol.ClientMessage)
@@ -10050,6 +11285,9 @@ class ClientMessage final :
   void set_has_respond_friend_request_request();
   void set_has_delete_friend_request();
   void set_has_change_password_request();
+  void set_has_fetch_system_stats_request();
+  void set_has_claim_support_like_reward_request();
+  void set_has_submit_support_like_request();
 
   inline bool has_payload() const;
   inline void clear_has_payload();
@@ -10084,6 +11322,9 @@ class ClientMessage final :
     ::landlords::protocol::RespondFriendRequestRequest* respond_friend_request_request_;
     ::landlords::protocol::DeleteFriendRequest* delete_friend_request_;
     ::landlords::protocol::ChangePasswordRequest* change_password_request_;
+    ::landlords::protocol::FetchSystemStatsRequest* fetch_system_stats_request_;
+    ::landlords::protocol::ClaimSupportLikeRewardRequest* claim_support_like_reward_request_;
+    ::landlords::protocol::SubmitSupportLikeRequest* submit_support_like_request_;
   } payload_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   uint32_t _oneof_case_[1];
@@ -10156,6 +11397,9 @@ class ServerMessage final :
     kDeleteFriendResponse = 27,
     kFriendCenterPush = 28,
     kChangePasswordResponse = 29,
+    kFetchSystemStatsResponse = 30,
+    kClaimSupportLikeRewardResponse = 31,
+    kSubmitSupportLikeResponse = 32,
     PAYLOAD_NOT_SET = 0,
   };
 
@@ -10164,7 +11408,7 @@ class ServerMessage final :
                &_ServerMessage_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    51;
+    58;
 
   friend void swap(ServerMessage& a, ServerMessage& b) {
     a.Swap(&b);
@@ -10256,6 +11500,9 @@ class ServerMessage final :
     kDeleteFriendResponseFieldNumber = 27,
     kFriendCenterPushFieldNumber = 28,
     kChangePasswordResponseFieldNumber = 29,
+    kFetchSystemStatsResponseFieldNumber = 30,
+    kClaimSupportLikeRewardResponseFieldNumber = 31,
+    kSubmitSupportLikeResponseFieldNumber = 32,
   };
   // string request_id = 1;
   void clear_request_id();
@@ -10631,6 +11878,60 @@ class ServerMessage final :
       ::landlords::protocol::ChangePasswordResponse* change_password_response);
   ::landlords::protocol::ChangePasswordResponse* unsafe_arena_release_change_password_response();
 
+  // .landlords.protocol.FetchSystemStatsResponse fetch_system_stats_response = 30;
+  bool has_fetch_system_stats_response() const;
+  private:
+  bool _internal_has_fetch_system_stats_response() const;
+  public:
+  void clear_fetch_system_stats_response();
+  const ::landlords::protocol::FetchSystemStatsResponse& fetch_system_stats_response() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::FetchSystemStatsResponse* release_fetch_system_stats_response();
+  ::landlords::protocol::FetchSystemStatsResponse* mutable_fetch_system_stats_response();
+  void set_allocated_fetch_system_stats_response(::landlords::protocol::FetchSystemStatsResponse* fetch_system_stats_response);
+  private:
+  const ::landlords::protocol::FetchSystemStatsResponse& _internal_fetch_system_stats_response() const;
+  ::landlords::protocol::FetchSystemStatsResponse* _internal_mutable_fetch_system_stats_response();
+  public:
+  void unsafe_arena_set_allocated_fetch_system_stats_response(
+      ::landlords::protocol::FetchSystemStatsResponse* fetch_system_stats_response);
+  ::landlords::protocol::FetchSystemStatsResponse* unsafe_arena_release_fetch_system_stats_response();
+
+  // .landlords.protocol.ClaimSupportLikeRewardResponse claim_support_like_reward_response = 31;
+  bool has_claim_support_like_reward_response() const;
+  private:
+  bool _internal_has_claim_support_like_reward_response() const;
+  public:
+  void clear_claim_support_like_reward_response();
+  const ::landlords::protocol::ClaimSupportLikeRewardResponse& claim_support_like_reward_response() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::ClaimSupportLikeRewardResponse* release_claim_support_like_reward_response();
+  ::landlords::protocol::ClaimSupportLikeRewardResponse* mutable_claim_support_like_reward_response();
+  void set_allocated_claim_support_like_reward_response(::landlords::protocol::ClaimSupportLikeRewardResponse* claim_support_like_reward_response);
+  private:
+  const ::landlords::protocol::ClaimSupportLikeRewardResponse& _internal_claim_support_like_reward_response() const;
+  ::landlords::protocol::ClaimSupportLikeRewardResponse* _internal_mutable_claim_support_like_reward_response();
+  public:
+  void unsafe_arena_set_allocated_claim_support_like_reward_response(
+      ::landlords::protocol::ClaimSupportLikeRewardResponse* claim_support_like_reward_response);
+  ::landlords::protocol::ClaimSupportLikeRewardResponse* unsafe_arena_release_claim_support_like_reward_response();
+
+  // .landlords.protocol.SubmitSupportLikeResponse submit_support_like_response = 32;
+  bool has_submit_support_like_response() const;
+  private:
+  bool _internal_has_submit_support_like_response() const;
+  public:
+  void clear_submit_support_like_response();
+  const ::landlords::protocol::SubmitSupportLikeResponse& submit_support_like_response() const;
+  PROTOBUF_NODISCARD ::landlords::protocol::SubmitSupportLikeResponse* release_submit_support_like_response();
+  ::landlords::protocol::SubmitSupportLikeResponse* mutable_submit_support_like_response();
+  void set_allocated_submit_support_like_response(::landlords::protocol::SubmitSupportLikeResponse* submit_support_like_response);
+  private:
+  const ::landlords::protocol::SubmitSupportLikeResponse& _internal_submit_support_like_response() const;
+  ::landlords::protocol::SubmitSupportLikeResponse* _internal_mutable_submit_support_like_response();
+  public:
+  void unsafe_arena_set_allocated_submit_support_like_response(
+      ::landlords::protocol::SubmitSupportLikeResponse* submit_support_like_response);
+  ::landlords::protocol::SubmitSupportLikeResponse* unsafe_arena_release_submit_support_like_response();
+
   void clear_payload();
   PayloadCase payload_case() const;
   // @@protoc_insertion_point(class_scope:landlords.protocol.ServerMessage)
@@ -10656,6 +11957,9 @@ class ServerMessage final :
   void set_has_delete_friend_response();
   void set_has_friend_center_push();
   void set_has_change_password_response();
+  void set_has_fetch_system_stats_response();
+  void set_has_claim_support_like_reward_response();
+  void set_has_submit_support_like_response();
 
   inline bool has_payload() const;
   inline void clear_has_payload();
@@ -10687,6 +11991,9 @@ class ServerMessage final :
     ::landlords::protocol::DeleteFriendResponse* delete_friend_response_;
     ::landlords::protocol::FriendCenterPush* friend_center_push_;
     ::landlords::protocol::ChangePasswordResponse* change_password_response_;
+    ::landlords::protocol::FetchSystemStatsResponse* fetch_system_stats_response_;
+    ::landlords::protocol::ClaimSupportLikeRewardResponse* claim_support_like_reward_response_;
+    ::landlords::protocol::SubmitSupportLikeResponse* submit_support_like_response_;
   } payload_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   uint32_t _oneof_case_[1];
@@ -10952,6 +12259,166 @@ inline void UserProfile::_internal_set_farmer_games(int32_t value) {
 inline void UserProfile::set_farmer_games(int32_t value) {
   _internal_set_farmer_games(value);
   // @@protoc_insertion_point(field_set:landlords.protocol.UserProfile.farmer_games)
+}
+
+// int32 online_landlord_wins = 9;
+inline void UserProfile::clear_online_landlord_wins() {
+  online_landlord_wins_ = 0;
+}
+inline int32_t UserProfile::_internal_online_landlord_wins() const {
+  return online_landlord_wins_;
+}
+inline int32_t UserProfile::online_landlord_wins() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.UserProfile.online_landlord_wins)
+  return _internal_online_landlord_wins();
+}
+inline void UserProfile::_internal_set_online_landlord_wins(int32_t value) {
+  
+  online_landlord_wins_ = value;
+}
+inline void UserProfile::set_online_landlord_wins(int32_t value) {
+  _internal_set_online_landlord_wins(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.UserProfile.online_landlord_wins)
+}
+
+// int32 online_landlord_games = 10;
+inline void UserProfile::clear_online_landlord_games() {
+  online_landlord_games_ = 0;
+}
+inline int32_t UserProfile::_internal_online_landlord_games() const {
+  return online_landlord_games_;
+}
+inline int32_t UserProfile::online_landlord_games() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.UserProfile.online_landlord_games)
+  return _internal_online_landlord_games();
+}
+inline void UserProfile::_internal_set_online_landlord_games(int32_t value) {
+  
+  online_landlord_games_ = value;
+}
+inline void UserProfile::set_online_landlord_games(int32_t value) {
+  _internal_set_online_landlord_games(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.UserProfile.online_landlord_games)
+}
+
+// int32 online_farmer_wins = 11;
+inline void UserProfile::clear_online_farmer_wins() {
+  online_farmer_wins_ = 0;
+}
+inline int32_t UserProfile::_internal_online_farmer_wins() const {
+  return online_farmer_wins_;
+}
+inline int32_t UserProfile::online_farmer_wins() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.UserProfile.online_farmer_wins)
+  return _internal_online_farmer_wins();
+}
+inline void UserProfile::_internal_set_online_farmer_wins(int32_t value) {
+  
+  online_farmer_wins_ = value;
+}
+inline void UserProfile::set_online_farmer_wins(int32_t value) {
+  _internal_set_online_farmer_wins(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.UserProfile.online_farmer_wins)
+}
+
+// int32 online_farmer_games = 12;
+inline void UserProfile::clear_online_farmer_games() {
+  online_farmer_games_ = 0;
+}
+inline int32_t UserProfile::_internal_online_farmer_games() const {
+  return online_farmer_games_;
+}
+inline int32_t UserProfile::online_farmer_games() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.UserProfile.online_farmer_games)
+  return _internal_online_farmer_games();
+}
+inline void UserProfile::_internal_set_online_farmer_games(int32_t value) {
+  
+  online_farmer_games_ = value;
+}
+inline void UserProfile::set_online_farmer_games(int32_t value) {
+  _internal_set_online_farmer_games(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.UserProfile.online_farmer_games)
+}
+
+// int32 bot_landlord_wins = 13;
+inline void UserProfile::clear_bot_landlord_wins() {
+  bot_landlord_wins_ = 0;
+}
+inline int32_t UserProfile::_internal_bot_landlord_wins() const {
+  return bot_landlord_wins_;
+}
+inline int32_t UserProfile::bot_landlord_wins() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.UserProfile.bot_landlord_wins)
+  return _internal_bot_landlord_wins();
+}
+inline void UserProfile::_internal_set_bot_landlord_wins(int32_t value) {
+  
+  bot_landlord_wins_ = value;
+}
+inline void UserProfile::set_bot_landlord_wins(int32_t value) {
+  _internal_set_bot_landlord_wins(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.UserProfile.bot_landlord_wins)
+}
+
+// int32 bot_landlord_games = 14;
+inline void UserProfile::clear_bot_landlord_games() {
+  bot_landlord_games_ = 0;
+}
+inline int32_t UserProfile::_internal_bot_landlord_games() const {
+  return bot_landlord_games_;
+}
+inline int32_t UserProfile::bot_landlord_games() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.UserProfile.bot_landlord_games)
+  return _internal_bot_landlord_games();
+}
+inline void UserProfile::_internal_set_bot_landlord_games(int32_t value) {
+  
+  bot_landlord_games_ = value;
+}
+inline void UserProfile::set_bot_landlord_games(int32_t value) {
+  _internal_set_bot_landlord_games(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.UserProfile.bot_landlord_games)
+}
+
+// int32 bot_farmer_wins = 15;
+inline void UserProfile::clear_bot_farmer_wins() {
+  bot_farmer_wins_ = 0;
+}
+inline int32_t UserProfile::_internal_bot_farmer_wins() const {
+  return bot_farmer_wins_;
+}
+inline int32_t UserProfile::bot_farmer_wins() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.UserProfile.bot_farmer_wins)
+  return _internal_bot_farmer_wins();
+}
+inline void UserProfile::_internal_set_bot_farmer_wins(int32_t value) {
+  
+  bot_farmer_wins_ = value;
+}
+inline void UserProfile::set_bot_farmer_wins(int32_t value) {
+  _internal_set_bot_farmer_wins(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.UserProfile.bot_farmer_wins)
+}
+
+// int32 bot_farmer_games = 16;
+inline void UserProfile::clear_bot_farmer_games() {
+  bot_farmer_games_ = 0;
+}
+inline int32_t UserProfile::_internal_bot_farmer_games() const {
+  return bot_farmer_games_;
+}
+inline int32_t UserProfile::bot_farmer_games() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.UserProfile.bot_farmer_games)
+  return _internal_bot_farmer_games();
+}
+inline void UserProfile::_internal_set_bot_farmer_games(int32_t value) {
+  
+  bot_farmer_games_ = value;
+}
+inline void UserProfile::set_bot_farmer_games(int32_t value) {
+  _internal_set_bot_farmer_games(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.UserProfile.bot_farmer_games)
 }
 
 // -------------------------------------------------------------------
@@ -11684,6 +13151,30 @@ inline void FriendCenterSnapshot::_internal_set_pending_request_count(int32_t va
 inline void FriendCenterSnapshot::set_pending_request_count(int32_t value) {
   _internal_set_pending_request_count(value);
   // @@protoc_insertion_point(field_set:landlords.protocol.FriendCenterSnapshot.pending_request_count)
+}
+
+// -------------------------------------------------------------------
+
+// SystemStatsSnapshot
+
+// int32 support_like_count = 1;
+inline void SystemStatsSnapshot::clear_support_like_count() {
+  support_like_count_ = 0;
+}
+inline int32_t SystemStatsSnapshot::_internal_support_like_count() const {
+  return support_like_count_;
+}
+inline int32_t SystemStatsSnapshot::support_like_count() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.SystemStatsSnapshot.support_like_count)
+  return _internal_support_like_count();
+}
+inline void SystemStatsSnapshot::_internal_set_support_like_count(int32_t value) {
+  
+  support_like_count_ = value;
+}
+inline void SystemStatsSnapshot::set_support_like_count(int32_t value) {
+  _internal_set_support_like_count(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.SystemStatsSnapshot.support_like_count)
 }
 
 // -------------------------------------------------------------------
@@ -12894,6 +14385,620 @@ inline void UpdateNicknameResponse::set_allocated_profile(::landlords::protocol:
   }
   profile_ = profile;
   // @@protoc_insertion_point(field_set_allocated:landlords.protocol.UpdateNicknameResponse.profile)
+}
+
+// -------------------------------------------------------------------
+
+// FetchSystemStatsRequest
+
+// -------------------------------------------------------------------
+
+// FetchSystemStatsResponse
+
+// bool success = 1;
+inline void FetchSystemStatsResponse::clear_success() {
+  success_ = false;
+}
+inline bool FetchSystemStatsResponse::_internal_success() const {
+  return success_;
+}
+inline bool FetchSystemStatsResponse::success() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.FetchSystemStatsResponse.success)
+  return _internal_success();
+}
+inline void FetchSystemStatsResponse::_internal_set_success(bool value) {
+  
+  success_ = value;
+}
+inline void FetchSystemStatsResponse::set_success(bool value) {
+  _internal_set_success(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.FetchSystemStatsResponse.success)
+}
+
+// string message = 2;
+inline void FetchSystemStatsResponse::clear_message() {
+  message_.ClearToEmpty();
+}
+inline const std::string& FetchSystemStatsResponse::message() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.FetchSystemStatsResponse.message)
+  return _internal_message();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void FetchSystemStatsResponse::set_message(ArgT0&& arg0, ArgT... args) {
+ 
+ message_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:landlords.protocol.FetchSystemStatsResponse.message)
+}
+inline std::string* FetchSystemStatsResponse::mutable_message() {
+  std::string* _s = _internal_mutable_message();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.FetchSystemStatsResponse.message)
+  return _s;
+}
+inline const std::string& FetchSystemStatsResponse::_internal_message() const {
+  return message_.Get();
+}
+inline void FetchSystemStatsResponse::_internal_set_message(const std::string& value) {
+  
+  message_.Set(value, GetArenaForAllocation());
+}
+inline std::string* FetchSystemStatsResponse::_internal_mutable_message() {
+  
+  return message_.Mutable(GetArenaForAllocation());
+}
+inline std::string* FetchSystemStatsResponse::release_message() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.FetchSystemStatsResponse.message)
+  return message_.Release();
+}
+inline void FetchSystemStatsResponse::set_allocated_message(std::string* message) {
+  if (message != nullptr) {
+    
+  } else {
+    
+  }
+  message_.SetAllocated(message, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (message_.IsDefault()) {
+    message_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.FetchSystemStatsResponse.message)
+}
+
+// .landlords.protocol.SystemStatsSnapshot stats = 3;
+inline bool FetchSystemStatsResponse::_internal_has_stats() const {
+  return this != internal_default_instance() && stats_ != nullptr;
+}
+inline bool FetchSystemStatsResponse::has_stats() const {
+  return _internal_has_stats();
+}
+inline void FetchSystemStatsResponse::clear_stats() {
+  if (GetArenaForAllocation() == nullptr && stats_ != nullptr) {
+    delete stats_;
+  }
+  stats_ = nullptr;
+}
+inline const ::landlords::protocol::SystemStatsSnapshot& FetchSystemStatsResponse::_internal_stats() const {
+  const ::landlords::protocol::SystemStatsSnapshot* p = stats_;
+  return p != nullptr ? *p : reinterpret_cast<const ::landlords::protocol::SystemStatsSnapshot&>(
+      ::landlords::protocol::_SystemStatsSnapshot_default_instance_);
+}
+inline const ::landlords::protocol::SystemStatsSnapshot& FetchSystemStatsResponse::stats() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.FetchSystemStatsResponse.stats)
+  return _internal_stats();
+}
+inline void FetchSystemStatsResponse::unsafe_arena_set_allocated_stats(
+    ::landlords::protocol::SystemStatsSnapshot* stats) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(stats_);
+  }
+  stats_ = stats;
+  if (stats) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.FetchSystemStatsResponse.stats)
+}
+inline ::landlords::protocol::SystemStatsSnapshot* FetchSystemStatsResponse::release_stats() {
+  
+  ::landlords::protocol::SystemStatsSnapshot* temp = stats_;
+  stats_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::landlords::protocol::SystemStatsSnapshot* FetchSystemStatsResponse::unsafe_arena_release_stats() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.FetchSystemStatsResponse.stats)
+  
+  ::landlords::protocol::SystemStatsSnapshot* temp = stats_;
+  stats_ = nullptr;
+  return temp;
+}
+inline ::landlords::protocol::SystemStatsSnapshot* FetchSystemStatsResponse::_internal_mutable_stats() {
+  
+  if (stats_ == nullptr) {
+    auto* p = CreateMaybeMessage<::landlords::protocol::SystemStatsSnapshot>(GetArenaForAllocation());
+    stats_ = p;
+  }
+  return stats_;
+}
+inline ::landlords::protocol::SystemStatsSnapshot* FetchSystemStatsResponse::mutable_stats() {
+  ::landlords::protocol::SystemStatsSnapshot* _msg = _internal_mutable_stats();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.FetchSystemStatsResponse.stats)
+  return _msg;
+}
+inline void FetchSystemStatsResponse::set_allocated_stats(::landlords::protocol::SystemStatsSnapshot* stats) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete stats_;
+  }
+  if (stats) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(stats);
+    if (message_arena != submessage_arena) {
+      stats = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, stats, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  stats_ = stats;
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.FetchSystemStatsResponse.stats)
+}
+
+// -------------------------------------------------------------------
+
+// SubmitSupportLikeRequest
+
+// -------------------------------------------------------------------
+
+// SubmitSupportLikeResponse
+
+// bool success = 1;
+inline void SubmitSupportLikeResponse::clear_success() {
+  success_ = false;
+}
+inline bool SubmitSupportLikeResponse::_internal_success() const {
+  return success_;
+}
+inline bool SubmitSupportLikeResponse::success() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.SubmitSupportLikeResponse.success)
+  return _internal_success();
+}
+inline void SubmitSupportLikeResponse::_internal_set_success(bool value) {
+  
+  success_ = value;
+}
+inline void SubmitSupportLikeResponse::set_success(bool value) {
+  _internal_set_success(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.SubmitSupportLikeResponse.success)
+}
+
+// string message = 2;
+inline void SubmitSupportLikeResponse::clear_message() {
+  message_.ClearToEmpty();
+}
+inline const std::string& SubmitSupportLikeResponse::message() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.SubmitSupportLikeResponse.message)
+  return _internal_message();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void SubmitSupportLikeResponse::set_message(ArgT0&& arg0, ArgT... args) {
+ 
+ message_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:landlords.protocol.SubmitSupportLikeResponse.message)
+}
+inline std::string* SubmitSupportLikeResponse::mutable_message() {
+  std::string* _s = _internal_mutable_message();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.SubmitSupportLikeResponse.message)
+  return _s;
+}
+inline const std::string& SubmitSupportLikeResponse::_internal_message() const {
+  return message_.Get();
+}
+inline void SubmitSupportLikeResponse::_internal_set_message(const std::string& value) {
+  
+  message_.Set(value, GetArenaForAllocation());
+}
+inline std::string* SubmitSupportLikeResponse::_internal_mutable_message() {
+  
+  return message_.Mutable(GetArenaForAllocation());
+}
+inline std::string* SubmitSupportLikeResponse::release_message() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.SubmitSupportLikeResponse.message)
+  return message_.Release();
+}
+inline void SubmitSupportLikeResponse::set_allocated_message(std::string* message) {
+  if (message != nullptr) {
+    
+  } else {
+    
+  }
+  message_.SetAllocated(message, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (message_.IsDefault()) {
+    message_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.SubmitSupportLikeResponse.message)
+}
+
+// .landlords.protocol.SystemStatsSnapshot stats = 3;
+inline bool SubmitSupportLikeResponse::_internal_has_stats() const {
+  return this != internal_default_instance() && stats_ != nullptr;
+}
+inline bool SubmitSupportLikeResponse::has_stats() const {
+  return _internal_has_stats();
+}
+inline void SubmitSupportLikeResponse::clear_stats() {
+  if (GetArenaForAllocation() == nullptr && stats_ != nullptr) {
+    delete stats_;
+  }
+  stats_ = nullptr;
+}
+inline const ::landlords::protocol::SystemStatsSnapshot& SubmitSupportLikeResponse::_internal_stats() const {
+  const ::landlords::protocol::SystemStatsSnapshot* p = stats_;
+  return p != nullptr ? *p : reinterpret_cast<const ::landlords::protocol::SystemStatsSnapshot&>(
+      ::landlords::protocol::_SystemStatsSnapshot_default_instance_);
+}
+inline const ::landlords::protocol::SystemStatsSnapshot& SubmitSupportLikeResponse::stats() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.SubmitSupportLikeResponse.stats)
+  return _internal_stats();
+}
+inline void SubmitSupportLikeResponse::unsafe_arena_set_allocated_stats(
+    ::landlords::protocol::SystemStatsSnapshot* stats) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(stats_);
+  }
+  stats_ = stats;
+  if (stats) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.SubmitSupportLikeResponse.stats)
+}
+inline ::landlords::protocol::SystemStatsSnapshot* SubmitSupportLikeResponse::release_stats() {
+  
+  ::landlords::protocol::SystemStatsSnapshot* temp = stats_;
+  stats_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::landlords::protocol::SystemStatsSnapshot* SubmitSupportLikeResponse::unsafe_arena_release_stats() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.SubmitSupportLikeResponse.stats)
+  
+  ::landlords::protocol::SystemStatsSnapshot* temp = stats_;
+  stats_ = nullptr;
+  return temp;
+}
+inline ::landlords::protocol::SystemStatsSnapshot* SubmitSupportLikeResponse::_internal_mutable_stats() {
+  
+  if (stats_ == nullptr) {
+    auto* p = CreateMaybeMessage<::landlords::protocol::SystemStatsSnapshot>(GetArenaForAllocation());
+    stats_ = p;
+  }
+  return stats_;
+}
+inline ::landlords::protocol::SystemStatsSnapshot* SubmitSupportLikeResponse::mutable_stats() {
+  ::landlords::protocol::SystemStatsSnapshot* _msg = _internal_mutable_stats();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.SubmitSupportLikeResponse.stats)
+  return _msg;
+}
+inline void SubmitSupportLikeResponse::set_allocated_stats(::landlords::protocol::SystemStatsSnapshot* stats) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete stats_;
+  }
+  if (stats) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(stats);
+    if (message_arena != submessage_arena) {
+      stats = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, stats, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  stats_ = stats;
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.SubmitSupportLikeResponse.stats)
+}
+
+// -------------------------------------------------------------------
+
+// ClaimSupportLikeRewardRequest
+
+// -------------------------------------------------------------------
+
+// ClaimSupportLikeRewardResponse
+
+// bool success = 1;
+inline void ClaimSupportLikeRewardResponse::clear_success() {
+  success_ = false;
+}
+inline bool ClaimSupportLikeRewardResponse::_internal_success() const {
+  return success_;
+}
+inline bool ClaimSupportLikeRewardResponse::success() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ClaimSupportLikeRewardResponse.success)
+  return _internal_success();
+}
+inline void ClaimSupportLikeRewardResponse::_internal_set_success(bool value) {
+  
+  success_ = value;
+}
+inline void ClaimSupportLikeRewardResponse::set_success(bool value) {
+  _internal_set_success(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.ClaimSupportLikeRewardResponse.success)
+}
+
+// string message = 2;
+inline void ClaimSupportLikeRewardResponse::clear_message() {
+  message_.ClearToEmpty();
+}
+inline const std::string& ClaimSupportLikeRewardResponse::message() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ClaimSupportLikeRewardResponse.message)
+  return _internal_message();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ClaimSupportLikeRewardResponse::set_message(ArgT0&& arg0, ArgT... args) {
+ 
+ message_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:landlords.protocol.ClaimSupportLikeRewardResponse.message)
+}
+inline std::string* ClaimSupportLikeRewardResponse::mutable_message() {
+  std::string* _s = _internal_mutable_message();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ClaimSupportLikeRewardResponse.message)
+  return _s;
+}
+inline const std::string& ClaimSupportLikeRewardResponse::_internal_message() const {
+  return message_.Get();
+}
+inline void ClaimSupportLikeRewardResponse::_internal_set_message(const std::string& value) {
+  
+  message_.Set(value, GetArenaForAllocation());
+}
+inline std::string* ClaimSupportLikeRewardResponse::_internal_mutable_message() {
+  
+  return message_.Mutable(GetArenaForAllocation());
+}
+inline std::string* ClaimSupportLikeRewardResponse::release_message() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ClaimSupportLikeRewardResponse.message)
+  return message_.Release();
+}
+inline void ClaimSupportLikeRewardResponse::set_allocated_message(std::string* message) {
+  if (message != nullptr) {
+    
+  } else {
+    
+  }
+  message_.SetAllocated(message, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (message_.IsDefault()) {
+    message_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.ClaimSupportLikeRewardResponse.message)
+}
+
+// .landlords.protocol.UserProfile profile = 3;
+inline bool ClaimSupportLikeRewardResponse::_internal_has_profile() const {
+  return this != internal_default_instance() && profile_ != nullptr;
+}
+inline bool ClaimSupportLikeRewardResponse::has_profile() const {
+  return _internal_has_profile();
+}
+inline void ClaimSupportLikeRewardResponse::clear_profile() {
+  if (GetArenaForAllocation() == nullptr && profile_ != nullptr) {
+    delete profile_;
+  }
+  profile_ = nullptr;
+}
+inline const ::landlords::protocol::UserProfile& ClaimSupportLikeRewardResponse::_internal_profile() const {
+  const ::landlords::protocol::UserProfile* p = profile_;
+  return p != nullptr ? *p : reinterpret_cast<const ::landlords::protocol::UserProfile&>(
+      ::landlords::protocol::_UserProfile_default_instance_);
+}
+inline const ::landlords::protocol::UserProfile& ClaimSupportLikeRewardResponse::profile() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ClaimSupportLikeRewardResponse.profile)
+  return _internal_profile();
+}
+inline void ClaimSupportLikeRewardResponse::unsafe_arena_set_allocated_profile(
+    ::landlords::protocol::UserProfile* profile) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(profile_);
+  }
+  profile_ = profile;
+  if (profile) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.ClaimSupportLikeRewardResponse.profile)
+}
+inline ::landlords::protocol::UserProfile* ClaimSupportLikeRewardResponse::release_profile() {
+  
+  ::landlords::protocol::UserProfile* temp = profile_;
+  profile_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::landlords::protocol::UserProfile* ClaimSupportLikeRewardResponse::unsafe_arena_release_profile() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ClaimSupportLikeRewardResponse.profile)
+  
+  ::landlords::protocol::UserProfile* temp = profile_;
+  profile_ = nullptr;
+  return temp;
+}
+inline ::landlords::protocol::UserProfile* ClaimSupportLikeRewardResponse::_internal_mutable_profile() {
+  
+  if (profile_ == nullptr) {
+    auto* p = CreateMaybeMessage<::landlords::protocol::UserProfile>(GetArenaForAllocation());
+    profile_ = p;
+  }
+  return profile_;
+}
+inline ::landlords::protocol::UserProfile* ClaimSupportLikeRewardResponse::mutable_profile() {
+  ::landlords::protocol::UserProfile* _msg = _internal_mutable_profile();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ClaimSupportLikeRewardResponse.profile)
+  return _msg;
+}
+inline void ClaimSupportLikeRewardResponse::set_allocated_profile(::landlords::protocol::UserProfile* profile) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete profile_;
+  }
+  if (profile) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(profile);
+    if (message_arena != submessage_arena) {
+      profile = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, profile, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  profile_ = profile;
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.ClaimSupportLikeRewardResponse.profile)
+}
+
+// .landlords.protocol.SystemStatsSnapshot stats = 4;
+inline bool ClaimSupportLikeRewardResponse::_internal_has_stats() const {
+  return this != internal_default_instance() && stats_ != nullptr;
+}
+inline bool ClaimSupportLikeRewardResponse::has_stats() const {
+  return _internal_has_stats();
+}
+inline void ClaimSupportLikeRewardResponse::clear_stats() {
+  if (GetArenaForAllocation() == nullptr && stats_ != nullptr) {
+    delete stats_;
+  }
+  stats_ = nullptr;
+}
+inline const ::landlords::protocol::SystemStatsSnapshot& ClaimSupportLikeRewardResponse::_internal_stats() const {
+  const ::landlords::protocol::SystemStatsSnapshot* p = stats_;
+  return p != nullptr ? *p : reinterpret_cast<const ::landlords::protocol::SystemStatsSnapshot&>(
+      ::landlords::protocol::_SystemStatsSnapshot_default_instance_);
+}
+inline const ::landlords::protocol::SystemStatsSnapshot& ClaimSupportLikeRewardResponse::stats() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ClaimSupportLikeRewardResponse.stats)
+  return _internal_stats();
+}
+inline void ClaimSupportLikeRewardResponse::unsafe_arena_set_allocated_stats(
+    ::landlords::protocol::SystemStatsSnapshot* stats) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(stats_);
+  }
+  stats_ = stats;
+  if (stats) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.ClaimSupportLikeRewardResponse.stats)
+}
+inline ::landlords::protocol::SystemStatsSnapshot* ClaimSupportLikeRewardResponse::release_stats() {
+  
+  ::landlords::protocol::SystemStatsSnapshot* temp = stats_;
+  stats_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::landlords::protocol::SystemStatsSnapshot* ClaimSupportLikeRewardResponse::unsafe_arena_release_stats() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ClaimSupportLikeRewardResponse.stats)
+  
+  ::landlords::protocol::SystemStatsSnapshot* temp = stats_;
+  stats_ = nullptr;
+  return temp;
+}
+inline ::landlords::protocol::SystemStatsSnapshot* ClaimSupportLikeRewardResponse::_internal_mutable_stats() {
+  
+  if (stats_ == nullptr) {
+    auto* p = CreateMaybeMessage<::landlords::protocol::SystemStatsSnapshot>(GetArenaForAllocation());
+    stats_ = p;
+  }
+  return stats_;
+}
+inline ::landlords::protocol::SystemStatsSnapshot* ClaimSupportLikeRewardResponse::mutable_stats() {
+  ::landlords::protocol::SystemStatsSnapshot* _msg = _internal_mutable_stats();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ClaimSupportLikeRewardResponse.stats)
+  return _msg;
+}
+inline void ClaimSupportLikeRewardResponse::set_allocated_stats(::landlords::protocol::SystemStatsSnapshot* stats) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete stats_;
+  }
+  if (stats) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(stats);
+    if (message_arena != submessage_arena) {
+      stats = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, stats, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  stats_ = stats;
+  // @@protoc_insertion_point(field_set_allocated:landlords.protocol.ClaimSupportLikeRewardResponse.stats)
+}
+
+// int32 reward_coins = 5;
+inline void ClaimSupportLikeRewardResponse::clear_reward_coins() {
+  reward_coins_ = 0;
+}
+inline int32_t ClaimSupportLikeRewardResponse::_internal_reward_coins() const {
+  return reward_coins_;
+}
+inline int32_t ClaimSupportLikeRewardResponse::reward_coins() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ClaimSupportLikeRewardResponse.reward_coins)
+  return _internal_reward_coins();
+}
+inline void ClaimSupportLikeRewardResponse::_internal_set_reward_coins(int32_t value) {
+  
+  reward_coins_ = value;
+}
+inline void ClaimSupportLikeRewardResponse::set_reward_coins(int32_t value) {
+  _internal_set_reward_coins(value);
+  // @@protoc_insertion_point(field_set:landlords.protocol.ClaimSupportLikeRewardResponse.reward_coins)
 }
 
 // -------------------------------------------------------------------
@@ -19227,6 +21332,228 @@ inline ::landlords::protocol::ChangePasswordRequest* ClientMessage::mutable_chan
   return _msg;
 }
 
+// .landlords.protocol.FetchSystemStatsRequest fetch_system_stats_request = 32;
+inline bool ClientMessage::_internal_has_fetch_system_stats_request() const {
+  return payload_case() == kFetchSystemStatsRequest;
+}
+inline bool ClientMessage::has_fetch_system_stats_request() const {
+  return _internal_has_fetch_system_stats_request();
+}
+inline void ClientMessage::set_has_fetch_system_stats_request() {
+  _oneof_case_[0] = kFetchSystemStatsRequest;
+}
+inline void ClientMessage::clear_fetch_system_stats_request() {
+  if (_internal_has_fetch_system_stats_request()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete payload_.fetch_system_stats_request_;
+    }
+    clear_has_payload();
+  }
+}
+inline ::landlords::protocol::FetchSystemStatsRequest* ClientMessage::release_fetch_system_stats_request() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ClientMessage.fetch_system_stats_request)
+  if (_internal_has_fetch_system_stats_request()) {
+    clear_has_payload();
+    ::landlords::protocol::FetchSystemStatsRequest* temp = payload_.fetch_system_stats_request_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    payload_.fetch_system_stats_request_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::landlords::protocol::FetchSystemStatsRequest& ClientMessage::_internal_fetch_system_stats_request() const {
+  return _internal_has_fetch_system_stats_request()
+      ? *payload_.fetch_system_stats_request_
+      : reinterpret_cast< ::landlords::protocol::FetchSystemStatsRequest&>(::landlords::protocol::_FetchSystemStatsRequest_default_instance_);
+}
+inline const ::landlords::protocol::FetchSystemStatsRequest& ClientMessage::fetch_system_stats_request() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ClientMessage.fetch_system_stats_request)
+  return _internal_fetch_system_stats_request();
+}
+inline ::landlords::protocol::FetchSystemStatsRequest* ClientMessage::unsafe_arena_release_fetch_system_stats_request() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:landlords.protocol.ClientMessage.fetch_system_stats_request)
+  if (_internal_has_fetch_system_stats_request()) {
+    clear_has_payload();
+    ::landlords::protocol::FetchSystemStatsRequest* temp = payload_.fetch_system_stats_request_;
+    payload_.fetch_system_stats_request_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ClientMessage::unsafe_arena_set_allocated_fetch_system_stats_request(::landlords::protocol::FetchSystemStatsRequest* fetch_system_stats_request) {
+  clear_payload();
+  if (fetch_system_stats_request) {
+    set_has_fetch_system_stats_request();
+    payload_.fetch_system_stats_request_ = fetch_system_stats_request;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.ClientMessage.fetch_system_stats_request)
+}
+inline ::landlords::protocol::FetchSystemStatsRequest* ClientMessage::_internal_mutable_fetch_system_stats_request() {
+  if (!_internal_has_fetch_system_stats_request()) {
+    clear_payload();
+    set_has_fetch_system_stats_request();
+    payload_.fetch_system_stats_request_ = CreateMaybeMessage< ::landlords::protocol::FetchSystemStatsRequest >(GetArenaForAllocation());
+  }
+  return payload_.fetch_system_stats_request_;
+}
+inline ::landlords::protocol::FetchSystemStatsRequest* ClientMessage::mutable_fetch_system_stats_request() {
+  ::landlords::protocol::FetchSystemStatsRequest* _msg = _internal_mutable_fetch_system_stats_request();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ClientMessage.fetch_system_stats_request)
+  return _msg;
+}
+
+// .landlords.protocol.ClaimSupportLikeRewardRequest claim_support_like_reward_request = 33;
+inline bool ClientMessage::_internal_has_claim_support_like_reward_request() const {
+  return payload_case() == kClaimSupportLikeRewardRequest;
+}
+inline bool ClientMessage::has_claim_support_like_reward_request() const {
+  return _internal_has_claim_support_like_reward_request();
+}
+inline void ClientMessage::set_has_claim_support_like_reward_request() {
+  _oneof_case_[0] = kClaimSupportLikeRewardRequest;
+}
+inline void ClientMessage::clear_claim_support_like_reward_request() {
+  if (_internal_has_claim_support_like_reward_request()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete payload_.claim_support_like_reward_request_;
+    }
+    clear_has_payload();
+  }
+}
+inline ::landlords::protocol::ClaimSupportLikeRewardRequest* ClientMessage::release_claim_support_like_reward_request() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ClientMessage.claim_support_like_reward_request)
+  if (_internal_has_claim_support_like_reward_request()) {
+    clear_has_payload();
+    ::landlords::protocol::ClaimSupportLikeRewardRequest* temp = payload_.claim_support_like_reward_request_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    payload_.claim_support_like_reward_request_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::landlords::protocol::ClaimSupportLikeRewardRequest& ClientMessage::_internal_claim_support_like_reward_request() const {
+  return _internal_has_claim_support_like_reward_request()
+      ? *payload_.claim_support_like_reward_request_
+      : reinterpret_cast< ::landlords::protocol::ClaimSupportLikeRewardRequest&>(::landlords::protocol::_ClaimSupportLikeRewardRequest_default_instance_);
+}
+inline const ::landlords::protocol::ClaimSupportLikeRewardRequest& ClientMessage::claim_support_like_reward_request() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ClientMessage.claim_support_like_reward_request)
+  return _internal_claim_support_like_reward_request();
+}
+inline ::landlords::protocol::ClaimSupportLikeRewardRequest* ClientMessage::unsafe_arena_release_claim_support_like_reward_request() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:landlords.protocol.ClientMessage.claim_support_like_reward_request)
+  if (_internal_has_claim_support_like_reward_request()) {
+    clear_has_payload();
+    ::landlords::protocol::ClaimSupportLikeRewardRequest* temp = payload_.claim_support_like_reward_request_;
+    payload_.claim_support_like_reward_request_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ClientMessage::unsafe_arena_set_allocated_claim_support_like_reward_request(::landlords::protocol::ClaimSupportLikeRewardRequest* claim_support_like_reward_request) {
+  clear_payload();
+  if (claim_support_like_reward_request) {
+    set_has_claim_support_like_reward_request();
+    payload_.claim_support_like_reward_request_ = claim_support_like_reward_request;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.ClientMessage.claim_support_like_reward_request)
+}
+inline ::landlords::protocol::ClaimSupportLikeRewardRequest* ClientMessage::_internal_mutable_claim_support_like_reward_request() {
+  if (!_internal_has_claim_support_like_reward_request()) {
+    clear_payload();
+    set_has_claim_support_like_reward_request();
+    payload_.claim_support_like_reward_request_ = CreateMaybeMessage< ::landlords::protocol::ClaimSupportLikeRewardRequest >(GetArenaForAllocation());
+  }
+  return payload_.claim_support_like_reward_request_;
+}
+inline ::landlords::protocol::ClaimSupportLikeRewardRequest* ClientMessage::mutable_claim_support_like_reward_request() {
+  ::landlords::protocol::ClaimSupportLikeRewardRequest* _msg = _internal_mutable_claim_support_like_reward_request();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ClientMessage.claim_support_like_reward_request)
+  return _msg;
+}
+
+// .landlords.protocol.SubmitSupportLikeRequest submit_support_like_request = 34;
+inline bool ClientMessage::_internal_has_submit_support_like_request() const {
+  return payload_case() == kSubmitSupportLikeRequest;
+}
+inline bool ClientMessage::has_submit_support_like_request() const {
+  return _internal_has_submit_support_like_request();
+}
+inline void ClientMessage::set_has_submit_support_like_request() {
+  _oneof_case_[0] = kSubmitSupportLikeRequest;
+}
+inline void ClientMessage::clear_submit_support_like_request() {
+  if (_internal_has_submit_support_like_request()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete payload_.submit_support_like_request_;
+    }
+    clear_has_payload();
+  }
+}
+inline ::landlords::protocol::SubmitSupportLikeRequest* ClientMessage::release_submit_support_like_request() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ClientMessage.submit_support_like_request)
+  if (_internal_has_submit_support_like_request()) {
+    clear_has_payload();
+    ::landlords::protocol::SubmitSupportLikeRequest* temp = payload_.submit_support_like_request_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    payload_.submit_support_like_request_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::landlords::protocol::SubmitSupportLikeRequest& ClientMessage::_internal_submit_support_like_request() const {
+  return _internal_has_submit_support_like_request()
+      ? *payload_.submit_support_like_request_
+      : reinterpret_cast< ::landlords::protocol::SubmitSupportLikeRequest&>(::landlords::protocol::_SubmitSupportLikeRequest_default_instance_);
+}
+inline const ::landlords::protocol::SubmitSupportLikeRequest& ClientMessage::submit_support_like_request() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ClientMessage.submit_support_like_request)
+  return _internal_submit_support_like_request();
+}
+inline ::landlords::protocol::SubmitSupportLikeRequest* ClientMessage::unsafe_arena_release_submit_support_like_request() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:landlords.protocol.ClientMessage.submit_support_like_request)
+  if (_internal_has_submit_support_like_request()) {
+    clear_has_payload();
+    ::landlords::protocol::SubmitSupportLikeRequest* temp = payload_.submit_support_like_request_;
+    payload_.submit_support_like_request_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ClientMessage::unsafe_arena_set_allocated_submit_support_like_request(::landlords::protocol::SubmitSupportLikeRequest* submit_support_like_request) {
+  clear_payload();
+  if (submit_support_like_request) {
+    set_has_submit_support_like_request();
+    payload_.submit_support_like_request_ = submit_support_like_request;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.ClientMessage.submit_support_like_request)
+}
+inline ::landlords::protocol::SubmitSupportLikeRequest* ClientMessage::_internal_mutable_submit_support_like_request() {
+  if (!_internal_has_submit_support_like_request()) {
+    clear_payload();
+    set_has_submit_support_like_request();
+    payload_.submit_support_like_request_ = CreateMaybeMessage< ::landlords::protocol::SubmitSupportLikeRequest >(GetArenaForAllocation());
+  }
+  return payload_.submit_support_like_request_;
+}
+inline ::landlords::protocol::SubmitSupportLikeRequest* ClientMessage::mutable_submit_support_like_request() {
+  ::landlords::protocol::SubmitSupportLikeRequest* _msg = _internal_mutable_submit_support_like_request();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ClientMessage.submit_support_like_request)
+  return _msg;
+}
+
 inline bool ClientMessage::has_payload() const {
   return payload_case() != PAYLOAD_NOT_SET;
 }
@@ -20770,6 +23097,228 @@ inline ::landlords::protocol::ChangePasswordResponse* ServerMessage::mutable_cha
   return _msg;
 }
 
+// .landlords.protocol.FetchSystemStatsResponse fetch_system_stats_response = 30;
+inline bool ServerMessage::_internal_has_fetch_system_stats_response() const {
+  return payload_case() == kFetchSystemStatsResponse;
+}
+inline bool ServerMessage::has_fetch_system_stats_response() const {
+  return _internal_has_fetch_system_stats_response();
+}
+inline void ServerMessage::set_has_fetch_system_stats_response() {
+  _oneof_case_[0] = kFetchSystemStatsResponse;
+}
+inline void ServerMessage::clear_fetch_system_stats_response() {
+  if (_internal_has_fetch_system_stats_response()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete payload_.fetch_system_stats_response_;
+    }
+    clear_has_payload();
+  }
+}
+inline ::landlords::protocol::FetchSystemStatsResponse* ServerMessage::release_fetch_system_stats_response() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ServerMessage.fetch_system_stats_response)
+  if (_internal_has_fetch_system_stats_response()) {
+    clear_has_payload();
+    ::landlords::protocol::FetchSystemStatsResponse* temp = payload_.fetch_system_stats_response_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    payload_.fetch_system_stats_response_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::landlords::protocol::FetchSystemStatsResponse& ServerMessage::_internal_fetch_system_stats_response() const {
+  return _internal_has_fetch_system_stats_response()
+      ? *payload_.fetch_system_stats_response_
+      : reinterpret_cast< ::landlords::protocol::FetchSystemStatsResponse&>(::landlords::protocol::_FetchSystemStatsResponse_default_instance_);
+}
+inline const ::landlords::protocol::FetchSystemStatsResponse& ServerMessage::fetch_system_stats_response() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ServerMessage.fetch_system_stats_response)
+  return _internal_fetch_system_stats_response();
+}
+inline ::landlords::protocol::FetchSystemStatsResponse* ServerMessage::unsafe_arena_release_fetch_system_stats_response() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:landlords.protocol.ServerMessage.fetch_system_stats_response)
+  if (_internal_has_fetch_system_stats_response()) {
+    clear_has_payload();
+    ::landlords::protocol::FetchSystemStatsResponse* temp = payload_.fetch_system_stats_response_;
+    payload_.fetch_system_stats_response_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ServerMessage::unsafe_arena_set_allocated_fetch_system_stats_response(::landlords::protocol::FetchSystemStatsResponse* fetch_system_stats_response) {
+  clear_payload();
+  if (fetch_system_stats_response) {
+    set_has_fetch_system_stats_response();
+    payload_.fetch_system_stats_response_ = fetch_system_stats_response;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.ServerMessage.fetch_system_stats_response)
+}
+inline ::landlords::protocol::FetchSystemStatsResponse* ServerMessage::_internal_mutable_fetch_system_stats_response() {
+  if (!_internal_has_fetch_system_stats_response()) {
+    clear_payload();
+    set_has_fetch_system_stats_response();
+    payload_.fetch_system_stats_response_ = CreateMaybeMessage< ::landlords::protocol::FetchSystemStatsResponse >(GetArenaForAllocation());
+  }
+  return payload_.fetch_system_stats_response_;
+}
+inline ::landlords::protocol::FetchSystemStatsResponse* ServerMessage::mutable_fetch_system_stats_response() {
+  ::landlords::protocol::FetchSystemStatsResponse* _msg = _internal_mutable_fetch_system_stats_response();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ServerMessage.fetch_system_stats_response)
+  return _msg;
+}
+
+// .landlords.protocol.ClaimSupportLikeRewardResponse claim_support_like_reward_response = 31;
+inline bool ServerMessage::_internal_has_claim_support_like_reward_response() const {
+  return payload_case() == kClaimSupportLikeRewardResponse;
+}
+inline bool ServerMessage::has_claim_support_like_reward_response() const {
+  return _internal_has_claim_support_like_reward_response();
+}
+inline void ServerMessage::set_has_claim_support_like_reward_response() {
+  _oneof_case_[0] = kClaimSupportLikeRewardResponse;
+}
+inline void ServerMessage::clear_claim_support_like_reward_response() {
+  if (_internal_has_claim_support_like_reward_response()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete payload_.claim_support_like_reward_response_;
+    }
+    clear_has_payload();
+  }
+}
+inline ::landlords::protocol::ClaimSupportLikeRewardResponse* ServerMessage::release_claim_support_like_reward_response() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ServerMessage.claim_support_like_reward_response)
+  if (_internal_has_claim_support_like_reward_response()) {
+    clear_has_payload();
+    ::landlords::protocol::ClaimSupportLikeRewardResponse* temp = payload_.claim_support_like_reward_response_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    payload_.claim_support_like_reward_response_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::landlords::protocol::ClaimSupportLikeRewardResponse& ServerMessage::_internal_claim_support_like_reward_response() const {
+  return _internal_has_claim_support_like_reward_response()
+      ? *payload_.claim_support_like_reward_response_
+      : reinterpret_cast< ::landlords::protocol::ClaimSupportLikeRewardResponse&>(::landlords::protocol::_ClaimSupportLikeRewardResponse_default_instance_);
+}
+inline const ::landlords::protocol::ClaimSupportLikeRewardResponse& ServerMessage::claim_support_like_reward_response() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ServerMessage.claim_support_like_reward_response)
+  return _internal_claim_support_like_reward_response();
+}
+inline ::landlords::protocol::ClaimSupportLikeRewardResponse* ServerMessage::unsafe_arena_release_claim_support_like_reward_response() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:landlords.protocol.ServerMessage.claim_support_like_reward_response)
+  if (_internal_has_claim_support_like_reward_response()) {
+    clear_has_payload();
+    ::landlords::protocol::ClaimSupportLikeRewardResponse* temp = payload_.claim_support_like_reward_response_;
+    payload_.claim_support_like_reward_response_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ServerMessage::unsafe_arena_set_allocated_claim_support_like_reward_response(::landlords::protocol::ClaimSupportLikeRewardResponse* claim_support_like_reward_response) {
+  clear_payload();
+  if (claim_support_like_reward_response) {
+    set_has_claim_support_like_reward_response();
+    payload_.claim_support_like_reward_response_ = claim_support_like_reward_response;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.ServerMessage.claim_support_like_reward_response)
+}
+inline ::landlords::protocol::ClaimSupportLikeRewardResponse* ServerMessage::_internal_mutable_claim_support_like_reward_response() {
+  if (!_internal_has_claim_support_like_reward_response()) {
+    clear_payload();
+    set_has_claim_support_like_reward_response();
+    payload_.claim_support_like_reward_response_ = CreateMaybeMessage< ::landlords::protocol::ClaimSupportLikeRewardResponse >(GetArenaForAllocation());
+  }
+  return payload_.claim_support_like_reward_response_;
+}
+inline ::landlords::protocol::ClaimSupportLikeRewardResponse* ServerMessage::mutable_claim_support_like_reward_response() {
+  ::landlords::protocol::ClaimSupportLikeRewardResponse* _msg = _internal_mutable_claim_support_like_reward_response();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ServerMessage.claim_support_like_reward_response)
+  return _msg;
+}
+
+// .landlords.protocol.SubmitSupportLikeResponse submit_support_like_response = 32;
+inline bool ServerMessage::_internal_has_submit_support_like_response() const {
+  return payload_case() == kSubmitSupportLikeResponse;
+}
+inline bool ServerMessage::has_submit_support_like_response() const {
+  return _internal_has_submit_support_like_response();
+}
+inline void ServerMessage::set_has_submit_support_like_response() {
+  _oneof_case_[0] = kSubmitSupportLikeResponse;
+}
+inline void ServerMessage::clear_submit_support_like_response() {
+  if (_internal_has_submit_support_like_response()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete payload_.submit_support_like_response_;
+    }
+    clear_has_payload();
+  }
+}
+inline ::landlords::protocol::SubmitSupportLikeResponse* ServerMessage::release_submit_support_like_response() {
+  // @@protoc_insertion_point(field_release:landlords.protocol.ServerMessage.submit_support_like_response)
+  if (_internal_has_submit_support_like_response()) {
+    clear_has_payload();
+    ::landlords::protocol::SubmitSupportLikeResponse* temp = payload_.submit_support_like_response_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    payload_.submit_support_like_response_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::landlords::protocol::SubmitSupportLikeResponse& ServerMessage::_internal_submit_support_like_response() const {
+  return _internal_has_submit_support_like_response()
+      ? *payload_.submit_support_like_response_
+      : reinterpret_cast< ::landlords::protocol::SubmitSupportLikeResponse&>(::landlords::protocol::_SubmitSupportLikeResponse_default_instance_);
+}
+inline const ::landlords::protocol::SubmitSupportLikeResponse& ServerMessage::submit_support_like_response() const {
+  // @@protoc_insertion_point(field_get:landlords.protocol.ServerMessage.submit_support_like_response)
+  return _internal_submit_support_like_response();
+}
+inline ::landlords::protocol::SubmitSupportLikeResponse* ServerMessage::unsafe_arena_release_submit_support_like_response() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:landlords.protocol.ServerMessage.submit_support_like_response)
+  if (_internal_has_submit_support_like_response()) {
+    clear_has_payload();
+    ::landlords::protocol::SubmitSupportLikeResponse* temp = payload_.submit_support_like_response_;
+    payload_.submit_support_like_response_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ServerMessage::unsafe_arena_set_allocated_submit_support_like_response(::landlords::protocol::SubmitSupportLikeResponse* submit_support_like_response) {
+  clear_payload();
+  if (submit_support_like_response) {
+    set_has_submit_support_like_response();
+    payload_.submit_support_like_response_ = submit_support_like_response;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:landlords.protocol.ServerMessage.submit_support_like_response)
+}
+inline ::landlords::protocol::SubmitSupportLikeResponse* ServerMessage::_internal_mutable_submit_support_like_response() {
+  if (!_internal_has_submit_support_like_response()) {
+    clear_payload();
+    set_has_submit_support_like_response();
+    payload_.submit_support_like_response_ = CreateMaybeMessage< ::landlords::protocol::SubmitSupportLikeResponse >(GetArenaForAllocation());
+  }
+  return payload_.submit_support_like_response_;
+}
+inline ::landlords::protocol::SubmitSupportLikeResponse* ServerMessage::mutable_submit_support_like_response() {
+  ::landlords::protocol::SubmitSupportLikeResponse* _msg = _internal_mutable_submit_support_like_response();
+  // @@protoc_insertion_point(field_mutable:landlords.protocol.ServerMessage.submit_support_like_response)
+  return _msg;
+}
+
 inline bool ServerMessage::has_payload() const {
   return payload_case() != PAYLOAD_NOT_SET;
 }
@@ -20782,6 +23331,20 @@ inline ServerMessage::PayloadCase ServerMessage::payload_case() const {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

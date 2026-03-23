@@ -31,6 +31,14 @@ class UserProfile extends $pb.GeneratedMessage {
     $core.int? landlordGames,
     $core.int? farmerWins,
     $core.int? farmerGames,
+    $core.int? onlineLandlordWins,
+    $core.int? onlineLandlordGames,
+    $core.int? onlineFarmerWins,
+    $core.int? onlineFarmerGames,
+    $core.int? botLandlordWins,
+    $core.int? botLandlordGames,
+    $core.int? botFarmerWins,
+    $core.int? botFarmerGames,
   }) {
     final result = create();
     if (userId != null) result.userId = userId;
@@ -41,6 +49,16 @@ class UserProfile extends $pb.GeneratedMessage {
     if (landlordGames != null) result.landlordGames = landlordGames;
     if (farmerWins != null) result.farmerWins = farmerWins;
     if (farmerGames != null) result.farmerGames = farmerGames;
+    if (onlineLandlordWins != null)
+      result.onlineLandlordWins = onlineLandlordWins;
+    if (onlineLandlordGames != null)
+      result.onlineLandlordGames = onlineLandlordGames;
+    if (onlineFarmerWins != null) result.onlineFarmerWins = onlineFarmerWins;
+    if (onlineFarmerGames != null) result.onlineFarmerGames = onlineFarmerGames;
+    if (botLandlordWins != null) result.botLandlordWins = botLandlordWins;
+    if (botLandlordGames != null) result.botLandlordGames = botLandlordGames;
+    if (botFarmerWins != null) result.botFarmerWins = botFarmerWins;
+    if (botFarmerGames != null) result.botFarmerGames = botFarmerGames;
     return result;
   }
 
@@ -66,6 +84,14 @@ class UserProfile extends $pb.GeneratedMessage {
     ..aI(6, _omitFieldNames ? '' : 'landlordGames')
     ..aI(7, _omitFieldNames ? '' : 'farmerWins')
     ..aI(8, _omitFieldNames ? '' : 'farmerGames')
+    ..aI(9, _omitFieldNames ? '' : 'onlineLandlordWins')
+    ..aI(10, _omitFieldNames ? '' : 'onlineLandlordGames')
+    ..aI(11, _omitFieldNames ? '' : 'onlineFarmerWins')
+    ..aI(12, _omitFieldNames ? '' : 'onlineFarmerGames')
+    ..aI(13, _omitFieldNames ? '' : 'botLandlordWins')
+    ..aI(14, _omitFieldNames ? '' : 'botLandlordGames')
+    ..aI(15, _omitFieldNames ? '' : 'botFarmerWins')
+    ..aI(16, _omitFieldNames ? '' : 'botFarmerGames')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -158,6 +184,78 @@ class UserProfile extends $pb.GeneratedMessage {
   $core.bool hasFarmerGames() => $_has(7);
   @$pb.TagNumber(8)
   void clearFarmerGames() => $_clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.int get onlineLandlordWins => $_getIZ(8);
+  @$pb.TagNumber(9)
+  set onlineLandlordWins($core.int value) => $_setSignedInt32(8, value);
+  @$pb.TagNumber(9)
+  $core.bool hasOnlineLandlordWins() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearOnlineLandlordWins() => $_clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.int get onlineLandlordGames => $_getIZ(9);
+  @$pb.TagNumber(10)
+  set onlineLandlordGames($core.int value) => $_setSignedInt32(9, value);
+  @$pb.TagNumber(10)
+  $core.bool hasOnlineLandlordGames() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearOnlineLandlordGames() => $_clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.int get onlineFarmerWins => $_getIZ(10);
+  @$pb.TagNumber(11)
+  set onlineFarmerWins($core.int value) => $_setSignedInt32(10, value);
+  @$pb.TagNumber(11)
+  $core.bool hasOnlineFarmerWins() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearOnlineFarmerWins() => $_clearField(11);
+
+  @$pb.TagNumber(12)
+  $core.int get onlineFarmerGames => $_getIZ(11);
+  @$pb.TagNumber(12)
+  set onlineFarmerGames($core.int value) => $_setSignedInt32(11, value);
+  @$pb.TagNumber(12)
+  $core.bool hasOnlineFarmerGames() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearOnlineFarmerGames() => $_clearField(12);
+
+  @$pb.TagNumber(13)
+  $core.int get botLandlordWins => $_getIZ(12);
+  @$pb.TagNumber(13)
+  set botLandlordWins($core.int value) => $_setSignedInt32(12, value);
+  @$pb.TagNumber(13)
+  $core.bool hasBotLandlordWins() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearBotLandlordWins() => $_clearField(13);
+
+  @$pb.TagNumber(14)
+  $core.int get botLandlordGames => $_getIZ(13);
+  @$pb.TagNumber(14)
+  set botLandlordGames($core.int value) => $_setSignedInt32(13, value);
+  @$pb.TagNumber(14)
+  $core.bool hasBotLandlordGames() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearBotLandlordGames() => $_clearField(14);
+
+  @$pb.TagNumber(15)
+  $core.int get botFarmerWins => $_getIZ(14);
+  @$pb.TagNumber(15)
+  set botFarmerWins($core.int value) => $_setSignedInt32(14, value);
+  @$pb.TagNumber(15)
+  $core.bool hasBotFarmerWins() => $_has(14);
+  @$pb.TagNumber(15)
+  void clearBotFarmerWins() => $_clearField(15);
+
+  @$pb.TagNumber(16)
+  $core.int get botFarmerGames => $_getIZ(15);
+  @$pb.TagNumber(16)
+  set botFarmerGames($core.int value) => $_setSignedInt32(15, value);
+  @$pb.TagNumber(16)
+  $core.bool hasBotFarmerGames() => $_has(15);
+  @$pb.TagNumber(16)
+  void clearBotFarmerGames() => $_clearField(16);
 }
 
 class OnlineUser extends $pb.GeneratedMessage {
@@ -489,6 +587,61 @@ class FriendCenterSnapshot extends $pb.GeneratedMessage {
   $core.bool hasPendingRequestCount() => $_has(3);
   @$pb.TagNumber(4)
   void clearPendingRequestCount() => $_clearField(4);
+}
+
+class SystemStatsSnapshot extends $pb.GeneratedMessage {
+  factory SystemStatsSnapshot({
+    $core.int? supportLikeCount,
+  }) {
+    final result = create();
+    if (supportLikeCount != null) result.supportLikeCount = supportLikeCount;
+    return result;
+  }
+
+  SystemStatsSnapshot._();
+
+  factory SystemStatsSnapshot.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory SystemStatsSnapshot.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SystemStatsSnapshot',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aI(1, _omitFieldNames ? '' : 'supportLikeCount')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SystemStatsSnapshot clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SystemStatsSnapshot copyWith(void Function(SystemStatsSnapshot) updates) =>
+      super.copyWith((message) => updates(message as SystemStatsSnapshot))
+          as SystemStatsSnapshot;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SystemStatsSnapshot create() => SystemStatsSnapshot._();
+  @$core.override
+  SystemStatsSnapshot createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static SystemStatsSnapshot getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SystemStatsSnapshot>(create);
+  static SystemStatsSnapshot? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get supportLikeCount => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set supportLikeCount($core.int value) => $_setSignedInt32(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSupportLikeCount() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSupportLikeCount() => $_clearField(1);
 }
 
 class RegisterRequest extends $pb.GeneratedMessage {
@@ -1221,6 +1374,406 @@ class UpdateNicknameResponse extends $pb.GeneratedMessage {
   void clearProfile() => $_clearField(3);
   @$pb.TagNumber(3)
   UserProfile ensureProfile() => $_ensure(2);
+}
+
+class FetchSystemStatsRequest extends $pb.GeneratedMessage {
+  factory FetchSystemStatsRequest() => create();
+
+  FetchSystemStatsRequest._();
+
+  factory FetchSystemStatsRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory FetchSystemStatsRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'FetchSystemStatsRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FetchSystemStatsRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FetchSystemStatsRequest copyWith(
+          void Function(FetchSystemStatsRequest) updates) =>
+      super.copyWith((message) => updates(message as FetchSystemStatsRequest))
+          as FetchSystemStatsRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static FetchSystemStatsRequest create() => FetchSystemStatsRequest._();
+  @$core.override
+  FetchSystemStatsRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static FetchSystemStatsRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<FetchSystemStatsRequest>(create);
+  static FetchSystemStatsRequest? _defaultInstance;
+}
+
+class FetchSystemStatsResponse extends $pb.GeneratedMessage {
+  factory FetchSystemStatsResponse({
+    $core.bool? success,
+    $core.String? message,
+    SystemStatsSnapshot? stats,
+  }) {
+    final result = create();
+    if (success != null) result.success = success;
+    if (message != null) result.message = message;
+    if (stats != null) result.stats = stats;
+    return result;
+  }
+
+  FetchSystemStatsResponse._();
+
+  factory FetchSystemStatsResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory FetchSystemStatsResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'FetchSystemStatsResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..aOM<SystemStatsSnapshot>(3, _omitFieldNames ? '' : 'stats',
+        subBuilder: SystemStatsSnapshot.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FetchSystemStatsResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  FetchSystemStatsResponse copyWith(
+          void Function(FetchSystemStatsResponse) updates) =>
+      super.copyWith((message) => updates(message as FetchSystemStatsResponse))
+          as FetchSystemStatsResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static FetchSystemStatsResponse create() => FetchSystemStatsResponse._();
+  @$core.override
+  FetchSystemStatsResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static FetchSystemStatsResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<FetchSystemStatsResponse>(create);
+  static FetchSystemStatsResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  SystemStatsSnapshot get stats => $_getN(2);
+  @$pb.TagNumber(3)
+  set stats(SystemStatsSnapshot value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasStats() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearStats() => $_clearField(3);
+  @$pb.TagNumber(3)
+  SystemStatsSnapshot ensureStats() => $_ensure(2);
+}
+
+class SubmitSupportLikeRequest extends $pb.GeneratedMessage {
+  factory SubmitSupportLikeRequest() => create();
+
+  SubmitSupportLikeRequest._();
+
+  factory SubmitSupportLikeRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory SubmitSupportLikeRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SubmitSupportLikeRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SubmitSupportLikeRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SubmitSupportLikeRequest copyWith(
+          void Function(SubmitSupportLikeRequest) updates) =>
+      super.copyWith((message) => updates(message as SubmitSupportLikeRequest))
+          as SubmitSupportLikeRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SubmitSupportLikeRequest create() => SubmitSupportLikeRequest._();
+  @$core.override
+  SubmitSupportLikeRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static SubmitSupportLikeRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SubmitSupportLikeRequest>(create);
+  static SubmitSupportLikeRequest? _defaultInstance;
+}
+
+class SubmitSupportLikeResponse extends $pb.GeneratedMessage {
+  factory SubmitSupportLikeResponse({
+    $core.bool? success,
+    $core.String? message,
+    SystemStatsSnapshot? stats,
+  }) {
+    final result = create();
+    if (success != null) result.success = success;
+    if (message != null) result.message = message;
+    if (stats != null) result.stats = stats;
+    return result;
+  }
+
+  SubmitSupportLikeResponse._();
+
+  factory SubmitSupportLikeResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory SubmitSupportLikeResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SubmitSupportLikeResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..aOM<SystemStatsSnapshot>(3, _omitFieldNames ? '' : 'stats',
+        subBuilder: SystemStatsSnapshot.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SubmitSupportLikeResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SubmitSupportLikeResponse copyWith(
+          void Function(SubmitSupportLikeResponse) updates) =>
+      super.copyWith((message) => updates(message as SubmitSupportLikeResponse))
+          as SubmitSupportLikeResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SubmitSupportLikeResponse create() => SubmitSupportLikeResponse._();
+  @$core.override
+  SubmitSupportLikeResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static SubmitSupportLikeResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SubmitSupportLikeResponse>(create);
+  static SubmitSupportLikeResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  SystemStatsSnapshot get stats => $_getN(2);
+  @$pb.TagNumber(3)
+  set stats(SystemStatsSnapshot value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasStats() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearStats() => $_clearField(3);
+  @$pb.TagNumber(3)
+  SystemStatsSnapshot ensureStats() => $_ensure(2);
+}
+
+class ClaimSupportLikeRewardRequest extends $pb.GeneratedMessage {
+  factory ClaimSupportLikeRewardRequest() => create();
+
+  ClaimSupportLikeRewardRequest._();
+
+  factory ClaimSupportLikeRewardRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ClaimSupportLikeRewardRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ClaimSupportLikeRewardRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ClaimSupportLikeRewardRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ClaimSupportLikeRewardRequest copyWith(
+          void Function(ClaimSupportLikeRewardRequest) updates) =>
+      super.copyWith(
+              (message) => updates(message as ClaimSupportLikeRewardRequest))
+          as ClaimSupportLikeRewardRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ClaimSupportLikeRewardRequest create() =>
+      ClaimSupportLikeRewardRequest._();
+  @$core.override
+  ClaimSupportLikeRewardRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ClaimSupportLikeRewardRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ClaimSupportLikeRewardRequest>(create);
+  static ClaimSupportLikeRewardRequest? _defaultInstance;
+}
+
+class ClaimSupportLikeRewardResponse extends $pb.GeneratedMessage {
+  factory ClaimSupportLikeRewardResponse({
+    $core.bool? success,
+    $core.String? message,
+    UserProfile? profile,
+    SystemStatsSnapshot? stats,
+    $core.int? rewardCoins,
+  }) {
+    final result = create();
+    if (success != null) result.success = success;
+    if (message != null) result.message = message;
+    if (profile != null) result.profile = profile;
+    if (stats != null) result.stats = stats;
+    if (rewardCoins != null) result.rewardCoins = rewardCoins;
+    return result;
+  }
+
+  ClaimSupportLikeRewardResponse._();
+
+  factory ClaimSupportLikeRewardResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ClaimSupportLikeRewardResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ClaimSupportLikeRewardResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'landlords.protocol'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..aOM<UserProfile>(3, _omitFieldNames ? '' : 'profile',
+        subBuilder: UserProfile.create)
+    ..aOM<SystemStatsSnapshot>(4, _omitFieldNames ? '' : 'stats',
+        subBuilder: SystemStatsSnapshot.create)
+    ..aI(5, _omitFieldNames ? '' : 'rewardCoins')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ClaimSupportLikeRewardResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ClaimSupportLikeRewardResponse copyWith(
+          void Function(ClaimSupportLikeRewardResponse) updates) =>
+      super.copyWith(
+              (message) => updates(message as ClaimSupportLikeRewardResponse))
+          as ClaimSupportLikeRewardResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ClaimSupportLikeRewardResponse create() =>
+      ClaimSupportLikeRewardResponse._();
+  @$core.override
+  ClaimSupportLikeRewardResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ClaimSupportLikeRewardResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ClaimSupportLikeRewardResponse>(create);
+  static ClaimSupportLikeRewardResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  UserProfile get profile => $_getN(2);
+  @$pb.TagNumber(3)
+  set profile(UserProfile value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasProfile() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearProfile() => $_clearField(3);
+  @$pb.TagNumber(3)
+  UserProfile ensureProfile() => $_ensure(2);
+
+  @$pb.TagNumber(4)
+  SystemStatsSnapshot get stats => $_getN(3);
+  @$pb.TagNumber(4)
+  set stats(SystemStatsSnapshot value) => $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasStats() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearStats() => $_clearField(4);
+  @$pb.TagNumber(4)
+  SystemStatsSnapshot ensureStats() => $_ensure(3);
+
+  @$pb.TagNumber(5)
+  $core.int get rewardCoins => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set rewardCoins($core.int value) => $_setSignedInt32(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasRewardCoins() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearRewardCoins() => $_clearField(5);
 }
 
 class MatchRequest extends $pb.GeneratedMessage {
@@ -4072,6 +4625,9 @@ enum ClientMessage_Payload {
   respondFriendRequestRequest,
   deleteFriendRequest,
   changePasswordRequest,
+  fetchSystemStatsRequest,
+  claimSupportLikeRewardRequest,
+  submitSupportLikeRequest,
   notSet
 }
 
@@ -4101,6 +4657,9 @@ class ClientMessage extends $pb.GeneratedMessage {
     RespondFriendRequestRequest? respondFriendRequestRequest,
     DeleteFriendRequest? deleteFriendRequest,
     ChangePasswordRequest? changePasswordRequest,
+    FetchSystemStatsRequest? fetchSystemStatsRequest,
+    ClaimSupportLikeRewardRequest? claimSupportLikeRewardRequest,
+    SubmitSupportLikeRequest? submitSupportLikeRequest,
   }) {
     final result = create();
     if (requestId != null) result.requestId = requestId;
@@ -4136,6 +4695,12 @@ class ClientMessage extends $pb.GeneratedMessage {
       result.deleteFriendRequest = deleteFriendRequest;
     if (changePasswordRequest != null)
       result.changePasswordRequest = changePasswordRequest;
+    if (fetchSystemStatsRequest != null)
+      result.fetchSystemStatsRequest = fetchSystemStatsRequest;
+    if (claimSupportLikeRewardRequest != null)
+      result.claimSupportLikeRewardRequest = claimSupportLikeRewardRequest;
+    if (submitSupportLikeRequest != null)
+      result.submitSupportLikeRequest = submitSupportLikeRequest;
     return result;
   }
 
@@ -4172,6 +4737,9 @@ class ClientMessage extends $pb.GeneratedMessage {
     29: ClientMessage_Payload.respondFriendRequestRequest,
     30: ClientMessage_Payload.deleteFriendRequest,
     31: ClientMessage_Payload.changePasswordRequest,
+    32: ClientMessage_Payload.fetchSystemStatsRequest,
+    33: ClientMessage_Payload.claimSupportLikeRewardRequest,
+    34: ClientMessage_Payload.submitSupportLikeRequest,
     0: ClientMessage_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -4201,7 +4769,10 @@ class ClientMessage extends $pb.GeneratedMessage {
       28,
       29,
       30,
-      31
+      31,
+      32,
+      33,
+      34
     ])
     ..aOS(1, _omitFieldNames ? '' : 'requestId')
     ..aOS(2, _omitFieldNames ? '' : 'sessionToken')
@@ -4254,6 +4825,15 @@ class ClientMessage extends $pb.GeneratedMessage {
     ..aOM<ChangePasswordRequest>(
         31, _omitFieldNames ? '' : 'changePasswordRequest',
         subBuilder: ChangePasswordRequest.create)
+    ..aOM<FetchSystemStatsRequest>(
+        32, _omitFieldNames ? '' : 'fetchSystemStatsRequest',
+        subBuilder: FetchSystemStatsRequest.create)
+    ..aOM<ClaimSupportLikeRewardRequest>(
+        33, _omitFieldNames ? '' : 'claimSupportLikeRewardRequest',
+        subBuilder: ClaimSupportLikeRewardRequest.create)
+    ..aOM<SubmitSupportLikeRequest>(
+        34, _omitFieldNames ? '' : 'submitSupportLikeRequest',
+        subBuilder: SubmitSupportLikeRequest.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -4297,6 +4877,9 @@ class ClientMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(29)
   @$pb.TagNumber(30)
   @$pb.TagNumber(31)
+  @$pb.TagNumber(32)
+  @$pb.TagNumber(33)
+  @$pb.TagNumber(34)
   ClientMessage_Payload whichPayload() =>
       _ClientMessage_PayloadByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(10)
@@ -4321,6 +4904,9 @@ class ClientMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(29)
   @$pb.TagNumber(30)
   @$pb.TagNumber(31)
+  @$pb.TagNumber(32)
+  @$pb.TagNumber(33)
+  @$pb.TagNumber(34)
   void clearPayload() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -4588,6 +5174,43 @@ class ClientMessage extends $pb.GeneratedMessage {
   void clearChangePasswordRequest() => $_clearField(31);
   @$pb.TagNumber(31)
   ChangePasswordRequest ensureChangePasswordRequest() => $_ensure(23);
+
+  @$pb.TagNumber(32)
+  FetchSystemStatsRequest get fetchSystemStatsRequest => $_getN(24);
+  @$pb.TagNumber(32)
+  set fetchSystemStatsRequest(FetchSystemStatsRequest value) =>
+      $_setField(32, value);
+  @$pb.TagNumber(32)
+  $core.bool hasFetchSystemStatsRequest() => $_has(24);
+  @$pb.TagNumber(32)
+  void clearFetchSystemStatsRequest() => $_clearField(32);
+  @$pb.TagNumber(32)
+  FetchSystemStatsRequest ensureFetchSystemStatsRequest() => $_ensure(24);
+
+  @$pb.TagNumber(33)
+  ClaimSupportLikeRewardRequest get claimSupportLikeRewardRequest => $_getN(25);
+  @$pb.TagNumber(33)
+  set claimSupportLikeRewardRequest(ClaimSupportLikeRewardRequest value) =>
+      $_setField(33, value);
+  @$pb.TagNumber(33)
+  $core.bool hasClaimSupportLikeRewardRequest() => $_has(25);
+  @$pb.TagNumber(33)
+  void clearClaimSupportLikeRewardRequest() => $_clearField(33);
+  @$pb.TagNumber(33)
+  ClaimSupportLikeRewardRequest ensureClaimSupportLikeRewardRequest() =>
+      $_ensure(25);
+
+  @$pb.TagNumber(34)
+  SubmitSupportLikeRequest get submitSupportLikeRequest => $_getN(26);
+  @$pb.TagNumber(34)
+  set submitSupportLikeRequest(SubmitSupportLikeRequest value) =>
+      $_setField(34, value);
+  @$pb.TagNumber(34)
+  $core.bool hasSubmitSupportLikeRequest() => $_has(26);
+  @$pb.TagNumber(34)
+  void clearSubmitSupportLikeRequest() => $_clearField(34);
+  @$pb.TagNumber(34)
+  SubmitSupportLikeRequest ensureSubmitSupportLikeRequest() => $_ensure(26);
 }
 
 enum ServerMessage_Payload {
@@ -4611,6 +5234,9 @@ enum ServerMessage_Payload {
   deleteFriendResponse,
   friendCenterPush,
   changePasswordResponse,
+  fetchSystemStatsResponse,
+  claimSupportLikeRewardResponse,
+  submitSupportLikeResponse,
   notSet
 }
 
@@ -4637,6 +5263,9 @@ class ServerMessage extends $pb.GeneratedMessage {
     DeleteFriendResponse? deleteFriendResponse,
     FriendCenterPush? friendCenterPush,
     ChangePasswordResponse? changePasswordResponse,
+    FetchSystemStatsResponse? fetchSystemStatsResponse,
+    ClaimSupportLikeRewardResponse? claimSupportLikeRewardResponse,
+    SubmitSupportLikeResponse? submitSupportLikeResponse,
   }) {
     final result = create();
     if (requestId != null) result.requestId = requestId;
@@ -4670,6 +5299,12 @@ class ServerMessage extends $pb.GeneratedMessage {
     if (friendCenterPush != null) result.friendCenterPush = friendCenterPush;
     if (changePasswordResponse != null)
       result.changePasswordResponse = changePasswordResponse;
+    if (fetchSystemStatsResponse != null)
+      result.fetchSystemStatsResponse = fetchSystemStatsResponse;
+    if (claimSupportLikeRewardResponse != null)
+      result.claimSupportLikeRewardResponse = claimSupportLikeRewardResponse;
+    if (submitSupportLikeResponse != null)
+      result.submitSupportLikeResponse = submitSupportLikeResponse;
     return result;
   }
 
@@ -4704,6 +5339,9 @@ class ServerMessage extends $pb.GeneratedMessage {
     27: ServerMessage_Payload.deleteFriendResponse,
     28: ServerMessage_Payload.friendCenterPush,
     29: ServerMessage_Payload.changePasswordResponse,
+    30: ServerMessage_Payload.fetchSystemStatsResponse,
+    31: ServerMessage_Payload.claimSupportLikeRewardResponse,
+    32: ServerMessage_Payload.submitSupportLikeResponse,
     0: ServerMessage_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -4731,7 +5369,10 @@ class ServerMessage extends $pb.GeneratedMessage {
       26,
       27,
       28,
-      29
+      29,
+      30,
+      31,
+      32
     ])
     ..aOS(1, _omitFieldNames ? '' : 'requestId')
     ..aOM<RegisterResponse>(10, _omitFieldNames ? '' : 'registerResponse',
@@ -4782,6 +5423,15 @@ class ServerMessage extends $pb.GeneratedMessage {
     ..aOM<ChangePasswordResponse>(
         29, _omitFieldNames ? '' : 'changePasswordResponse',
         subBuilder: ChangePasswordResponse.create)
+    ..aOM<FetchSystemStatsResponse>(
+        30, _omitFieldNames ? '' : 'fetchSystemStatsResponse',
+        subBuilder: FetchSystemStatsResponse.create)
+    ..aOM<ClaimSupportLikeRewardResponse>(
+        31, _omitFieldNames ? '' : 'claimSupportLikeRewardResponse',
+        subBuilder: ClaimSupportLikeRewardResponse.create)
+    ..aOM<SubmitSupportLikeResponse>(
+        32, _omitFieldNames ? '' : 'submitSupportLikeResponse',
+        subBuilder: SubmitSupportLikeResponse.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -4823,6 +5473,9 @@ class ServerMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(27)
   @$pb.TagNumber(28)
   @$pb.TagNumber(29)
+  @$pb.TagNumber(30)
+  @$pb.TagNumber(31)
+  @$pb.TagNumber(32)
   ServerMessage_Payload whichPayload() =>
       _ServerMessage_PayloadByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(10)
@@ -4845,6 +5498,9 @@ class ServerMessage extends $pb.GeneratedMessage {
   @$pb.TagNumber(27)
   @$pb.TagNumber(28)
   @$pb.TagNumber(29)
+  @$pb.TagNumber(30)
+  @$pb.TagNumber(31)
+  @$pb.TagNumber(32)
   void clearPayload() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -5083,6 +5739,44 @@ class ServerMessage extends $pb.GeneratedMessage {
   void clearChangePasswordResponse() => $_clearField(29);
   @$pb.TagNumber(29)
   ChangePasswordResponse ensureChangePasswordResponse() => $_ensure(20);
+
+  @$pb.TagNumber(30)
+  FetchSystemStatsResponse get fetchSystemStatsResponse => $_getN(21);
+  @$pb.TagNumber(30)
+  set fetchSystemStatsResponse(FetchSystemStatsResponse value) =>
+      $_setField(30, value);
+  @$pb.TagNumber(30)
+  $core.bool hasFetchSystemStatsResponse() => $_has(21);
+  @$pb.TagNumber(30)
+  void clearFetchSystemStatsResponse() => $_clearField(30);
+  @$pb.TagNumber(30)
+  FetchSystemStatsResponse ensureFetchSystemStatsResponse() => $_ensure(21);
+
+  @$pb.TagNumber(31)
+  ClaimSupportLikeRewardResponse get claimSupportLikeRewardResponse =>
+      $_getN(22);
+  @$pb.TagNumber(31)
+  set claimSupportLikeRewardResponse(ClaimSupportLikeRewardResponse value) =>
+      $_setField(31, value);
+  @$pb.TagNumber(31)
+  $core.bool hasClaimSupportLikeRewardResponse() => $_has(22);
+  @$pb.TagNumber(31)
+  void clearClaimSupportLikeRewardResponse() => $_clearField(31);
+  @$pb.TagNumber(31)
+  ClaimSupportLikeRewardResponse ensureClaimSupportLikeRewardResponse() =>
+      $_ensure(22);
+
+  @$pb.TagNumber(32)
+  SubmitSupportLikeResponse get submitSupportLikeResponse => $_getN(23);
+  @$pb.TagNumber(32)
+  set submitSupportLikeResponse(SubmitSupportLikeResponse value) =>
+      $_setField(32, value);
+  @$pb.TagNumber(32)
+  $core.bool hasSubmitSupportLikeResponse() => $_has(23);
+  @$pb.TagNumber(32)
+  void clearSubmitSupportLikeResponse() => $_clearField(32);
+  @$pb.TagNumber(32)
+  SubmitSupportLikeResponse ensureSubmitSupportLikeResponse() => $_ensure(23);
 }
 
 const $core.bool _omitFieldNames =

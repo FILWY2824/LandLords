@@ -201,6 +201,50 @@ const UserProfile$json = {
     {'1': 'landlord_games', '3': 6, '4': 1, '5': 5, '10': 'landlordGames'},
     {'1': 'farmer_wins', '3': 7, '4': 1, '5': 5, '10': 'farmerWins'},
     {'1': 'farmer_games', '3': 8, '4': 1, '5': 5, '10': 'farmerGames'},
+    {
+      '1': 'online_landlord_wins',
+      '3': 9,
+      '4': 1,
+      '5': 5,
+      '10': 'onlineLandlordWins'
+    },
+    {
+      '1': 'online_landlord_games',
+      '3': 10,
+      '4': 1,
+      '5': 5,
+      '10': 'onlineLandlordGames'
+    },
+    {
+      '1': 'online_farmer_wins',
+      '3': 11,
+      '4': 1,
+      '5': 5,
+      '10': 'onlineFarmerWins'
+    },
+    {
+      '1': 'online_farmer_games',
+      '3': 12,
+      '4': 1,
+      '5': 5,
+      '10': 'onlineFarmerGames'
+    },
+    {
+      '1': 'bot_landlord_wins',
+      '3': 13,
+      '4': 1,
+      '5': 5,
+      '10': 'botLandlordWins'
+    },
+    {
+      '1': 'bot_landlord_games',
+      '3': 14,
+      '4': 1,
+      '5': 5,
+      '10': 'botLandlordGames'
+    },
+    {'1': 'bot_farmer_wins', '3': 15, '4': 1, '5': 5, '10': 'botFarmerWins'},
+    {'1': 'bot_farmer_games', '3': 16, '4': 1, '5': 5, '10': 'botFarmerGames'},
   ],
 };
 
@@ -210,7 +254,14 @@ final $typed_data.Uint8List userProfileDescriptor = $convert.base64Decode(
     'IHYWNjb3VudBIaCghuaWNrbmFtZRgDIAEoCVIIbmlja25hbWUSHwoLdG90YWxfc2NvcmUYBCAB'
     'KAVSCnRvdGFsU2NvcmUSIwoNbGFuZGxvcmRfd2lucxgFIAEoBVIMbGFuZGxvcmRXaW5zEiUKDm'
     'xhbmRsb3JkX2dhbWVzGAYgASgFUg1sYW5kbG9yZEdhbWVzEh8KC2Zhcm1lcl93aW5zGAcgASgF'
-    'UgpmYXJtZXJXaW5zEiEKDGZhcm1lcl9nYW1lcxgIIAEoBVILZmFybWVyR2FtZXM=');
+    'UgpmYXJtZXJXaW5zEiEKDGZhcm1lcl9nYW1lcxgIIAEoBVILZmFybWVyR2FtZXMSMAoUb25saW'
+    '5lX2xhbmRsb3JkX3dpbnMYCSABKAVSEm9ubGluZUxhbmRsb3JkV2lucxIyChVvbmxpbmVfbGFu'
+    'ZGxvcmRfZ2FtZXMYCiABKAVSE29ubGluZUxhbmRsb3JkR2FtZXMSLAoSb25saW5lX2Zhcm1lcl'
+    '93aW5zGAsgASgFUhBvbmxpbmVGYXJtZXJXaW5zEi4KE29ubGluZV9mYXJtZXJfZ2FtZXMYDCAB'
+    'KAVSEW9ubGluZUZhcm1lckdhbWVzEioKEWJvdF9sYW5kbG9yZF93aW5zGA0gASgFUg9ib3RMYW'
+    '5kbG9yZFdpbnMSLAoSYm90X2xhbmRsb3JkX2dhbWVzGA4gASgFUhBib3RMYW5kbG9yZEdhbWVz'
+    'EiYKD2JvdF9mYXJtZXJfd2lucxgPIAEoBVINYm90RmFybWVyV2lucxIoChBib3RfZmFybWVyX2'
+    'dhbWVzGBAgASgFUg5ib3RGYXJtZXJHYW1lcw==');
 
 @$core.Deprecated('Use onlineUserDescriptor instead')
 const OnlineUser$json = {
@@ -330,6 +381,25 @@ final $typed_data.Uint8List friendCenterSnapshotDescriptor = $convert.base64Deco
     'c3RFbnRyeVIPaGlzdG9yeVJlcXVlc3RzEjIKFXBlbmRpbmdfcmVxdWVzdF9jb3VudBgEIAEoBV'
     'ITcGVuZGluZ1JlcXVlc3RDb3VudA==');
 
+@$core.Deprecated('Use systemStatsSnapshotDescriptor instead')
+const SystemStatsSnapshot$json = {
+  '1': 'SystemStatsSnapshot',
+  '2': [
+    {
+      '1': 'support_like_count',
+      '3': 1,
+      '4': 1,
+      '5': 5,
+      '10': 'supportLikeCount'
+    },
+  ],
+};
+
+/// Descriptor for `SystemStatsSnapshot`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List systemStatsSnapshotDescriptor = $convert.base64Decode(
+    'ChNTeXN0ZW1TdGF0c1NuYXBzaG90EiwKEnN1cHBvcnRfbGlrZV9jb3VudBgBIAEoBVIQc3VwcG'
+    '9ydExpa2VDb3VudA==');
+
 @$core.Deprecated('Use registerRequestDescriptor instead')
 const RegisterRequest$json = {
   '1': 'RegisterRequest',
@@ -434,6 +504,35 @@ final $typed_data.Uint8List resetPasswordResponseDescriptor = $convert.base64Dec
     'ChVSZXNldFBhc3N3b3JkUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIYCgdtZX'
     'NzYWdlGAIgASgJUgdtZXNzYWdl');
 
+@$core.Deprecated('Use changePasswordRequestDescriptor instead')
+const ChangePasswordRequest$json = {
+  '1': 'ChangePasswordRequest',
+  '2': [
+    {'1': 'current_password', '3': 1, '4': 1, '5': 9, '10': 'currentPassword'},
+    {'1': 'new_password', '3': 2, '4': 1, '5': 9, '10': 'newPassword'},
+  ],
+};
+
+/// Descriptor for `ChangePasswordRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List changePasswordRequestDescriptor = $convert.base64Decode(
+    'ChVDaGFuZ2VQYXNzd29yZFJlcXVlc3QSKQoQY3VycmVudF9wYXNzd29yZBgBIAEoCVIPY3Vycm'
+    'VudFBhc3N3b3JkEiEKDG5ld19wYXNzd29yZBgCIAEoCVILbmV3UGFzc3dvcmQ=');
+
+@$core.Deprecated('Use changePasswordResponseDescriptor instead')
+const ChangePasswordResponse$json = {
+  '1': 'ChangePasswordResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+  ],
+};
+
+/// Descriptor for `ChangePasswordResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List changePasswordResponseDescriptor =
+    $convert.base64Decode(
+        'ChZDaGFuZ2VQYXNzd29yZFJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3MSGAoHbW'
+        'Vzc2FnZRgCIAEoCVIHbWVzc2FnZQ==');
+
 @$core.Deprecated('Use updateNicknameRequestDescriptor instead')
 const UpdateNicknameRequest$json = {
   '1': 'UpdateNicknameRequest',
@@ -469,6 +568,113 @@ final $typed_data.Uint8List updateNicknameResponseDescriptor = $convert.base64De
     'ChZVcGRhdGVOaWNrbmFtZVJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3MSGAoHbW'
     'Vzc2FnZRgCIAEoCVIHbWVzc2FnZRI5Cgdwcm9maWxlGAMgASgLMh8ubGFuZGxvcmRzLnByb3Rv'
     'Y29sLlVzZXJQcm9maWxlUgdwcm9maWxl');
+
+@$core.Deprecated('Use fetchSystemStatsRequestDescriptor instead')
+const FetchSystemStatsRequest$json = {
+  '1': 'FetchSystemStatsRequest',
+};
+
+/// Descriptor for `FetchSystemStatsRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List fetchSystemStatsRequestDescriptor =
+    $convert.base64Decode('ChdGZXRjaFN5c3RlbVN0YXRzUmVxdWVzdA==');
+
+@$core.Deprecated('Use fetchSystemStatsResponseDescriptor instead')
+const FetchSystemStatsResponse$json = {
+  '1': 'FetchSystemStatsResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+    {
+      '1': 'stats',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.SystemStatsSnapshot',
+      '10': 'stats'
+    },
+  ],
+};
+
+/// Descriptor for `FetchSystemStatsResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List fetchSystemStatsResponseDescriptor = $convert.base64Decode(
+    'ChhGZXRjaFN5c3RlbVN0YXRzUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIYCg'
+    'dtZXNzYWdlGAIgASgJUgdtZXNzYWdlEj0KBXN0YXRzGAMgASgLMicubGFuZGxvcmRzLnByb3Rv'
+    'Y29sLlN5c3RlbVN0YXRzU25hcHNob3RSBXN0YXRz');
+
+@$core.Deprecated('Use submitSupportLikeRequestDescriptor instead')
+const SubmitSupportLikeRequest$json = {
+  '1': 'SubmitSupportLikeRequest',
+};
+
+/// Descriptor for `SubmitSupportLikeRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List submitSupportLikeRequestDescriptor =
+    $convert.base64Decode('ChhTdWJtaXRTdXBwb3J0TGlrZVJlcXVlc3Q=');
+
+@$core.Deprecated('Use submitSupportLikeResponseDescriptor instead')
+const SubmitSupportLikeResponse$json = {
+  '1': 'SubmitSupportLikeResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+    {
+      '1': 'stats',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.SystemStatsSnapshot',
+      '10': 'stats'
+    },
+  ],
+};
+
+/// Descriptor for `SubmitSupportLikeResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List submitSupportLikeResponseDescriptor = $convert.base64Decode(
+    'ChlTdWJtaXRTdXBwb3J0TGlrZVJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3MSGA'
+    'oHbWVzc2FnZRgCIAEoCVIHbWVzc2FnZRI9CgVzdGF0cxgDIAEoCzInLmxhbmRsb3Jkcy5wcm90'
+    'b2NvbC5TeXN0ZW1TdGF0c1NuYXBzaG90UgVzdGF0cw==');
+
+@$core.Deprecated('Use claimSupportLikeRewardRequestDescriptor instead')
+const ClaimSupportLikeRewardRequest$json = {
+  '1': 'ClaimSupportLikeRewardRequest',
+};
+
+/// Descriptor for `ClaimSupportLikeRewardRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List claimSupportLikeRewardRequestDescriptor =
+    $convert.base64Decode('Ch1DbGFpbVN1cHBvcnRMaWtlUmV3YXJkUmVxdWVzdA==');
+
+@$core.Deprecated('Use claimSupportLikeRewardResponseDescriptor instead')
+const ClaimSupportLikeRewardResponse$json = {
+  '1': 'ClaimSupportLikeRewardResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+    {
+      '1': 'profile',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.UserProfile',
+      '10': 'profile'
+    },
+    {
+      '1': 'stats',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.SystemStatsSnapshot',
+      '10': 'stats'
+    },
+    {'1': 'reward_coins', '3': 5, '4': 1, '5': 5, '10': 'rewardCoins'},
+  ],
+};
+
+/// Descriptor for `ClaimSupportLikeRewardResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List claimSupportLikeRewardResponseDescriptor = $convert.base64Decode(
+    'Ch5DbGFpbVN1cHBvcnRMaWtlUmV3YXJkUmVzcG9uc2USGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2'
+    'VzcxIYCgdtZXNzYWdlGAIgASgJUgdtZXNzYWdlEjkKB3Byb2ZpbGUYAyABKAsyHy5sYW5kbG9y'
+    'ZHMucHJvdG9jb2wuVXNlclByb2ZpbGVSB3Byb2ZpbGUSPQoFc3RhdHMYBCABKAsyJy5sYW5kbG'
+    '9yZHMucHJvdG9jb2wuU3lzdGVtU3RhdHNTbmFwc2hvdFIFc3RhdHMSIQoMcmV3YXJkX2NvaW5z'
+    'GAUgASgFUgtyZXdhcmRDb2lucw==');
 
 @$core.Deprecated('Use matchRequestDescriptor instead')
 const MatchRequest$json = {
@@ -1443,6 +1649,42 @@ const ClientMessage$json = {
       '9': 0,
       '10': 'deleteFriendRequest'
     },
+    {
+      '1': 'change_password_request',
+      '3': 31,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.ChangePasswordRequest',
+      '9': 0,
+      '10': 'changePasswordRequest'
+    },
+    {
+      '1': 'fetch_system_stats_request',
+      '3': 32,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.FetchSystemStatsRequest',
+      '9': 0,
+      '10': 'fetchSystemStatsRequest'
+    },
+    {
+      '1': 'claim_support_like_reward_request',
+      '3': 33,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.ClaimSupportLikeRewardRequest',
+      '9': 0,
+      '10': 'claimSupportLikeRewardRequest'
+    },
+    {
+      '1': 'submit_support_like_request',
+      '3': 34,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.SubmitSupportLikeRequest',
+      '9': 0,
+      '10': 'submitSupportLikeRequest'
+    },
   ],
   '8': [
     {'1': 'payload'},
@@ -1486,7 +1728,15 @@ final $typed_data.Uint8List clientMessageDescriptor = $convert.base64Decode(
     'ZXF1ZXN0GB0gASgLMi8ubGFuZGxvcmRzLnByb3RvY29sLlJlc3BvbmRGcmllbmRSZXF1ZXN0Um'
     'VxdWVzdEgAUhtyZXNwb25kRnJpZW5kUmVxdWVzdFJlcXVlc3QSXQoVZGVsZXRlX2ZyaWVuZF9y'
     'ZXF1ZXN0GB4gASgLMicubGFuZGxvcmRzLnByb3RvY29sLkRlbGV0ZUZyaWVuZFJlcXVlc3RIAF'
-    'ITZGVsZXRlRnJpZW5kUmVxdWVzdEIJCgdwYXlsb2Fk');
+    'ITZGVsZXRlRnJpZW5kUmVxdWVzdBJjChdjaGFuZ2VfcGFzc3dvcmRfcmVxdWVzdBgfIAEoCzIp'
+    'LmxhbmRsb3Jkcy5wcm90b2NvbC5DaGFuZ2VQYXNzd29yZFJlcXVlc3RIAFIVY2hhbmdlUGFzc3'
+    'dvcmRSZXF1ZXN0EmoKGmZldGNoX3N5c3RlbV9zdGF0c19yZXF1ZXN0GCAgASgLMisubGFuZGxv'
+    'cmRzLnByb3RvY29sLkZldGNoU3lzdGVtU3RhdHNSZXF1ZXN0SABSF2ZldGNoU3lzdGVtU3RhdH'
+    'NSZXF1ZXN0En0KIWNsYWltX3N1cHBvcnRfbGlrZV9yZXdhcmRfcmVxdWVzdBghIAEoCzIxLmxh'
+    'bmRsb3Jkcy5wcm90b2NvbC5DbGFpbVN1cHBvcnRMaWtlUmV3YXJkUmVxdWVzdEgAUh1jbGFpbV'
+    'N1cHBvcnRMaWtlUmV3YXJkUmVxdWVzdBJtChtzdWJtaXRfc3VwcG9ydF9saWtlX3JlcXVlc3QY'
+    'IiABKAsyLC5sYW5kbG9yZHMucHJvdG9jb2wuU3VibWl0U3VwcG9ydExpa2VSZXF1ZXN0SABSGH'
+    'N1Ym1pdFN1cHBvcnRMaWtlUmVxdWVzdEIJCgdwYXlsb2Fk');
 
 @$core.Deprecated('Use serverMessageDescriptor instead')
 const ServerMessage$json = {
@@ -1664,6 +1914,42 @@ const ServerMessage$json = {
       '9': 0,
       '10': 'friendCenterPush'
     },
+    {
+      '1': 'change_password_response',
+      '3': 29,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.ChangePasswordResponse',
+      '9': 0,
+      '10': 'changePasswordResponse'
+    },
+    {
+      '1': 'fetch_system_stats_response',
+      '3': 30,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.FetchSystemStatsResponse',
+      '9': 0,
+      '10': 'fetchSystemStatsResponse'
+    },
+    {
+      '1': 'claim_support_like_reward_response',
+      '3': 31,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.ClaimSupportLikeRewardResponse',
+      '9': 0,
+      '10': 'claimSupportLikeRewardResponse'
+    },
+    {
+      '1': 'submit_support_like_response',
+      '3': 32,
+      '4': 1,
+      '5': 11,
+      '6': '.landlords.protocol.SubmitSupportLikeResponse',
+      '9': 0,
+      '10': 'submitSupportLikeResponse'
+    },
   ],
   '8': [
     {'1': 'payload'},
@@ -1704,4 +1990,13 @@ final $typed_data.Uint8List serverMessageDescriptor = $convert.base64Decode(
     'VuZFJlcXVlc3RSZXNwb25zZRJgChZkZWxldGVfZnJpZW5kX3Jlc3BvbnNlGBsgASgLMigubGFu'
     'ZGxvcmRzLnByb3RvY29sLkRlbGV0ZUZyaWVuZFJlc3BvbnNlSABSFGRlbGV0ZUZyaWVuZFJlc3'
     'BvbnNlElQKEmZyaWVuZF9jZW50ZXJfcHVzaBgcIAEoCzIkLmxhbmRsb3Jkcy5wcm90b2NvbC5G'
-    'cmllbmRDZW50ZXJQdXNoSABSEGZyaWVuZENlbnRlclB1c2hCCQoHcGF5bG9hZA==');
+    'cmllbmRDZW50ZXJQdXNoSABSEGZyaWVuZENlbnRlclB1c2gSZgoYY2hhbmdlX3Bhc3N3b3JkX3'
+    'Jlc3BvbnNlGB0gASgLMioubGFuZGxvcmRzLnByb3RvY29sLkNoYW5nZVBhc3N3b3JkUmVzcG9u'
+    'c2VIAFIWY2hhbmdlUGFzc3dvcmRSZXNwb25zZRJtChtmZXRjaF9zeXN0ZW1fc3RhdHNfcmVzcG'
+    '9uc2UYHiABKAsyLC5sYW5kbG9yZHMucHJvdG9jb2wuRmV0Y2hTeXN0ZW1TdGF0c1Jlc3BvbnNl'
+    'SABSGGZldGNoU3lzdGVtU3RhdHNSZXNwb25zZRKAAQoiY2xhaW1fc3VwcG9ydF9saWtlX3Jld2'
+    'FyZF9yZXNwb25zZRgfIAEoCzIyLmxhbmRsb3Jkcy5wcm90b2NvbC5DbGFpbVN1cHBvcnRMaWtl'
+    'UmV3YXJkUmVzcG9uc2VIAFIeY2xhaW1TdXBwb3J0TGlrZVJld2FyZFJlc3BvbnNlEnAKHHN1Ym'
+    '1pdF9zdXBwb3J0X2xpa2VfcmVzcG9uc2UYICABKAsyLS5sYW5kbG9yZHMucHJvdG9jb2wuU3Vi'
+    'bWl0U3VwcG9ydExpa2VSZXNwb25zZUgAUhlzdWJtaXRTdXBwb3J0TGlrZVJlc3BvbnNlQgkKB3'
+    'BheWxvYWQ=');

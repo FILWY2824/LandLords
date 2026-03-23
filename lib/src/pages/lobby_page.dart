@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../models/app_models.dart';
 import '../services/voice_cue_service.dart';
 import '../state/app_controller.dart';
+import '../utils/app_snackbar.dart';
 import '../widgets/friend_center_dialog.dart';
 import '../widgets/fixed_stage.dart';
 import '../widgets/responsive_modal.dart';
@@ -26,6 +27,7 @@ class _LobbyPageState extends State<LobbyPage> {
   void initState() {
     super.initState();
     unawaited(_voice.stopBackgroundMusic(force: true));
+    unawaited(widget.controller.refreshSupportStats());
   }
 
   @override
@@ -38,6 +40,9 @@ class _LobbyPageState extends State<LobbyPage> {
     final difficulty = await showDialog<BotDifficulty>(
       context: context,
       builder: (context) => const _ResponsiveChoiceDialog<BotDifficulty>(
+        eyebrow: 'AI 练习',
+        icon: Icons.smart_toy_rounded,
+        accent: Color(0xFF2B7FFF),
         title: '选择 AI 对局',
         subtitle: '选择一个难度后，将立即进入牌桌，与两位机器人开始游戏。',
         options: [
@@ -93,6 +98,15 @@ class _LobbyPageState extends State<LobbyPage> {
     final legacyAction = await showDialog<_OnlineAction>(
       context: context,
       builder: (context) => const _ResponsiveChoiceDialog<_OnlineAction>(
+        eyebrow: '多人联机',
+        icon: Icons.groups_2_rounded,
+        accent: Color(0xFF4FB9FF),
+        eyebrow: '多人联机',
+        icon: Icons.groups_2_rounded,
+        accent: Color(0xFF4FB9FF),
+        eyebrow: '多人联机',
+        icon: Icons.groups_2_rounded,
+        accent: Color(0xFF4FB9FF),
         title: '真人对局',
         subtitle: '你可以创建房间、进入房间，或者直接自由匹配。',
         options: [
@@ -139,6 +153,9 @@ class _LobbyPageState extends State<LobbyPage> {
     return showDialog<_OnlineAction>(
       context: context,
       builder: (context) => const _ResponsiveChoiceDialog<_OnlineAction>(
+        eyebrow: '多人联机',
+        icon: Icons.groups_2_rounded,
+        accent: Color(0xFF4FB9FF),
         title: '真人对局',
         subtitle: '你可以创建房间、进入房间，或者直接自由匹配。',
         options: [
@@ -166,6 +183,9 @@ class _LobbyPageState extends State<LobbyPage> {
     return showDialog<_OnlineAction>(
       context: context,
       builder: (context) => const _ResponsiveChoiceDialog<_OnlineAction>(
+        eyebrow: '多人联机',
+        icon: Icons.groups_2_rounded,
+        accent: Color(0xFF4FB9FF),
         title: '鐪熶汉瀵瑰眬',
         subtitle: '浣犲彲浠ュ垱寤烘埧闂淬€佽繘鍏ユ埧闂达紝鎴栬€呯洿鎺ヨ嚜鐢卞尮閰嶃€?',
         options: [
@@ -468,16 +488,14 @@ class _LobbyPageState extends State<LobbyPage> {
           final avatarLabel =
               (displayName.isEmpty ? 'P' : displayName.substring(0, 1))
                   .toUpperCase();
-          final messenger = ScaffoldMessenger.of(context);
-
           void showProfileMessage(String successMessage) {
             final errorText = widget.controller.errorText;
             if (errorText != null && errorText.isNotEmpty) {
-              messenger.showSnackBar(SnackBar(content: Text(errorText)));
+              showAppSnackBar(context, errorText);
               widget.controller.clearError();
               return;
             }
-            messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+            showAppSnackBar(context, successMessage);
           }
           Future<void> handleNicknameEdit() async {
             final nickname = await showDialog<String>(
@@ -496,21 +514,18 @@ class _LobbyPageState extends State<LobbyPage> {
                 return;
               }
               await widget.controller.updateNickname(nickname);
-              if (!mounted) {
+              if (!context.mounted) {
                 return;
               }
               if (widget.controller.errorText != null) {
                 showProfileMessage('');
                 return;
               }
-              messenger.showSnackBar(
-                const SnackBar(content: Text('昵称已经更新。')),
-              );
+              showAppSnackBar(context, '昵称已经更新。');
             }
           }
 
           Future<void> handlePasswordEdit() async {
-            final messenger = ScaffoldMessenger.of(context);
             final passwordChange = await showDialog<_PasswordChangeResult>(
               context: context,
               barrierColor: const Color(0x33173A59),
@@ -527,16 +542,14 @@ class _LobbyPageState extends State<LobbyPage> {
                 passwordChange.currentPassword,
                 passwordChange.newPassword,
               );
-              if (!mounted) {
+              if (!context.mounted) {
                 return;
               }
               if (widget.controller.errorText != null) {
                 showProfileMessage('');
                 return;
               }
-              messenger.showSnackBar(
-                const SnackBar(content: Text('密码修改请求已提交。')),
-              );
+              showAppSnackBar(context, '密码修改请求已提交。');
             }
           }
 
@@ -705,6 +718,15 @@ class _LobbyPageState extends State<LobbyPage> {
     final avatarLabel = (displayName.isEmpty ? 'P' : displayName.substring(0, 1))
         .toUpperCase();
     final coins = profile?.coins ?? 0;
+    final totalGames = profile?.totalGames ?? 0;
+    final overallWinRate = profile == null || totalGames == 0
+        ? '等待首局战绩'
+        : '总胜率 ${_formatRate(profile.overallWinRate)}';
+    final currentStatus = _buildLobbyStatusCardData(controller);
+    final onlineEntryTitle = controller.hasResumeRoom ? '恢复对局' : '真人匹配';
+    final onlineEntrySubtitle = controller.hasResumeRoom
+        ? '检测到未结束牌局，可以直接返回原房间继续。'
+        : '支持创建房间、输入房号与自由匹配。';
 
     return Scaffold(
       body: FixedStageBackdrop(
@@ -882,117 +904,150 @@ class _LobbyPageState extends State<LobbyPage> {
                             child: StagePanel(
                               padding: const EdgeInsets.fromLTRB(26, 24, 26, 24),
                               radius: 30,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(999),
-                                      color: const Color(0xFFE6F3FF),
-                                    ),
-                                    child: const Text(
-                                      '大厅',
-                                      style: TextStyle(fontWeight: FontWeight.w900),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 22),
-                                  const Text(
-                                    '立即对局',
-                                    style: TextStyle(
-                                      color: Color(0xFF173A59),
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 66,
-                                      height: 0.98,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  Text(
-                                    '$displayName，选择模式后即可开始正式对局。',
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF587790),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 18),
-                                  Wrap(
-                                    spacing: 10,
-                                    runSpacing: 10,
-                                    children: const [
-                                      _Chip('AI策略'),
-                                      _Chip('实时分析'),
-                                      _Chip('真人对局'),
-                                      _Chip('断线可续'),
-                                    ],
-                                  ),
-                                  const Spacer(),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(22),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(28),
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFFF2F8FF),
-                                          Color(0xFFE3F1FF),
+                              child: LayoutBuilder(
+                                builder: (context, panelConstraints) {
+                                  final heroHeight = math.max(
+                                    132.0,
+                                    panelConstraints.maxHeight * 0.22,
+                                  );
+                                  final modelBoardHeight = math.max(
+                                    184.0,
+                                    panelConstraints.maxHeight * 0.24,
+                                  );
+
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(999),
+                                          color: const Color(0xFFE6F3FF),
+                                        ),
+                                        child: const Text(
+                                          '大厅',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 18),
+                                      SizedBox(
+                                        height: heroHeight,
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                  children: [
+                                                  const Text(
+                                                    '开局中心',
+                                                    style: TextStyle(
+                                                      color: Color(0xFF173A59),
+                                                      fontWeight:
+                                                          FontWeight.w900,
+                                                      fontSize: 58,
+                                                      height: 0.98,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 10),
+                                                  Text(
+                                                    '$displayName，选择 AI 对局或真人匹配后即可开始。',
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: Color(0xFF587790),
+                                                      height: 1.35,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            SizedBox(
+                                              width: 246,
+                                              child: _LobbyQuickStatusCard(
+                                                message: controller.lobbyStatusText,
+                                                tone: currentStatus.tone,
+                                                icon: currentStatus.icon,
+                                                onResume:
+                                                    controller.canResumeFromLobby
+                                                    ? controller.resumeRoom
+                                                    : null,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 14),
+                                      Wrap(
+                                        spacing: 10,
+                                        runSpacing: 10,
+                                        children: const [
+                                          _Chip('DouZero 决策'),
+                                          _Chip('提示与托管'),
+                                          _Chip('好友邀请'),
+                                          _Chip('断线可续'),
                                         ],
                                       ),
-                                    ),
-                                    child: const Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '简单模式：DouZero-ADP',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: 18,
+                                      const SizedBox(height: 14),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _LobbyMetricCard(
+                                              title: 'AI 难度',
+                                              value: '3 档',
+                                              subtitle: '简单 / 标准 / 困难',
+                                              accent: const Color(0xFF2B7FFF),
+                                              icon: Icons.psychology_alt_rounded,
+                                            ),
                                           ),
-                                        ),
-                                        SizedBox(height: 10),
-                                        Text(
-                                          '标准模式：DouZero-SL',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: 18,
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: _LobbyMetricCard(
+                                              title: '在线方式',
+                                              value: '3 种',
+                                              subtitle: controller.hasResumeRoom
+                                                  ? '恢复房间 / 邀请 / 调整座位'
+                                                  : '建房 / 房号加入 / 自由匹配',
+                                              accent: const Color(0xFF2FA772),
+                                              icon: Icons.groups_2_rounded,
+                                            ),
                                           ),
-                                        ),
-                                        SizedBox(height: 10),
-                                        Text(
-                                          '困难模式：DouZero-WP',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: 18,
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: _LobbyMetricCard(
+                                              title: '当前进度',
+                                              value: totalGames == 0
+                                                  ? '新账号'
+                                                  : '$totalGames 局',
+                                              subtitle: overallWinRate,
+                                              accent: const Color(0xFFF0A11A),
+                                              icon: Icons.auto_graph_rounded,
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  Text(
-                                    controller.hasResumeRoom
-                                        ? '你有一局正在进行的牌局，可直接恢复对局。'
-                                        : '状态正常，随时可以开始对局。',
-                                    style: TextStyle(
-                                      color: !controller.hasResumeRoom
-                                          ? const Color(0xFF587790)
-                                          : const Color(0xFF2B7FFF),
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                  if (controller.hasResumeRoom) ...[
-                                    const SizedBox(height: 12),
-                                    FilledButton(
-                                      onPressed: controller.resumeRoom,
-                                      child: const Text('恢复对局'),
-                                    ),
-                                  ],
-                                ],
+                                        ],
+                                      ),
+                                      const SizedBox(height: 14),
+                                      SizedBox(
+                                        height: modelBoardHeight,
+                                        child: const _LobbyModelBoard(),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -1003,10 +1058,17 @@ class _LobbyPageState extends State<LobbyPage> {
                               children: [
                                 Expanded(
                                   child: _ActionCard(
+                                    eyebrow: '单人练习',
                                     title: 'AI 对局',
                                     subtitle:
-                                        '选择难度后立即进入牌桌，与两位 DouZero 直接开始游戏。',
+                                        '三档难度统一接入 DouZero 推理链，适合练手与验证提示策略。',
                                     accent: const Color(0xFF2B7FFF),
+                                    icon: Icons.smart_toy_rounded,
+                                    points: const [
+                                      '三档难度',
+                                      '统一推理链',
+                                      '直接开局',
+                                    ],
                                     buttonLabel: '选择模式',
                                     onPressed: controller.isBusy ||
                                             controller.isMatching
@@ -1017,14 +1079,29 @@ class _LobbyPageState extends State<LobbyPage> {
                                 const SizedBox(height: 14),
                                 Expanded(
                                   child: _ActionCard(
-                                    title:
-                                        controller.hasResumeRoom ? '恢复对局' : '真人匹配',
-                                    subtitle: controller.hasResumeRoom
-                                        ? '返回当前仍在进行中的牌局，继续完成这桌对局。'
-                                        : '支持创建房间、进入房间与自由匹配。',
+                                    eyebrow: controller.hasResumeRoom
+                                        ? '继续当前房间'
+                                        : '联机模式',
+                                    title: onlineEntryTitle,
+                                    subtitle: onlineEntrySubtitle,
                                     accent: const Color(0xFF4FB9FF),
-                                    buttonLabel:
-                                        controller.hasResumeRoom ? '恢复对局' : '选择方式',
+                                    icon: controller.hasResumeRoom
+                                        ? Icons.restart_alt_rounded
+                                        : Icons.groups_rounded,
+                                    points: controller.hasResumeRoom
+                                        ? const [
+                                            '返回原房间',
+                                            '保留当前座位',
+                                            '继续当前牌局',
+                                          ]
+                                        : const [
+                                            '创建房间',
+                                            '输入房号',
+                                            '自由匹配',
+                                          ],
+                                    buttonLabel: controller.hasResumeRoom
+                                        ? '恢复对局'
+                                        : '选择方式',
                                     onPressed: controller.isBusy ||
                                             controller.isMatching
                                         ? null
@@ -1087,60 +1164,493 @@ class _LobbyPageState extends State<LobbyPage> {
 
 enum _OnlineAction { createRoom, joinRoom, freeMatch }
 
+class _LobbyStatusCardData {
+  const _LobbyStatusCardData({
+    required this.tone,
+    required this.icon,
+  });
+
+  final Color tone;
+  final IconData icon;
+}
+
 class _ActionCard extends StatelessWidget {
   const _ActionCard({
+    required this.eyebrow,
     required this.title,
     required this.subtitle,
     required this.accent,
+    required this.icon,
+    required this.points,
     required this.buttonLabel,
     required this.onPressed,
   });
 
+  final String eyebrow;
   final String title;
   final String subtitle;
   final Color accent;
+  final IconData icon;
+  final List<String> points;
   final String buttonLabel;
   final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     return StagePanel(
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
       radius: 28,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxHeight < 255;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      color: accent.withValues(alpha: 0.12),
+                    ),
+                    child: Text(
+                      eyebrow,
+                      style: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        colors: [
+                          accent.withValues(alpha: 0.18),
+                          accent.withValues(alpha: 0.08),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Icon(icon, color: accent),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: compact ? 26 : 30,
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFF173A59),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                subtitle,
+                maxLines: compact ? 2 : 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: compact ? 15 : 16,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF587790),
+                  height: 1.42,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final point in points)
+                    _ActionTag(text: point, accent: accent),
+                ],
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: onPressed,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: accent,
+                    minimumSize: const Size.fromHeight(56),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
+                  ),
+                  child: Text(buttonLabel),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+_LobbyStatusCardData _buildLobbyStatusCardData(AppController controller) {
+  if (controller.hasLobbyStatusIssue) {
+    return const _LobbyStatusCardData(
+      tone: Color(0xFFE77E57),
+      icon: Icons.warning_amber_rounded,
+    );
+  }
+  if (controller.isMatching) {
+    return const _LobbyStatusCardData(
+      tone: Color(0xFF2B7FFF),
+      icon: Icons.radar_rounded,
+    );
+  }
+  if (controller.isBusy) {
+    return const _LobbyStatusCardData(
+      tone: Color(0xFFF08A24),
+      icon: Icons.autorenew_rounded,
+    );
+  }
+  return const _LobbyStatusCardData(
+    tone: Color(0xFF2FA772),
+    icon: Icons.verified_rounded,
+  );
+}
+
+class _LobbyModelBoard extends StatelessWidget {
+  const _LobbyModelBoard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFFF5FAFF),
+            Color(0xFFE2F0FF),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: const Color(0xFFD9EBFF)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF587790),
-              height: 1.45,
-            ),
-          ),
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onPressed,
-              style: FilledButton.styleFrom(
-                backgroundColor: accent,
-                minimumSize: const Size.fromHeight(58),
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18,
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  color: const Color(0xFF2B7FFF).withValues(alpha: 0.12),
+                ),
+                child: const Icon(
+                  Icons.hub_rounded,
+                  color: Color(0xFF2B7FFF),
                 ),
               ),
-              child: Text(buttonLabel),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AI 模型说明',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 22,
+                        color: Color(0xFF173A59),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      '提示、托管与机器人出牌统一走 DouZero 推理链。',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.35,
+                        color: Color(0xFF587790),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Expanded(
+            child: Row(
+              children: [
+                Expanded(child: _ModeInsightRow(difficulty: BotDifficulty.easy)),
+                SizedBox(width: 10),
+                Expanded(
+                  child: _ModeInsightRow(difficulty: BotDifficulty.normal),
+                ),
+                SizedBox(width: 10),
+                Expanded(child: _ModeInsightRow(difficulty: BotDifficulty.hard)),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LobbyQuickStatusCard extends StatelessWidget {
+  const _LobbyQuickStatusCard({
+    required this.message,
+    required this.tone,
+    required this.icon,
+    required this.onResume,
+  });
+
+  final String message;
+  final Color tone;
+  final IconData icon;
+  final VoidCallback? onResume;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasResumeAction = onResume != null;
+    final longMessage = message.runes.length > (hasResumeAction ? 18 : 22);
+    final messageFontSize = hasResumeAction
+        ? (longMessage ? 16.0 : 18.0)
+        : (longMessage ? 17.0 : 20.0);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        gradient: LinearGradient(
+          colors: [
+            tone.withValues(alpha: 0.14),
+            tone.withValues(alpha: 0.06),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: tone.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  color: Colors.white.withValues(alpha: 0.72),
+                ),
+                child: Icon(icon, color: tone),
+              ),
+              if (onResume != null) ...[
+                const Spacer(),
+                FilledButton.tonal(
+                  onPressed: onResume,
+                  style: FilledButton.styleFrom(
+                    foregroundColor: const Color(0xFF173A59),
+                    backgroundColor: Colors.white.withValues(alpha: 0.78),
+                    minimumSize: const Size(104, 38),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                  ),
+                  child: const Text('恢复对局'),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 14),
+          Expanded(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                message,
+                maxLines: hasResumeAction ? 4 : 5,
+                overflow: TextOverflow.ellipsis,
+                softWrap: true,
+                style: TextStyle(
+                  color: tone,
+                  fontWeight: FontWeight.w900,
+                  fontSize: messageFontSize,
+                  height: 1.35,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LobbyMetricCard extends StatelessWidget {
+  const _LobbyMetricCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.accent,
+    required this.icon,
+  });
+
+  final String title;
+  final String value;
+  final String subtitle;
+  final Color accent;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 15),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: Colors.white.withValues(alpha: 0.84),
+        border: Border.all(color: const Color(0xFFDCEEFF)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: accent.withValues(alpha: 0.12),
+            ),
+            child: Icon(icon, color: accent),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF587790),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Color(0xFF173A59),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFF587790),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModeInsightRow extends StatelessWidget {
+  const _ModeInsightRow({required this.difficulty});
+
+  final BotDifficulty difficulty;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = switch (difficulty) {
+      BotDifficulty.easy => const Color(0xFF2FA772),
+      BotDifficulty.normal => const Color(0xFF2B7FFF),
+      BotDifficulty.hard => const Color(0xFFF08A24),
+    };
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withValues(alpha: 0.82),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 8,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: accent,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            difficulty.hallSummary,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+              color: Color(0xFF6F89A2),
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionTag extends StatelessWidget {
+  const _ActionTag({
+    required this.text,
+    required this.accent,
+  });
+
+  final String text;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: accent.withValues(alpha: 0.10),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: accent,
+          fontWeight: FontWeight.w800,
+          fontSize: 13,
+        ),
       ),
     );
   }
@@ -1290,9 +1800,7 @@ class _ProfileDialogSurface extends StatelessWidget {
                               if (!context.mounted) {
                                 return;
                               }
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('已复制玩家编号')),
-                              );
+                              showAppSnackBar(context, '已复制玩家编号');
                             },
                             subtitle: '点击卡片可复制，用于服务端唯一识别',
                           ),
@@ -2221,6 +2729,7 @@ class _WinRateStatCard extends StatelessWidget {
     required this.record,
     required this.accent,
     this.compact = false,
+    this.showHint = true,
   });
 
   final String title;
@@ -2229,6 +2738,7 @@ class _WinRateStatCard extends StatelessWidget {
   final String record;
   final Color accent;
   final bool compact;
+  final bool showHint;
 
   @override
   Widget build(BuildContext context) {
@@ -2304,18 +2814,20 @@ class _WinRateStatCard extends StatelessWidget {
               height: 1.45,
             ),
           ),
-          SizedBox(height: compact ? 8 : 10),
-          Text(
-            progress == 0
-                ? '继续完成对局后，这里会形成更稳定的统计。'
-                : '当前数据会在每局结束后自动更新。',
-            style: TextStyle(
-              color: const Color(0xFF7A8CA7),
-              fontSize: compact ? 11 : 11.5,
-              fontWeight: FontWeight.w700,
-              height: 1.35,
+          if (showHint) ...[
+            SizedBox(height: compact ? 8 : 10),
+            Text(
+              progress == 0
+                  ? '继续完成对局后，这里会形成更稳定的统计。'
+                  : '当前数据会在每局结束后自动更新。',
+              style: TextStyle(
+                color: const Color(0xFF7A8CA7),
+                fontSize: compact ? 11 : 11.5,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -2737,7 +3249,7 @@ class _WinRateDialogSurface extends StatelessWidget {
                       _ProfileSectionCard(
                         icon: Icons.query_stats_rounded,
                         title: '个人战绩',
-                        subtitle: '${profile.displayName} 的地主与农民胜率概览。',
+                        subtitle: '${profile.displayName} 的真人与人机战绩分开展示。',
                         compact: compactHeader,
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2749,16 +3261,18 @@ class _WinRateDialogSurface extends StatelessWidget {
                                 children: [
                                   _ProfileInfoBadge(
                                     icon: Icons.emoji_events_rounded,
-                                    text: '总胜场 ${profile.totalWins}',
+                                    text: '真人 ${profile.onlineTotalWins}/${profile.onlineTotalGames}',
                                     emphasized: true,
                                   ),
                                   _ProfileInfoBadge(
-                                    icon: Icons.sports_esports_rounded,
-                                    text: '总对局 ${profile.totalGames}',
+                                    icon: Icons.smart_toy_rounded,
+                                    text: '人机 ${profile.botTotalWins}/${profile.botTotalGames}',
                                   ),
                                   _ProfileInfoBadge(
                                     icon: Icons.analytics_rounded,
-                                    text: _buildWinRateFocus(profile),
+                                    text: profile.totalGames == 0
+                                        ? '等待首局战绩'
+                                        : '综合 ${_formatRate(profile.overallWinRate)}',
                                   ),
                                 ],
                               ),
@@ -2773,35 +3287,80 @@ class _WinRateDialogSurface extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: gap),
-                      _WinRateOverviewCard(
-                        profile: profile,
-                        compact: compactHeader,
-                      ),
-                      SizedBox(height: gap),
                       _FixedTwoColumnGrid(
                         gap: gap,
                         children: [
                           _WinRateStatCard(
-                            title: '地主胜率',
-                            rate: _formatRate(profile.landlordWinRate),
-                            progress: profile.landlordWinRate,
+                            title: '真人地主胜率',
+                            rate: _formatRate(profile.onlineLandlordWinRate),
+                            progress: profile.onlineLandlordWinRate,
                             record: _formatBattleRecord(
-                              wins: profile.landlordWins,
-                              games: profile.landlordGames,
+                              wins: profile.onlineLandlordWins,
+                              games: profile.onlineLandlordGames,
                             ),
                             accent: const Color(0xFF2B7FFF),
                             compact: compactHeader,
+                            showHint: false,
                           ),
                           _WinRateStatCard(
-                            title: '农民胜率',
-                            rate: _formatRate(profile.farmerWinRate),
-                            progress: profile.farmerWinRate,
+                            title: '真人农民胜率',
+                            rate: _formatRate(profile.onlineFarmerWinRate),
+                            progress: profile.onlineFarmerWinRate,
                             record: _formatBattleRecord(
-                              wins: profile.farmerWins,
-                              games: profile.farmerGames,
+                              wins: profile.onlineFarmerWins,
+                              games: profile.onlineFarmerGames,
                             ),
                             accent: const Color(0xFF2FA772),
                             compact: compactHeader,
+                            showHint: false,
+                          ),
+                          _WinRateStatCard(
+                            title: '人机地主胜率',
+                            rate: _formatRate(profile.botLandlordWinRate),
+                            progress: profile.botLandlordWinRate,
+                            record: _formatBattleRecord(
+                              wins: profile.botLandlordWins,
+                              games: profile.botLandlordGames,
+                            ),
+                            accent: const Color(0xFF4F7BFF),
+                            compact: compactHeader,
+                            showHint: false,
+                          ),
+                          _WinRateStatCard(
+                            title: '人机农民胜率',
+                            rate: _formatRate(profile.botFarmerWinRate),
+                            progress: profile.botFarmerWinRate,
+                            record: _formatBattleRecord(
+                              wins: profile.botFarmerWins,
+                              games: profile.botFarmerGames,
+                            ),
+                            accent: const Color(0xFF7B61FF),
+                            compact: compactHeader,
+                            showHint: false,
+                          ),
+                          _WinRateStatCard(
+                            title: '真人总体胜率',
+                            rate: _formatRate(profile.onlineOverallWinRate),
+                            progress: profile.onlineOverallWinRate,
+                            record: _formatBattleRecord(
+                              wins: profile.onlineTotalWins,
+                              games: profile.onlineTotalGames,
+                            ),
+                            accent: const Color(0xFFF08A24),
+                            compact: compactHeader,
+                            showHint: false,
+                          ),
+                          _WinRateStatCard(
+                            title: '人机总体胜率',
+                            rate: _formatRate(profile.botOverallWinRate),
+                            progress: profile.botOverallWinRate,
+                            record: _formatBattleRecord(
+                              wins: profile.botTotalWins,
+                              games: profile.botTotalGames,
+                            ),
+                            accent: const Color(0xFF1F9D8B),
+                            compact: compactHeader,
+                            showHint: false,
                           ),
                         ],
                       ),
@@ -2817,6 +3376,7 @@ class _WinRateDialogSurface extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _WinRateOverviewCard extends StatelessWidget {
   const _WinRateOverviewCard({
     required this.profile,
@@ -3000,105 +3560,196 @@ class _OverallRateSummary extends StatelessWidget {
 
 class _ResponsiveChoiceDialog<T> extends StatelessWidget {
   const _ResponsiveChoiceDialog({
+    required this.eyebrow,
     required this.title,
     required this.subtitle,
+    required this.icon,
+    required this.accent,
     required this.options,
   });
 
+  final String eyebrow;
   final String title;
   final String subtitle;
+  final IconData icon;
+  final Color accent;
   final List<_ChoiceItem<T>> options;
 
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.sizeOf(context);
-    const designWidth = 1320.0;
-    const designHeight = 760.0;
-    final stageScale = math.min(
-      media.width / designWidth,
-      media.height / designHeight,
-    );
     final compactLayout = media.height < 560 || media.width < 420;
-    final titleSize = compactLayout ? 22.0 : 24.0;
+    final titleSize = compactLayout ? 24.0 : 28.0;
     final subtitleSize = compactLayout ? 13.0 : 14.0;
-    return StageRelativeDialogPanel(
-      stageWidth: designWidth,
-      stageHeight: designHeight,
-      stageScale: stageScale,
-      widthRatio: 0.45,
-      heightRatio: 0.75,
-      fillHeight: true,
+    return _ResponsiveDialogFrame(
+      maxWidth: compactLayout ? 430 : 500,
       padding: compactLayout
           ? const EdgeInsets.fromLTRB(18, 18, 18, 16)
-          : const EdgeInsets.fromLTRB(24, 22, 24, 20),
-      radius: compactLayout ? 30 : 34,
-      scrollable: false,
-      child: LayoutBuilder(
-        builder: (context, constraints) => SizedBox(
-          height: constraints.maxHeight,
-          child: SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: const Color(0xFF173A59),
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.w900,
+          : const EdgeInsets.fromLTRB(22, 20, 22, 18),
+      radius: compactLayout ? 28 : 32,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  padding: compactLayout
+                      ? const EdgeInsets.fromLTRB(14, 14, 14, 14)
+                      : const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: LinearGradient(
+                      colors: [
+                        accent.withValues(alpha: 0.16),
+                        accent.withValues(alpha: 0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    border: Border.all(color: accent.withValues(alpha: 0.18)),
                   ),
-                  SizedBox(height: compactLayout ? 4 : 6),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: const Color(0xFF587790),
-                      fontSize: subtitleSize,
-                      fontWeight: FontWeight.w700,
-                      height: 1.45,
-                    ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: compactLayout ? 46 : 50,
+                        height: compactLayout ? 46 : 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          color: Colors.white.withValues(alpha: 0.84),
+                        ),
+                        child: Icon(icon, color: accent, size: compactLayout ? 24 : 26),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(999),
+                                color: Colors.white.withValues(alpha: 0.75),
+                              ),
+                              child: Text(
+                                eyebrow,
+                                style: TextStyle(
+                                  color: accent,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              title,
+                              style: TextStyle(
+                                color: const Color(0xFF173A59),
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            SizedBox(height: compactLayout ? 6 : 8),
+                            Text(
+                              subtitle,
+                              style: TextStyle(
+                                color: const Color(0xFF587790),
+                                fontSize: subtitleSize,
+                                fontWeight: FontWeight.w700,
+                                height: 1.45,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: compactLayout ? 14 : 18),
-                  for (var index = 0; index < options.length; index++) ...[
-                    _ChoiceCard<T>(item: options[index]),
-                    if (index != options.length - 1) const SizedBox(height: 10),
-                  ],
-                ],
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              IconButton.filledTonal(
+                onPressed: () => Navigator.of(context).pop(),
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFFEAF4FF),
+                  foregroundColor: const Color(0xFF587790),
+                  visualDensity: VisualDensity.compact,
+                ),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
           ),
-        ),
+          SizedBox(height: compactLayout ? 14 : 16),
+          for (var index = 0; index < options.length; index++) ...[
+            _ChoiceCard<T>(
+              item: options[index],
+              accent: accent,
+              indexLabel: '${index + 1}'.padLeft(2, '0'),
+            ),
+            if (index != options.length - 1) const SizedBox(height: 10),
+          ],
+        ],
       ),
     );
   }
 }
 
 class _ChoiceCard<T> extends StatelessWidget {
-  const _ChoiceCard({required this.item});
+  const _ChoiceCard({
+    required this.item,
+    this.accent = const Color(0xFF2B7FFF),
+    this.indexLabel,
+  });
 
   final _ChoiceItem<T> item;
+  final Color accent;
+  final String? indexLabel;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       onTap: () => Navigator.of(context).pop(item.value),
       child: Ink(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: const LinearGradient(
-            colors: [Color(0xFFF8FCFF), Color(0xFFF0F8FF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border.all(color: const Color(0xFFD7EBFF)),
+          borderRadius: BorderRadius.circular(24),
+          color: Colors.white.withValues(alpha: 0.94),
+          border: Border.all(color: accent.withValues(alpha: 0.16)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x103678A3),
+              blurRadius: 18,
+              offset: Offset(0, 10),
+            ),
+          ],
         ),
         child: Row(
           children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: accent.withValues(alpha: 0.12),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                indexLabel ?? '',
+                style: TextStyle(
+                  color: accent,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3114,6 +3765,8 @@ class _ChoiceCard<T> extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     item.detail,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Color(0xFF587790),
                       fontSize: 14,
@@ -3126,15 +3779,15 @@ class _ChoiceCard<T> extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Container(
-              width: 40,
-              height: 40,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                color: const Color(0x142B7FFF),
+                borderRadius: BorderRadius.circular(16),
+                color: accent.withValues(alpha: 0.12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_forward_rounded,
-                color: Color(0xFF2B7FFF),
+                color: accent,
               ),
             ),
           ],

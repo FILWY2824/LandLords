@@ -60,6 +60,7 @@ add_executable(landlords_server
   src/models.cpp
   src/onnx_bot_strategy.cpp
   src/file_friend_request_repository.cpp
+  src/file_system_repository.cpp
   src/file_user_repository.cpp
   src/room.cpp
   src/game_service.cpp
@@ -81,6 +82,7 @@ add_executable(landlords_friend_center_tests
   src/bid_strategy.cpp
   src/bot_strategy.cpp
   src/file_friend_request_repository.cpp
+  src/file_system_repository.cpp
   src/file_user_repository.cpp
   src/game_service.cpp
   src/logging.cpp
@@ -95,6 +97,7 @@ add_executable(landlords_room_lifecycle_tests
   src/bid_strategy.cpp
   src/bot_strategy.cpp
   src/file_friend_request_repository.cpp
+  src/file_system_repository.cpp
   src/file_user_repository.cpp
   src/game_service.cpp
   src/logging.cpp

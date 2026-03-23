@@ -17,6 +17,7 @@ const _inviteSentText = '\u9080\u8bf7\u5df2\u53d1\u9001';
 const _inviteDialogTitle = '\u6536\u5230\u9080\u8bf7';
 const _acceptText = '\u540c\u610f';
 const _prepareText = '\u51c6\u5907';
+const _sessionExpiredHint = '\u5176\u4ed6\u8bbe\u5907';
 
 void main() {
   testWidgets('desktop create room flow reaches the preparing room', (
@@ -109,7 +110,7 @@ void main() {
     expect(find.text(_prepareText), findsWidgets);
   });
 
-  testWidgets('expired invitation closes the dialog and shows one timeout notice', (
+  testWidgets('expired invitation closes the dialog and shows timeout feedback', (
     tester,
   ) async {
     final gateway = _ScriptedGateway()..expireInvitationOnResponse = true;
@@ -126,11 +127,89 @@ void main() {
     await tester.tap(find.text(_acceptText));
     await _advanceUi(tester);
 
-    expect(find.textContaining('超时'), findsOneWidget);
+    expect(find.textContaining('超时'), findsAtLeastNWidgets(1));
     expect(find.text(_inviteDialogTitle), findsNothing);
 
     await _advanceUi(tester);
-    expect(find.textContaining('超时'), findsOneWidget);
+    expect(find.textContaining('超时'), findsAtLeastNWidgets(1));
+  });
+  testWidgets('forced logout closes the invitation dialog before showing the new notice', (
+    tester,
+  ) async {
+    final gateway = _ScriptedGateway();
+
+    await _pumpApp(tester, gateway, const Size(1600, 900));
+    await _loginIntoLobby(tester);
+
+    gateway.emitInvitation();
+    await tester.pump();
+    await _advanceUi(tester);
+
+    expect(find.text(_inviteDialogTitle), findsOneWidget);
+
+    gateway.emitSessionExpired();
+    await tester.pump();
+    await _advanceUi(tester);
+
+    expect(find.text(_inviteDialogTitle), findsNothing);
+    expect(find.textContaining(_sessionExpiredHint), findsOneWidget);
+  });
+
+  testWidgets('forced logout replaces an existing popup notice instead of stacking dialogs', (
+    tester,
+  ) async {
+    final gateway = _ScriptedGateway();
+
+    await _pumpApp(tester, gateway, const Size(1600, 900));
+    await _loginIntoLobby(tester);
+    await tester.tap(find.text(_chooseModeText));
+    await _advanceUi(tester);
+    await tester.tap(find.text(_createRoomText).last);
+    await _advanceUi(tester);
+    await tester.tap(find.text(_arrangeSeatText).first);
+    await _advanceUi(tester);
+
+    final inviteButton = find.text(_inviteSeatText).first;
+    await tester.ensureVisible(inviteButton);
+    await _advanceUi(tester);
+    await tester.tap(inviteButton);
+    await _advanceUi(tester);
+
+    expect(find.text(_inviteSentText), findsOneWidget);
+
+    gateway.emitSessionExpired();
+    await tester.pump();
+    await _advanceUi(tester);
+
+    expect(find.text(_inviteSentText), findsNothing);
+    expect(find.textContaining(_sessionExpiredHint), findsOneWidget);
+  });
+
+  testWidgets('forced logout closes lobby mode dialogs from the root navigator', (
+    tester,
+  ) async {
+    final gateway = _ScriptedGateway();
+
+    await _pumpApp(tester, gateway, const Size(1600, 900));
+    await _loginIntoLobby(tester);
+
+    await tester.tap(find.text(_chooseModeText));
+    await _advanceUi(tester);
+
+    expect(
+      find.text('\u4f60\u53ef\u4ee5\u521b\u5efa\u623f\u95f4\u3001\u8fdb\u5165\u623f\u95f4\uff0c\u6216\u8005\u76f4\u63a5\u81ea\u7531\u5339\u914d\u3002'),
+      findsOneWidget,
+    );
+
+    gateway.emitSessionExpired();
+    await tester.pump();
+    await _advanceUi(tester);
+
+    expect(
+      find.text('\u4f60\u53ef\u4ee5\u521b\u5efa\u623f\u95f4\u3001\u8fdb\u5165\u623f\u95f4\uff0c\u6216\u8005\u76f4\u63a5\u81ea\u7531\u5339\u914d\u3002'),
+      findsNothing,
+    );
+    expect(find.textContaining(_sessionExpiredHint), findsOneWidget);
   });
 }
 
@@ -267,6 +346,32 @@ class _ScriptedGateway implements GameGateway {
     final updated = _usersByAccount[account]!.copyWith(nickname: nickname);
     _usersByAccount[account] = updated;
     return updated;
+  }
+
+  @override
+  Future<SupportStats> fetchSupportStats() async {
+    return const SupportStats(supportLikeCount: 21);
+  }
+
+  @override
+  Future<SupportStats> submitSupportLike() async {
+    return const SupportStats(supportLikeCount: 22);
+  }
+
+  @override
+  Future<SupportRewardResult> claimSupportLikeReward({
+    required String sessionToken,
+  }) async {
+    final account = _requireAccount(sessionToken);
+    final updated = _usersByAccount[account]!.copyWith(
+      coins: _usersByAccount[account]!.coins + 50,
+    );
+    _usersByAccount[account] = updated;
+    return SupportRewardResult(
+      profile: updated,
+      stats: const SupportStats(supportLikeCount: 22),
+      rewardCoins: 50,
+    );
   }
 
   @override
@@ -634,6 +739,12 @@ class _ScriptedGateway implements GameGateway {
     );
     _lastInvitation = invitation;
     _notificationController.add(RoomInvitationNotification(invitation));
+  }
+
+  void emitSessionExpired() {
+    _notificationController.add(
+      const SessionExpiredNotification('account logged in on another device'),
+    );
   }
 
   RoomSnapshot _buildPreparingRoom({

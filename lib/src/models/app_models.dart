@@ -39,6 +39,10 @@ extension BotDifficultyPresentation on BotDifficulty {
         BotDifficulty.hard => 'DouZero-WP',
       };
 
+  String get modelAttribution => '基于开源$modelFamily模型';
+
+  String get hallSummary => '$hallTitle：$modelAttribution';
+
   bool get prefersOnnx => true;
 }
 
@@ -52,6 +56,14 @@ class UserProfile {
     this.landlordGames = 0,
     this.farmerWins = 0,
     this.farmerGames = 0,
+    this.onlineLandlordWins = 0,
+    this.onlineLandlordGames = 0,
+    this.onlineFarmerWins = 0,
+    this.onlineFarmerGames = 0,
+    this.botLandlordWins = 0,
+    this.botLandlordGames = 0,
+    this.botFarmerWins = 0,
+    this.botFarmerGames = 0,
   });
 
   final String userId;
@@ -62,6 +74,14 @@ class UserProfile {
   final int landlordGames;
   final int farmerWins;
   final int farmerGames;
+  final int onlineLandlordWins;
+  final int onlineLandlordGames;
+  final int onlineFarmerWins;
+  final int onlineFarmerGames;
+  final int botLandlordWins;
+  final int botLandlordGames;
+  final int botFarmerWins;
+  final int botFarmerGames;
 
   String get displayName => nickname.isNotEmpty ? nickname : account;
 
@@ -78,6 +98,32 @@ class UserProfile {
 
   double get overallWinRate => totalGames == 0 ? 0 : totalWins / totalGames;
 
+  int get onlineTotalWins => onlineLandlordWins + onlineFarmerWins;
+
+  int get onlineTotalGames => onlineLandlordGames + onlineFarmerGames;
+
+  double get onlineLandlordWinRate =>
+      onlineLandlordGames == 0 ? 0 : onlineLandlordWins / onlineLandlordGames;
+
+  double get onlineFarmerWinRate =>
+      onlineFarmerGames == 0 ? 0 : onlineFarmerWins / onlineFarmerGames;
+
+  double get onlineOverallWinRate =>
+      onlineTotalGames == 0 ? 0 : onlineTotalWins / onlineTotalGames;
+
+  int get botTotalWins => botLandlordWins + botFarmerWins;
+
+  int get botTotalGames => botLandlordGames + botFarmerGames;
+
+  double get botLandlordWinRate =>
+      botLandlordGames == 0 ? 0 : botLandlordWins / botLandlordGames;
+
+  double get botFarmerWinRate =>
+      botFarmerGames == 0 ? 0 : botFarmerWins / botFarmerGames;
+
+  double get botOverallWinRate =>
+      botTotalGames == 0 ? 0 : botTotalWins / botTotalGames;
+
   UserProfile copyWith({
     String? userId,
     String? account,
@@ -87,6 +133,14 @@ class UserProfile {
     int? landlordGames,
     int? farmerWins,
     int? farmerGames,
+    int? onlineLandlordWins,
+    int? onlineLandlordGames,
+    int? onlineFarmerWins,
+    int? onlineFarmerGames,
+    int? botLandlordWins,
+    int? botLandlordGames,
+    int? botFarmerWins,
+    int? botFarmerGames,
   }) {
     return UserProfile(
       userId: userId ?? this.userId,
@@ -97,6 +151,14 @@ class UserProfile {
       landlordGames: landlordGames ?? this.landlordGames,
       farmerWins: farmerWins ?? this.farmerWins,
       farmerGames: farmerGames ?? this.farmerGames,
+      onlineLandlordWins: onlineLandlordWins ?? this.onlineLandlordWins,
+      onlineLandlordGames: onlineLandlordGames ?? this.onlineLandlordGames,
+      onlineFarmerWins: onlineFarmerWins ?? this.onlineFarmerWins,
+      onlineFarmerGames: onlineFarmerGames ?? this.onlineFarmerGames,
+      botLandlordWins: botLandlordWins ?? this.botLandlordWins,
+      botLandlordGames: botLandlordGames ?? this.botLandlordGames,
+      botFarmerWins: botFarmerWins ?? this.botFarmerWins,
+      botFarmerGames: botFarmerGames ?? this.botFarmerGames,
     );
   }
 }
@@ -189,6 +251,40 @@ class FriendCenterSnapshot {
   final List<FriendRequestEntry> pendingRequests;
   final List<FriendRequestEntry> historyRequests;
   final int pendingRequestCount;
+}
+
+class SupportStats {
+  const SupportStats({
+    required this.supportLikeCount,
+  });
+
+  const SupportStats.empty() : supportLikeCount = 0;
+
+  final int supportLikeCount;
+}
+
+class SupportRewardResult {
+  const SupportRewardResult({
+    required this.profile,
+    required this.stats,
+    required this.rewardCoins,
+  });
+
+  final UserProfile profile;
+  final SupportStats stats;
+  final int rewardCoins;
+}
+
+class SupportRewardOffer {
+  const SupportRewardOffer({
+    required this.currentCoins,
+    required this.rewardCoins,
+    required this.supportLikeCount,
+  });
+
+  final int currentCoins;
+  final int rewardCoins;
+  final int supportLikeCount;
 }
 
 class RoomInvitation {

@@ -66,11 +66,19 @@ core::UserRecord BuildDemoUser() {
       .account = "player1",
       .nickname = "player1",
       .password_hash = DefaultPasswordHash(),
-      .total_score = 0,
+      .total_score = 100,
       .landlord_wins = 0,
       .landlord_games = 0,
       .farmer_wins = 0,
       .farmer_games = 0,
+      .online_landlord_wins = 0,
+      .online_landlord_games = 0,
+      .online_farmer_wins = 0,
+      .online_farmer_games = 0,
+      .bot_landlord_wins = 0,
+      .bot_landlord_games = 0,
+      .bot_farmer_wins = 0,
+      .bot_farmer_games = 0,
       .friend_user_ids = {},
   };
 }
@@ -112,7 +120,7 @@ std::optional<core::UserRecord> ParseUserRecordLine(const std::string& line) {
   }
 
   const auto parts = Split(line);
-  if (parts.size() < 10U || parts[0] != "v2") {
+  if (parts.size() < 18U || parts[0] != "v3") {
     return std::nullopt;
   }
   core::UserRecord user{
@@ -125,7 +133,16 @@ std::optional<core::UserRecord> ParseUserRecordLine(const std::string& line) {
       .landlord_games = std::stoi(parts[7]),
       .farmer_wins = std::stoi(parts[8]),
       .farmer_games = std::stoi(parts[9]),
-      .friend_user_ids = parts.size() >= 11U ? SplitCsv(parts[10]) : std::vector<std::string>{},
+      .online_landlord_wins = std::stoi(parts[10]),
+      .online_landlord_games = std::stoi(parts[11]),
+      .online_farmer_wins = std::stoi(parts[12]),
+      .online_farmer_games = std::stoi(parts[13]),
+      .bot_landlord_wins = std::stoi(parts[14]),
+      .bot_landlord_games = std::stoi(parts[15]),
+      .bot_farmer_wins = std::stoi(parts[16]),
+      .bot_farmer_games = std::stoi(parts[17]),
+      .friend_user_ids =
+          parts.size() >= 19U ? SplitCsv(parts[18]) : std::vector<std::string>{},
   };
 
   if (user.user_id.empty() || user.account.empty()) {
@@ -137,13 +154,21 @@ std::optional<core::UserRecord> ParseUserRecordLine(const std::string& line) {
 }
 
 std::string SerializeUserRecord(const core::UserRecord& user) {
-  return "v2|" + Escape(user.user_id) + "|" + Escape(user.account) + "|" +
+  return "v3|" + Escape(user.user_id) + "|" + Escape(user.account) + "|" +
          Escape(user.nickname) + "|" + Escape(user.password_hash) + "|" +
          std::to_string(user.total_score) + "|" +
          std::to_string(user.landlord_wins) + "|" +
          std::to_string(user.landlord_games) + "|" +
          std::to_string(user.farmer_wins) + "|" +
          std::to_string(user.farmer_games) + "|" +
+         std::to_string(user.online_landlord_wins) + "|" +
+         std::to_string(user.online_landlord_games) + "|" +
+         std::to_string(user.online_farmer_wins) + "|" +
+         std::to_string(user.online_farmer_games) + "|" +
+         std::to_string(user.bot_landlord_wins) + "|" +
+         std::to_string(user.bot_landlord_games) + "|" +
+         std::to_string(user.bot_farmer_wins) + "|" +
+         std::to_string(user.bot_farmer_games) + "|" +
          Escape(JoinCsv(user.friend_user_ids));
 }
 
@@ -285,11 +310,19 @@ core::UserRecord FileUserRepository::SaveNewUser(const std::string& account,
       .account = account,
       .nickname = nickname,
       .password_hash = password_hash,
-      .total_score = 0,
+      .total_score = 100,
       .landlord_wins = 0,
       .landlord_games = 0,
       .farmer_wins = 0,
       .farmer_games = 0,
+      .online_landlord_wins = 0,
+      .online_landlord_games = 0,
+      .online_farmer_wins = 0,
+      .online_farmer_games = 0,
+      .bot_landlord_wins = 0,
+      .bot_landlord_games = 0,
+      .bot_farmer_wins = 0,
+      .bot_farmer_games = 0,
       .friend_user_ids = {},
   };
   by_user_id_[user.user_id] = user;

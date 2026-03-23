@@ -81,6 +81,14 @@ message UserProfile {
   int32 landlord_games = 6;
   int32 farmer_wins = 7;
   int32 farmer_games = 8;
+  int32 online_landlord_wins = 9;
+  int32 online_landlord_games = 10;
+  int32 online_farmer_wins = 11;
+  int32 online_farmer_games = 12;
+  int32 bot_landlord_wins = 13;
+  int32 bot_landlord_games = 14;
+  int32 bot_farmer_wins = 15;
+  int32 bot_farmer_games = 16;
 }
 
 message OnlineUser {
@@ -115,6 +123,10 @@ message FriendCenterSnapshot {
   repeated FriendRequestEntry pending_requests = 2;
   repeated FriendRequestEntry history_requests = 3;
   int32 pending_request_count = 4;
+}
+
+message SystemStatsSnapshot {
+  int32 support_like_count = 1;
 }
 
 message RegisterRequest {
@@ -169,6 +181,32 @@ message UpdateNicknameResponse {
   bool success = 1;
   string message = 2;
   UserProfile profile = 3;
+}
+
+message FetchSystemStatsRequest {}
+
+message FetchSystemStatsResponse {
+  bool success = 1;
+  string message = 2;
+  SystemStatsSnapshot stats = 3;
+}
+
+message SubmitSupportLikeRequest {}
+
+message SubmitSupportLikeResponse {
+  bool success = 1;
+  string message = 2;
+  SystemStatsSnapshot stats = 3;
+}
+
+message ClaimSupportLikeRewardRequest {}
+
+message ClaimSupportLikeRewardResponse {
+  bool success = 1;
+  string message = 2;
+  UserProfile profile = 3;
+  SystemStatsSnapshot stats = 4;
+  int32 reward_coins = 5;
 }
 
 message MatchRequest {
@@ -410,6 +448,9 @@ message ClientMessage {
     RespondFriendRequestRequest respond_friend_request_request = 29;
     DeleteFriendRequest delete_friend_request = 30;
     ChangePasswordRequest change_password_request = 31;
+    FetchSystemStatsRequest fetch_system_stats_request = 32;
+    ClaimSupportLikeRewardRequest claim_support_like_reward_request = 33;
+    SubmitSupportLikeRequest submit_support_like_request = 34;
   }
 }
 
@@ -436,5 +477,8 @@ message ServerMessage {
     DeleteFriendResponse delete_friend_response = 27;
     FriendCenterPush friend_center_push = 28;
     ChangePasswordResponse change_password_response = 29;
+    FetchSystemStatsResponse fetch_system_stats_response = 30;
+    ClaimSupportLikeRewardResponse claim_support_like_reward_response = 31;
+    SubmitSupportLikeResponse submit_support_like_response = 32;
   }
 }

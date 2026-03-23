@@ -183,6 +183,66 @@ class SocketGameGateway implements GameGateway {
   }
 
   @override
+  Future<app.SupportStats> fetchSupportStats() async {
+    await _ensureConnected();
+    final response = await _send(
+      (message) => message.fetchSystemStatsRequest = pb.FetchSystemStatsRequest(),
+    );
+    if (!response.hasFetchSystemStatsResponse() ||
+        !response.fetchSystemStatsResponse.success) {
+      throw Exception(
+        response.hasFetchSystemStatsResponse()
+            ? response.fetchSystemStatsResponse.message
+            : response.errorResponse.message,
+      );
+    }
+    return _mapSupportStats(response.fetchSystemStatsResponse.stats);
+  }
+
+  @override
+  Future<app.SupportStats> submitSupportLike() async {
+    await _ensureConnected();
+    final response = await _send(
+      (message) => message.submitSupportLikeRequest = pb.SubmitSupportLikeRequest(),
+    );
+    if (!response.hasSubmitSupportLikeResponse() ||
+        !response.submitSupportLikeResponse.success) {
+      throw Exception(
+        response.hasSubmitSupportLikeResponse()
+            ? response.submitSupportLikeResponse.message
+            : response.errorResponse.message,
+      );
+    }
+    return _mapSupportStats(response.submitSupportLikeResponse.stats);
+  }
+
+  @override
+  Future<app.SupportRewardResult> claimSupportLikeReward({
+    required String sessionToken,
+  }) async {
+    await _ensureConnected();
+    final response = await _send(
+      (message) =>
+          message.claimSupportLikeRewardRequest =
+              pb.ClaimSupportLikeRewardRequest(),
+      sessionToken: sessionToken,
+    );
+    if (!response.hasClaimSupportLikeRewardResponse() ||
+        !response.claimSupportLikeRewardResponse.success) {
+      throw Exception(
+        response.hasClaimSupportLikeRewardResponse()
+            ? response.claimSupportLikeRewardResponse.message
+            : response.errorResponse.message,
+      );
+    }
+    return app.SupportRewardResult(
+      profile: _mapUserProfile(response.claimSupportLikeRewardResponse.profile),
+      stats: _mapSupportStats(response.claimSupportLikeRewardResponse.stats),
+      rewardCoins: response.claimSupportLikeRewardResponse.rewardCoins,
+    );
+  }
+
+  @override
   Future<RoomSnapshot> startMatch({
     required String sessionToken,
     required app.UserProfile profile,
@@ -921,6 +981,14 @@ class SocketGameGateway implements GameGateway {
         landlordGames: profile.landlordGames,
         farmerWins: profile.farmerWins,
         farmerGames: profile.farmerGames,
+        onlineLandlordWins: profile.onlineLandlordWins,
+        onlineLandlordGames: profile.onlineLandlordGames,
+        onlineFarmerWins: profile.onlineFarmerWins,
+        onlineFarmerGames: profile.onlineFarmerGames,
+        botLandlordWins: profile.botLandlordWins,
+        botLandlordGames: profile.botLandlordGames,
+        botFarmerWins: profile.botFarmerWins,
+        botFarmerGames: profile.botFarmerGames,
       );
 
   app.OnlineUser _mapOnlineUser(pb.OnlineUser user) => app.OnlineUser(
@@ -966,6 +1034,11 @@ class SocketGameGateway implements GameGateway {
             .map(_mapFriendRequestEntry)
             .toList(growable: false),
         pendingRequestCount: snapshot.pendingRequestCount,
+      );
+
+  app.SupportStats _mapSupportStats(pb.SystemStatsSnapshot stats) =>
+      app.SupportStats(
+        supportLikeCount: stats.supportLikeCount,
       );
 
   RoomSnapshot _mapSnapshot(pb.RoomSnapshot snapshot) {

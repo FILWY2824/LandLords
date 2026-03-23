@@ -369,6 +369,32 @@ class _PollingGateway implements GameGateway {
   }
 
   @override
+  Future<SupportStats> fetchSupportStats() async {
+    return const SupportStats(supportLikeCount: 9);
+  }
+
+  @override
+  Future<SupportStats> submitSupportLike() async {
+    return const SupportStats(supportLikeCount: 10);
+  }
+
+  @override
+  Future<SupportRewardResult> claimSupportLikeReward({
+    required String sessionToken,
+  }) async {
+    return const SupportRewardResult(
+      profile: UserProfile(
+        userId: 'user-player1',
+        account: 'player1',
+        nickname: '玩家1',
+        coins: 50,
+      ),
+      stats: SupportStats(supportLikeCount: 10),
+      rewardCoins: 50,
+    );
+  }
+
+  @override
   Future<RoomSnapshot> startMatch({
     required String sessionToken,
     required UserProfile profile,

@@ -55,6 +55,14 @@ struct UserRecord {
   int landlord_games = 0;
   int farmer_wins = 0;
   int farmer_games = 0;
+  int online_landlord_wins = 0;
+  int online_landlord_games = 0;
+  int online_farmer_wins = 0;
+  int online_farmer_games = 0;
+  int bot_landlord_wins = 0;
+  int bot_landlord_games = 0;
+  int bot_farmer_wins = 0;
+  int bot_farmer_games = 0;
   std::vector<std::string> friend_user_ids;
 };
 
@@ -66,6 +74,10 @@ struct FriendRequestRecord {
       landlords::protocol::FRIEND_REQUEST_STATUS_PENDING;
   std::int64_t created_at_ms = 0;
   std::int64_t updated_at_ms = 0;
+};
+
+struct SystemRecord {
+  int support_like_count = 0;
 };
 
 struct PlayerState {
