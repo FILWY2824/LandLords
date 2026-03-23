@@ -6,7 +6,7 @@ import 'package:landlords/src/services/socket_game_gateway.dart';
 
 void main() {
   test(
-    'existing runtime accounts can login and fetch friend center without crashing server',
+    'default runtime account can login and fetch friend center without crashing server',
     () async {
       final host = Platform.environment['LANDLORDS_TEST_HOST'] ?? '127.0.0.1';
       final tcpPort =
@@ -16,7 +16,7 @@ void main() {
       addTearDown(gateway.close);
 
       const password = 'pass123';
-      for (final account in const ['player1', 'admin']) {
+      for (final account in const ['player1']) {
         await gateway.resetPassword(account: account, newPassword: password);
         final login = await gateway.login(account: account, password: password);
         final snapshot = await gateway.fetchFriendCenter(

@@ -135,7 +135,7 @@ function Get-ListeningProcessInfo {
   }
 }
 
-Import-LandlordsEnv -RepoRoot $root -OverwriteExisting
+Import-LandlordsEnv -RepoRoot $root
 Write-Host "[landlords-frontend-windows] loaded landlords.env"
 
 $webRoot = Join-Path $root "build\web"

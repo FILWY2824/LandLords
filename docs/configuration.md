@@ -13,6 +13,7 @@
 - 仓库内部路径优先写相对路径，例如 `backend/ai_models/onnx/sl`
 - 机器本地 SDK 优先写绝对路径，例如 `D:/sdk/protobuf`
 - 用户只修改已有值，不需要自己新增配置键
+- Windows 主脚本会优先读取当前终端里已经导入的同名环境变量；如果没有导入，再回落到 `landlords.env`
 
 ## 一、后端构建与原生依赖
 
@@ -24,8 +25,6 @@
 - `LANDLORDS_CMAKE_BUILD_CONFIG`
 - `LANDLORDS_CMAKE_BUILD_TYPE`
 - `LANDLORDS_SERVER_EXE`
-- `LANDLORDS_USE_LOCAL_WINDOWS_DEPS`
-- `LANDLORDS_WINDOWS_DEPS_ROOT`
 - `LANDLORDS_PROTOBUF_ROOT`
 - `LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE`
 - `LANDLORDS_PROTOBUF_INCLUDE_DIR`
@@ -36,30 +35,9 @@
 - `LANDLORDS_ENABLE_ONNXRUNTIME`
 - `LANDLORDS_ONNXRUNTIME_ROOT`
 
-### 推荐的 Windows bundle 模式
-
-如果你的依赖目录结构类似下面这样，建议优先用 bundle 模式，只改一个根路径即可：
-
-```text
-<deps_root>/protobuf/bin/protoc.exe
-<deps_root>/protobuf/include
-<deps_root>/protobuf/lib/libprotobuf.lib
-<deps_root>/libevent/lib/cmake/libevent
-```
-
-对应配置：
+### Windows 推荐配置
 
 ```env
-LANDLORDS_USE_LOCAL_WINDOWS_DEPS=ON
-LANDLORDS_WINDOWS_DEPS_ROOT=D:/sdk/landlords/windows_deps
-```
-
-### 分开指定依赖
-
-当 protobuf 和 libevent 不在同一目录时，再改成手动模式：
-
-```env
-LANDLORDS_USE_LOCAL_WINDOWS_DEPS=OFF
 LANDLORDS_PROTOBUF_ROOT=D:/sdk/protobuf
 LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE=D:/sdk/protobuf/bin/protoc.exe
 LANDLORDS_PROTOBUF_INCLUDE_DIR=D:/sdk/protobuf/include
@@ -68,6 +46,12 @@ LANDLORDS_LIBEVENT_ROOT=D:/sdk/libevent
 LANDLORDS_LIBEVENT_CMAKE_DIR=D:/sdk/libevent/lib/cmake/libevent
 LANDLORDS_ONNXRUNTIME_ROOT=D:/sdk/onnxruntime/Microsoft.ML.OnnxRuntime.1.24.3
 ```
+
+这套配置是当前项目正式维护的 Windows 部署方式：
+
+- 不再使用 bundle 模式
+- protobuf、libevent、onnxruntime 都通过明确路径指定
+- 用户只需要把示例值改成自己机器上的真实目录
 
 ## 二、前端编译期配置
 

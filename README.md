@@ -54,9 +54,13 @@ docs/onnx_deployment.md        ONNX 导出、替换、跨平台使用说明
 
 第一次部署最需要优先确认的是这些键：
 
-- `LANDLORDS_WINDOWS_DEPS_ROOT`
+- `LANDLORDS_PROTOBUF_ROOT`
+- `LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE`
+- `LANDLORDS_PROTOBUF_INCLUDE_DIR`
+- `LANDLORDS_PROTOBUF_LIBRARY`
+- `LANDLORDS_LIBEVENT_ROOT`
+- `LANDLORDS_LIBEVENT_CMAKE_DIR`
 - `LANDLORDS_ONNXRUNTIME_ROOT`
-- 如果不使用 bundle 模式，还要改 `LANDLORDS_PROTOBUF_*` 和 `LANDLORDS_LIBEVENT_*`
 - `LANDLORDS_HOST`
 - `LANDLORDS_PORT`
 - `LANDLORDS_WS_PORT`
@@ -134,7 +138,6 @@ sudo apt install -y build-essential cmake ninja-build protobuf-compiler libproto
 cmake -S backend/server -B backend/server/build \
   -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
-  -DLANDLORDS_USE_LOCAL_WINDOWS_DEPS=OFF \
   -DLANDLORDS_ENABLE_ONNXRUNTIME=ON \
   -DLANDLORDS_ONNXRUNTIME_ROOT=/opt/onnxruntime/Microsoft.ML.OnnxRuntime.1.24.3
 

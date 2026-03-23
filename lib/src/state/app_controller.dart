@@ -220,8 +220,8 @@ class AppController extends ChangeNotifier {
           notifyListeners();
         }
       }
-      unawaited(refreshFriendCenter(silent: true));
-      unawaited(_refreshSupportStatsAndMaybeOffer());
+      await refreshFriendCenter(silent: true);
+      await _refreshSupportStatsAndMaybeOffer();
     }
   }
 

@@ -168,6 +168,10 @@ ClientMessage MakeDeleteFriend(
   return message;
 }
 
+std::string HashPasswordForSeedUser(const std::string& password) {
+  return std::to_string(std::hash<std::string>{}(password));
+}
+
 void RunFriendCenterServiceTest() {
   const auto runtime_dir =
       std::filesystem::path("runtime") / "friend-center-service-test";
@@ -590,7 +594,22 @@ void RunFriendRequestBatchRejectServiceTest() {
 }
 
 void RunExistingRuntimeFriendCenterRegressionTest() {
-  const auto runtime_dir = std::filesystem::path("runtime");
+  const auto runtime_dir =
+      std::filesystem::path("runtime") /
+      "friend-center-runtime-regression-test";
+  std::filesystem::remove_all(runtime_dir);
+
+  {
+    FileUserRepository seeded_users(runtime_dir);
+    auto default_user = seeded_users.FindByAccount("player1");
+    Require(default_user.has_value(),
+            "default player1 account should exist in seeded runtime");
+    seeded_users.SaveNewUser(
+        "admin",
+        "admin",
+        HashPasswordForSeedUser("seed-admin"));
+  }
+
   auto user_repository = std::make_shared<FileUserRepository>(runtime_dir);
   auto friend_request_repository =
       std::make_shared<FileFriendRequestRepository>(runtime_dir);
@@ -624,6 +643,8 @@ void RunExistingRuntimeFriendCenterRegressionTest() {
     Require(list_response.has_list_friends_response(),
             "list friends response missing for runtime account " + account);
   }
+
+  std::filesystem::remove_all(runtime_dir);
 }
 
 void RunChangePasswordServiceTest() {

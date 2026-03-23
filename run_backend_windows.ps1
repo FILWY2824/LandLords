@@ -314,24 +314,39 @@ function Configure-Backend {
   $generator = Get-LandlordsEnvValue -Name "LANDLORDS_CMAKE_GENERATOR" -DefaultValue "Visual Studio 17 2022"
   $platform = Get-LandlordsEnvValue -Name "LANDLORDS_CMAKE_PLATFORM" -DefaultValue "x64"
   $buildType = Get-LandlordsEnvValue -Name "LANDLORDS_CMAKE_BUILD_TYPE"
+  $protobufRoot = Resolve-LandlordsConfigPathOrEmpty "LANDLORDS_PROTOBUF_ROOT"
+  $protobufProtoc = Resolve-LandlordsConfigPathOrEmpty "LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE"
+  $protobufInclude = Resolve-LandlordsConfigPathOrEmpty "LANDLORDS_PROTOBUF_INCLUDE_DIR"
+  $protobufLibrary = Resolve-LandlordsConfigPathOrEmpty "LANDLORDS_PROTOBUF_LIBRARY"
+  $libeventRoot = Resolve-LandlordsConfigPathOrEmpty "LANDLORDS_LIBEVENT_ROOT"
+  $libeventCmakeDir = Resolve-LandlordsConfigPathOrEmpty "LANDLORDS_LIBEVENT_CMAKE_DIR"
 
-  $useLocalWindowsDeps = Test-LandlordsTruthy (Get-LandlordsEnvValue -Name "LANDLORDS_USE_LOCAL_WINDOWS_DEPS" -DefaultValue "ON")
-  if ($useLocalWindowsDeps) {
-    $depsRoot = Resolve-LandlordsConfigPathOrEmpty "LANDLORDS_WINDOWS_DEPS_ROOT"
-    if ([string]::IsNullOrWhiteSpace($depsRoot)) {
-      throw "LANDLORDS_WINDOWS_DEPS_ROOT is empty. Please edit landlords.env and point it to your local dependency bundle."
-    }
-
-    Assert-LandlordsPathExists -Label "Windows dependency root" -PathValue $depsRoot -Hint "Please edit LANDLORDS_WINDOWS_DEPS_ROOT in landlords.env."
-    Assert-LandlordsPathExists -Label "Protobuf header" -PathValue (Join-Path $depsRoot "protobuf\include\google\protobuf\stubs\common.h") -Hint "Please make sure protobuf is installed under LANDLORDS_WINDOWS_DEPS_ROOT/protobuf."
-    Assert-LandlordsPathExists -Label "protoc executable" -PathValue (Join-Path $depsRoot "protobuf\bin\protoc.exe") -Hint "Please make sure protobuf/bin/protoc.exe exists."
-    $protobufLibDebug = Join-Path $depsRoot "protobuf\lib\libprotobufd.lib"
-    $protobufLibRelease = Join-Path $depsRoot "protobuf\lib\libprotobuf.lib"
-    if (-not (Test-Path $protobufLibDebug) -and -not (Test-Path $protobufLibRelease)) {
-      throw "Protobuf library not found under $depsRoot\protobuf\lib. Please make sure libprotobuf.lib or libprotobufd.lib exists."
-    }
-    Assert-LandlordsPathExists -Label "libevent CMake package directory" -PathValue (Join-Path $depsRoot "libevent\lib\cmake\libevent") -Hint "Please make sure libevent is installed under LANDLORDS_WINDOWS_DEPS_ROOT/libevent."
+  if ([string]::IsNullOrWhiteSpace($protobufRoot)) {
+    throw "LANDLORDS_PROTOBUF_ROOT is empty. Please edit landlords.env and point it to your protobuf installation root."
   }
+  if ([string]::IsNullOrWhiteSpace($protobufProtoc)) {
+    throw "LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE is empty. Please edit landlords.env and point it to protoc.exe."
+  }
+  if ([string]::IsNullOrWhiteSpace($protobufInclude)) {
+    throw "LANDLORDS_PROTOBUF_INCLUDE_DIR is empty. Please edit landlords.env and point it to the protobuf include directory."
+  }
+  if ([string]::IsNullOrWhiteSpace($protobufLibrary)) {
+    throw "LANDLORDS_PROTOBUF_LIBRARY is empty. Please edit landlords.env and point it to libprotobuf.lib or libprotobufd.lib."
+  }
+  if ([string]::IsNullOrWhiteSpace($libeventRoot)) {
+    throw "LANDLORDS_LIBEVENT_ROOT is empty. Please edit landlords.env and point it to your libevent installation root."
+  }
+  if ([string]::IsNullOrWhiteSpace($libeventCmakeDir)) {
+    throw "LANDLORDS_LIBEVENT_CMAKE_DIR is empty. Please edit landlords.env and point it to the directory containing LibeventConfig.cmake."
+  }
+
+  Assert-LandlordsPathExists -Label "Protobuf root" -PathValue $protobufRoot -Hint "Please edit LANDLORDS_PROTOBUF_ROOT in landlords.env."
+  Assert-LandlordsPathExists -Label "protoc executable" -PathValue $protobufProtoc -Hint "Please edit LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE in landlords.env."
+  Assert-LandlordsPathExists -Label "protobuf include directory" -PathValue $protobufInclude -Hint "Please edit LANDLORDS_PROTOBUF_INCLUDE_DIR in landlords.env."
+  Assert-LandlordsPathExists -Label "protobuf header" -PathValue (Join-Path $protobufInclude "google\protobuf\stubs\common.h") -Hint "LANDLORDS_PROTOBUF_INCLUDE_DIR should point to the include directory that contains google/protobuf/stubs/common.h."
+  Assert-LandlordsPathExists -Label "protobuf library" -PathValue $protobufLibrary -Hint "Please edit LANDLORDS_PROTOBUF_LIBRARY in landlords.env."
+  Assert-LandlordsPathExists -Label "libevent root" -PathValue $libeventRoot -Hint "Please edit LANDLORDS_LIBEVENT_ROOT in landlords.env."
+  Assert-LandlordsPathExists -Label "libevent CMake package directory" -PathValue $libeventCmakeDir -Hint "Please edit LANDLORDS_LIBEVENT_CMAKE_DIR in landlords.env."
 
   $enableOnnxRuntime = Test-LandlordsTruthy (Get-LandlordsEnvValue -Name "LANDLORDS_ENABLE_ONNXRUNTIME" -DefaultValue "ON")
   if ($enableOnnxRuntime) {
@@ -373,35 +388,20 @@ function Configure-Backend {
     $cmakeArgs += "-D$CMakeName=$resolvedValue"
   }
 
-  Add-CMakeCacheArg -CMakeName "LANDLORDS_USE_LOCAL_WINDOWS_DEPS" -Value $(if ($useLocalWindowsDeps) { "ON" } else { "OFF" })
   Add-CMakeCacheArg -CMakeName "LANDLORDS_ENABLE_ONNXRUNTIME" -Value $(if ($enableOnnxRuntime) { "ON" } else { "OFF" })
-
-  if ($useLocalWindowsDeps) {
-    Add-CMakeCacheArg -CMakeName "LANDLORDS_WINDOWS_DEPS_ROOT" -Value (Get-LandlordsEnvValue -Name "LANDLORDS_WINDOWS_DEPS_ROOT") -PathLike
-
-    foreach ($name in @(
-      "LANDLORDS_PROTOBUF_ROOT",
-      "LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE",
-      "LANDLORDS_PROTOBUF_INCLUDE_DIR",
-      "LANDLORDS_PROTOBUF_LIBRARY",
-      "LANDLORDS_LIBEVENT_ROOT",
-      "LANDLORDS_LIBEVENT_CMAKE_DIR"
-    )) {
-      Add-CMakeCacheArg -CMakeName $name
+  foreach ($name in @(
+    "LANDLORDS_PROTOBUF_ROOT",
+    "LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE",
+    "LANDLORDS_PROTOBUF_INCLUDE_DIR",
+    "LANDLORDS_PROTOBUF_LIBRARY",
+    "LANDLORDS_LIBEVENT_ROOT",
+    "LANDLORDS_LIBEVENT_CMAKE_DIR"
+  )) {
+    $pathValue = Get-LandlordsEnvValue -Name $name
+    if ([string]::IsNullOrWhiteSpace($pathValue)) {
+      throw "$name is empty. Please edit landlords.env before configuring the backend."
     }
-  } else {
-    Add-CMakeCacheArg -CMakeName "LANDLORDS_WINDOWS_DEPS_ROOT"
-
-    foreach ($name in @(
-      "LANDLORDS_PROTOBUF_ROOT",
-      "LANDLORDS_PROTOBUF_PROTOC_EXECUTABLE",
-      "LANDLORDS_PROTOBUF_INCLUDE_DIR",
-      "LANDLORDS_PROTOBUF_LIBRARY",
-      "LANDLORDS_LIBEVENT_ROOT",
-      "LANDLORDS_LIBEVENT_CMAKE_DIR"
-    )) {
-      Add-CMakeCacheArg -CMakeName $name -Value (Get-LandlordsEnvValue -Name $name) -PathLike
-    }
+    Add-CMakeCacheArg -CMakeName $name -Value $pathValue -PathLike
   }
 
   Add-CMakeCacheArg -CMakeName "LANDLORDS_ONNXRUNTIME_ROOT" -Value (Get-LandlordsEnvValue -Name "LANDLORDS_ONNXRUNTIME_ROOT") -PathLike
@@ -441,7 +441,7 @@ function Build-Backend {
   }
 }
 
-Import-LandlordsEnv -RepoRoot $root -OverwriteExisting
+Import-LandlordsEnv -RepoRoot $root
 Configure-Backend
 Build-Backend
 
